@@ -16,7 +16,8 @@ sub new {
 
     return $package;
 }
-
+sub clear(){
+	return 1;}
 sub lan_attack() {
     my $self = shift;
     $self->{'CONFIG'}->{'IO'}->verbose(1);    ##only for now##

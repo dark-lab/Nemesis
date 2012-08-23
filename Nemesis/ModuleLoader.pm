@@ -1,6 +1,7 @@
 package Nemesis::ModuleLoader;
 
 use strict;
+use Carp qw( croak );
 
 #external modules
 use Data::Dump qw(dump);
@@ -39,10 +40,23 @@ sub execute {
     my $self    = shift;
     my $module  = shift @_;
     my $command = shift @_;
-    my $object  = "$self->{'Base'}->{'path'}::$module";
-    eval( $object->$command(@_) );
+
+    # my $object  = "$self->{'Base'}->{'path'}::$module";
+    eval( "$self->{'Base'}->{'path'}::$module"->$command(@_) );
 
 }
+
+sub execute_on_all {
+	my $self    = shift;
+    my $met  = shift @_;
+    my @command = @_;
+	foreach my $module ( sort( keys %{ $self->{'modules'} } ) ) {
+
+        eval( "$self->{'modules'}->{$module}->$met(@command)" );
+    }
+	
+}
+
 
 sub export_public_methods() {
     my $self = shift;
@@ -103,16 +117,19 @@ sub loadmodules {
         my $result = do($base);
 
         if ($@) {
-            $IO->print_info( 'Error: Loading module ($base):' . $@ );
+            $IO->print_error( $@ );
             delete $INC{ $self->{'Base'}->{'path'} . "/" . $name };
             next;
         }
         if ( !$result ) {
-            $IO->print_info("Error: module ($base) did not return true\n");
+            $IO->print_error("module ($base) did not return true\n");
             next;
         }
         my $object = "$self->{'Base'}->{'path'}::$name";
-        if ( eval { $modules->{$name} = $object->new( %{ $self->{'core'} }, ModuleLoader => $self ) }
+        if (eval {
+                $modules->{$name} = $object->new( %{ $self->{'core'} },
+                    ModuleLoader => $self );
+            }
             )
         {    #Verify object's creation
             $mods++;
@@ -123,7 +140,8 @@ sub loadmodules {
 
     }
     $IO->print_info("> $mods modules available.\n");
-   # delete $self->{'modules'};
+
+    # delete $self->{'modules'};
     $self->{'modules'} = $modules;
     return 1;
 }

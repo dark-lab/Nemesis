@@ -1,6 +1,7 @@
 package Nemesis::Env;
 use warnings;
 use Storable;
+
 sub new {
     my $package = shift;
     bless( {}, $package );
@@ -8,9 +9,9 @@ sub new {
     if ( !-d $package->{'workspace'} ) {
         mkdir( $package->{'workspace'} );
     }
-    if(!-d $package->{'workspace'} . "/tmp"){
-        mkdir( $package->{'workspace'} . "/tmp");
-	}
+    if ( !-d $package->{'workspace'} . "/tmp" ) {
+        mkdir( $package->{'workspace'} . "/tmp" );
+    }
     return $package;
 }
 
@@ -43,6 +44,24 @@ sub select_info() {
 
 }
 
+sub ipv4_forward {
+    my $self = shift;
+    if ( $_[0] eq "on" ) {
+        open FILE, ">/proc/sys/net/ipv4/ip_forward";
+        print FILE 1;
+        close FILE;
+    }
+    elsif ( $_[0] eq "off" ) {
+        open FILE, ">/proc/sys/net/ipv4/ip_forward";
+        print FILE 0;
+        close FILE;
+    }
+
+    open FILE, "</proc/sys/net/ipv4/ip_forward";
+    my $res = <FILE>;
+    return $res;
+}
+
 sub check_root() {
 
     my $result = 0;
@@ -61,30 +80,31 @@ sub path() {
     my $self = shift;
 
     return
-        @{ $self->{ 'path' }
+        @{ $self->{'path'}
         };    #acquisisce l'array precedentemente messo nella chiave "devices"
 }
 
-sub whereis{
-	my $self=shift;
-	my $dependency=$_[0];
-	if(exists($self->{'ENV'}->{$dependency}){
-		return $self->{'ENV'}->{$dependency};
-	} else {
-		foreach my $path(@{ $self->{ 'path' } }){
-			@FILES=<$path/*>;
-			foreach my $p(@FILES){
-				return $p if $p=~/$dependency/i;
-			}
-		}
-	}
-	return;
+sub whereis {
+    my $self       = shift;
+    my $dependency = $_[0];
+    if ( exists( $self->{'ENV'}->{$dependency} ) ) {
+        return $self->{'ENV'}->{$dependency};
+    }
+    else {
+        foreach my $path ( @{ $self->{'path'} } ) {
+            @FILES = <$path/*>;
+            foreach my $p (@FILES) {
+                return $p if $p =~ /$dependency/i;
+            }
+        }
+    }
+    return;
 }
 
-sub path_for(){
-	my $self=shift;
-	my ($i,$path)=@_;
-	$self->{'ENV'}->{$i}=$path;
+sub path_for() {
+    my $self = shift;
+    my ( $i, $path ) = @_;
+    $self->{'ENV'}->{$i} = $path;
 }
 
 sub workspace() {
@@ -106,9 +126,9 @@ sub time() {
     my ($second,     $minute,    $hour,
         $dayOfMonth, $month,     $yearOffset,
         $dayOfWeek,  $dayOfYear, $daylightSavings
-    ) =  localtime(time);
-    if(length($hour)==1){ $hour="0".$hour; }
-    if(length($minute)==1){ $minute="0".$minute; }
+    ) = localtime(time);
+    if ( length($hour) == 1 )   { $hour   = "0" . $hour; }
+    if ( length($minute) == 1 ) { $minute = "0" . $minute; }
     my $year = 1900 + $yearOffset;
     return
           $dayOfMonth . "."
@@ -137,11 +157,11 @@ sub time_seconds() {
     my ($second,     $minute,    $hour,
         $dayOfMonth, $month,     $yearOffset,
         $dayOfWeek,  $dayOfYear, $daylightSavings
-    ) =  localtime(time);
+    ) = localtime(CORE::time);
     my $year = 1900 + $yearOffset;
-    if(length($hour)==1){ $hour="0".$hour; }
-    if(length($minute)==1){ $minute="0".$minute; }
-    return  "$hour:$minute:$second";
+    if ( length($hour) == 1 )   { $hour   = "0" . $hour; }
+    if ( length($minute) == 1 ) { $minute = "0" . $minute; }
+    return "$hour:$minute:$second";
 }
 
 1;

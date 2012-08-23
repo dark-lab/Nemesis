@@ -1,6 +1,7 @@
 package Nemesis::Interfaces;
 use warnings;
 use Net::Ping;
+
 #use strict;
 use vars qw($VERSION);
 $VERSION = '0.01';
@@ -97,8 +98,19 @@ sub scan_avaible_devices() {
 
     }
 
-    $self->print_devices();
+    #Locating default gateway-
 
+    $self->print_devices();
+    @output = $IO->exec("ip route");
+    foreach my $o (@output) {
+        if ( $o =~ /default/ ) {
+            my @res = split( / /, $o );
+            $self->{'GATEWAY'} = $res[2];
+
+        }
+    }
+    $IO->print_info( "Local gateway: " . $self->{'GATEWAY'} )
+        if exists( $self->{'GATEWAY'} );
 }
 
 sub info_device() {
@@ -195,7 +207,7 @@ sub check_internet() {
     my $self      = shift;
     my $interface = $_[0];
     my $alive     = 0;
-    my $ping = Net::Ping->new("tcp");
+    my $ping      = Net::Ping->new("tcp");
     $self->{'CONFIG'}->{'IO'}->print_info("Checking internet on $interface");
     $ping->bind( $self->{'devices'}->{$interface}->{'IPV4_ADDRESS'} )
         ;    # Specify source interface of pings
