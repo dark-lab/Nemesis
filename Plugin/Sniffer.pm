@@ -97,13 +97,14 @@ sub sniff {
         $env->tmp_dir() . "/" . $dev . "-ettercap-" . $env->time() . ".pcap";
 
     my $log_file = $env->tmp_dir() . "/" . $dev . "-etterlog-" . $env->time();
-    my $process  = Nemesis::Process->new(
-        type => 'daemon',             # forked pipeline
-        code => 'ettercap -Du -i ' 
+    $code='ettercap -Du -i ' 
             . $dev . ' -L '
             . $log_file . ' -w '
             . $pcap_file
-            . " -P autoadd",
+            . " -P autoadd";
+    my $process  = Nemesis::Process->new(
+        type => 'daemon',             # forked pipeline
+        code => $code,
         env      => $self->{'core'}->{'env'},
         IO       => $IO,
         file     => $pcap_file,
