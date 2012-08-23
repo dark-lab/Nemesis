@@ -19,17 +19,19 @@ sub new {
     return $package;
 }
 
-sub get_prompt_out{
-	
-	return colored("Nemesis","green on_black").colored("~","white on_black").colored("#","blue on_black blink");
-	
+sub get_prompt_out {
+
+    return
+          colored( "Nemesis", "green on_black" )
+        . colored( "~", "white on_black" )
+        . colored( "#", "blue on_black blink" );
+
 }
 
+sub print_motd {
 
-
-sub print_motd{
-	
-print colored(q{ 	               ,
+    print colored(
+        q{ 	               ,
                       dM
                       MMr
                      4MMML                  .
@@ -56,7 +58,8 @@ print colored(q{ 	               ,
 													and attack when it match some vectors.]
 	
 		
-	},"blue on_black bold")."\n";
+	}, "blue on_black bold"
+    ) . "\n";
 }
 
 sub set_public_methods() {
@@ -67,8 +70,10 @@ sub set_public_methods() {
 
 sub print_alert() {
     my $self = shift;
-	print colored("[Warn]\t","magenta on_black bold").colored($_[0],"cyan on_black")."\n";
-   # print "\/\!\\ Nemesis Warning \/\!\\\t " . $_[0] . "\n";
+    print colored( "[Warn]\t", "magenta on_black bold" )
+        . colored( $_[0],      "cyan on_black" ) . "\n";
+
+    # print "\/\!\\ Nemesis Warning \/\!\\\t " . $_[0] . "\n";
 
 }
 
@@ -89,22 +94,26 @@ sub sighandler() {
 sub debug() {
     my $self = shift;
     if ( $self->{'CONFIG'}->{'debug'} == 1 ) {
-		
-		
-		   print colored("[DEBUG]\t["
-            . $self->{'CONFIG'}->{'env'}->time_seconds()
-            . "]\t".$_[0],"bold on_red white")."\n";
 
-    #    print "["
-     #       . $self->{'CONFIG'}->{'env'}->time_seconds()
-      #      . "]\t"
-      #      . $_[0] . "\n";
+        print colored(
+            "[DEBUG]\t["
+                . $self->{'CONFIG'}->{'env'}->time_seconds() . "]\t"
+                . $_[0],
+            "bold on_red white"
+        ) . "\n";
+
+        #    print "["
+        #       . $self->{'CONFIG'}->{'env'}->time_seconds()
+        #      . "]\t"
+        #      . $_[0] . "\n";
     }
 }
 
 sub print_info() {
     my $self = shift;
-   print (colored("~>\t","green on_black bold"),colored($_[0],"blue on_black bold"),"\n");
+    print( colored( "~>\t", "green on_black bold" ),
+        colored( $_[0], "blue on_black bold" ), "\n" );
+
     #print "["
     #    . $self->{'CONFIG'}->{'env'}->time_seconds() . "]>\t"
     #    . $_[0] . "\n";
@@ -112,17 +121,17 @@ sub print_info() {
 
 sub print_error() {
     my $self = shift;
-    
-    
-    		
-	print colored("[ERROR]\t","bold red on_black blink").colored("["
-            . $self->{'CONFIG'}->{'env'}->time_seconds()
-            . "]\n".$_[0],"bold red on_black")."\n";
-    
-  #  print "["
-  #      . $self->{'CONFIG'}->{'env'}->time_seconds()
-   #     . "] !!! Nemesis Error !!!\t"
-   #     . $_[0] . "\n";
+
+    print colored( "[ERROR]\t", "bold red on_black blink" )
+        . colored(
+        "[" . $self->{'CONFIG'}->{'env'}->time_seconds() . "]\n" . $_[0],
+        "bold red on_black" )
+        . "\n";
+
+    #  print "["
+    #      . $self->{'CONFIG'}->{'env'}->time_seconds()
+    #     . "] !!! Nemesis Error !!!\t"
+    #     . $_[0] . "\n";
 
 }
 
@@ -130,9 +139,10 @@ sub print_title {
     my $self = shift;
     my ($msg) = @_;
     printf "\n\n";
-   #printf colored("=" x length($msg),"white on_yellow");
-    printf "\n".colored($msg,"yellow on_black bold")."\n";
-    printf colored("=" x length($msg),"white on_yellow");
+
+    #printf colored("=" x length($msg),"white on_yellow");
+    printf "\n" . colored( $msg, "yellow on_black bold" ) . "\n";
+    printf colored( "=" x length($msg), "white on_yellow" );
     printf "\n\n";
 }
 

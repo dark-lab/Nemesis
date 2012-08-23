@@ -47,16 +47,15 @@ sub execute {
 }
 
 sub execute_on_all {
-	my $self    = shift;
-    my $met  = shift @_;
+    my $self    = shift;
+    my $met     = shift @_;
     my @command = @_;
-	foreach my $module ( sort( keys %{ $self->{'modules'} } ) ) {
+    foreach my $module ( sort( keys %{ $self->{'modules'} } ) ) {
 
-        eval( "$self->{'modules'}->{$module}->$met(@command)" );
+        eval("$self->{'modules'}->{$module}->$met(@command)");
     }
-	
-}
 
+}
 
 sub export_public_methods() {
     my $self = shift;
@@ -117,7 +116,7 @@ sub loadmodules {
         my $result = do($base);
 
         if ($@) {
-            $IO->print_error( $@ );
+            $IO->print_error($@);
             delete $INC{ $self->{'Base'}->{'path'} . "/" . $name };
             next;
         }

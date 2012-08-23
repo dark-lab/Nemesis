@@ -234,15 +234,14 @@ package Nemesis::Process;
         return "@pid";
 
     }
-    
-    sub get_output_file(){
-		my $self=shift;
-		return $self->{'CONFIG'}->{'env'}->tmp_dir() . "/"
-            . $self->{'INDEX'}
-            . ".out";
-		
-		
-	}
+
+    sub get_output_file() {
+        my $self = shift;
+        return
+              $self->{'CONFIG'}->{'env'}->tmp_dir() . "/"
+            . $self->{'INDEX'} . ".out";
+
+    }
 
     sub get_output() {
         my $self = shift;

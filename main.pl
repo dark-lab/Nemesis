@@ -30,6 +30,7 @@ my $moduleloader = Nemesis::ModuleLoader->new(
 $0 = "spike_nemesis";
 
 $SIG{'INT'} = sub { $output->sighandler(); };
+
 # Setting the terminal
 my $prompt    = $output->get_prompt_out();
 my $term_name = "Nemesis";
@@ -202,32 +203,35 @@ else {
 my $attribs = $nemesis_t->Attribs;
 @PUBLIC_LIST = $moduleloader->export_public_methods();
 $attribs->{completion_function} = sub { return @PUBLIC_LIST; };
-my $list= join(" ",@PUBLIC_LIST);
+my $list = join( " ", @PUBLIC_LIST );
 
 # Main loop. This is inspired from the POD page of Term::Readline.
 while ( defined( $_ = $nemesis_t->readline($prompt) ) ) {
     my @cmd = split( / /, $_ );
     my $command = shift(@cmd);
-    if($command eq "reload"){
-		$output->print_title("Reloading modules..");
-		if ( $moduleloader->loadmodules() != 1 ) {    # loadmodules error
-			$output->print_error($_);
-			exit;
-		}
-		@PUBLIC_LIST = $moduleloader->export_public_methods();
-	} elsif ($command=~/exit/){
-		$output->print_info("Clearing all before we go..");
-		$moduleloader->execute_on_all("clear");
-		exit;
-		
-	} elsif ( $command =~ /\./ ) {
+    if ( $command eq "reload" ) {
+        $output->print_title("Reloading modules..");
+        if ( $moduleloader->loadmodules() != 1 ) {    # loadmodules error
+            $output->print_error($_);
+            exit;
+        }
+        @PUBLIC_LIST = $moduleloader->export_public_methods();
+    }
+    elsif ( $command =~ /exit/ ) {
+        $output->print_info("Clearing all before we go..");
+        $moduleloader->execute_on_all("clear");
+        exit;
+
+    }
+    elsif ( $command =~ /\./ ) {
         my ( $module, $method ) = split( /\./, $command );
         if ( "@cmd" =~ /help/i ) { $cmd[0] = $method; $method = 'help'; }
-        if($list =~ /$command/i){
-			$moduleloader->execute( $module, $method, @cmd );
-		} else {
-			$output->print_alert("function not implemented");
-		}
+        if ( $list =~ /$command/i ) {
+            $moduleloader->execute( $module, $method, @cmd );
+        }
+        else {
+            $output->print_alert("function not implemented");
+        }
     }
     else {
         $output->debug("not a module command, falling back to eval");

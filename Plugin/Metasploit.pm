@@ -52,8 +52,11 @@ sub configure {
     #postgre pc_hba.conf
 
 }
-sub clear(){
-	return 1;}
+
+sub clear() {
+    return 1;
+}
+
 sub test {
     my $self = shift;
     $self->{'core'}->{'IO'}

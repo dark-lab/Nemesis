@@ -30,8 +30,10 @@ sub export_public_methods() {
 sub info() {
 
 }
-sub clear(){
-	return 1;}
+
+sub clear() {
+    return 1;
+}
 ##TO DO ONE START FOR ONE INTERFACE, MORE ETTERCAP OBJECTS , ONE FOR EACH INTERFACE.
 sub start {
     my $self       = shift;
