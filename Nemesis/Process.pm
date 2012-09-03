@@ -39,6 +39,7 @@ package Nemesis::Process;
         }
         $self->{'CONFIG'}->{'IO'}
             ->debug( "Starting ..  " . $self->{'CONFIG'}->{'code'} );
+        return $self->get_id();
     }
 
     sub stop() {
@@ -142,9 +143,11 @@ package Nemesis::Process;
             $self->{'CONFIG'}->{'IO'}
             ->generate_command( $self->{'CONFIG'}->{'code'} );
         system($cmd);
+        $self->{'CONFIG'}->{'IO'}->debug("Daemon released me");
         $p = $this_pid->get_pidof($cmd);
         $self->save_pid($p);
-        $self->save("Daemon mode");
+        $self->{'CONFIG'}->{'IO'}->debug("PID: ".$p);
+        $self->save("Daemon mode\n");
     }
 
     sub fork {

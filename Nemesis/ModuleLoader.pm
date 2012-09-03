@@ -4,13 +4,11 @@ use strict;
 use Carp qw( croak );
 
 #external modules
-use Data::Dump qw(dump);
 
 
 my $base = {
     'path'    => 'Plugin',
-    'pwd'     => './',
-    'options' => $options
+    'pwd'     => './'
 };
 
 sub new {

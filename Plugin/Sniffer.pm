@@ -97,14 +97,15 @@ sub sniff {
         $env->tmp_dir() . "/" . $dev . "-ettercap-" . $env->time() . ".pcap";
 
     my $log_file = $env->tmp_dir() . "/" . $dev . "-etterlog-" . $env->time();
-    $code='ettercap -Du -i ' 
-            . $dev . ' -L '
-            . $log_file . ' -w '
-            . $pcap_file
-            . " -P autoadd";
-    my $process  = Nemesis::Process->new(
-        type => 'daemon',             # forked pipeline
-        code => $code,
+    $code =
+          'ettercap -Du -i ' 
+        . $dev . ' -L '
+        . $log_file . ' -w '
+        . $pcap_file
+        . " -P autoadd";
+    my $process = Nemesis::Process->new(
+        type     => 'daemon',                   # forked pipeline
+        code     => $code,
         env      => $self->{'core'}->{'env'},
         IO       => $IO,
         file     => $pcap_file,
@@ -208,19 +209,18 @@ sub status_device() {
         ID  => $self->{$group}->{$dev}
     ) or $output->debug( "Can't reload " . $self->{$group}->{$dev} );
     $output->print_info( $process->get_var("code") );
-    $output->print_info( "\tRunning:\t " . $process->is_running() );
+    $output->print_tabbed( "Running:\t " . $process->is_running() );
 
     #$output->print_info( "Output: " . $process->get_output() );
     my $pid = $process->get_pid();
     if ( $pid eq "" ) { $pid = "Waiting for it.."; }
-    $output->print_info( "\tPID:\t " . $pid );
+    $output->print_tabbed( "PID:\t " . $pid );
     if ( $process->{'CONFIG'}->{'type'} eq "daemon" ) {
-        $output->print_info( "\tFile (Generic output by process):\t "
+        $output->print_tabbed( "File (Generic output by process):\t "
                 . $process->get_var('file') );
-        $output->print_info( "\tFile (Generic output by process):\t "
+        $output->print_tabbed( "File (Generic output by process):\t "
                 . $process->get_var('file_log') );
     }
-    $output->print_info("\n")
 
 }
 
@@ -233,10 +233,10 @@ sub stop {
     my $group  = $_[1];
     if ( !defined($dev) ) {
         $output->print_alert("You must provide a device");
-        exit;
-    }
+  
+    } else {
     if ( defined($group) ) {
-        $output->print_title(
+        $output->print_info(
             "Stopping all activities on " . $dev . " for $group" );
 
         my $process = Nemesis::Process->new(
@@ -275,6 +275,7 @@ sub stop {
     }
 
     $output->exec("iptables -t nat -F");
+}
 }
 
 sub where {

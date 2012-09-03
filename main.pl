@@ -8,7 +8,7 @@ use Nemesis::ModuleLoader;
 
 #External
 use Getopt::Long;
-use Term::ReadLine;
+use Term::ReadLine::Gnu;
 
 ##General Settings
 my $env    = new Nemesis::Env;
@@ -203,6 +203,7 @@ else {
 my $attribs = $nemesis_t->Attribs;
 @PUBLIC_LIST = $moduleloader->export_public_methods();
 $attribs->{completion_function} = sub { return @PUBLIC_LIST; };
+$attribs->{special-prefix} = '###';
 my $list = join( " ", @PUBLIC_LIST );
 
 # Main loop. This is inspired from the POD page of Term::Readline.
@@ -226,7 +227,7 @@ while ( defined( $_ = $nemesis_t->readline($prompt) ) ) {
     elsif ( $command =~ /\./ ) {
         my ( $module, $method ) = split( /\./, $command );
         if ( "@cmd" =~ /help/i ) { $cmd[0] = $method; $method = 'help'; }
-        if ( $list =~ /$command/i ) {
+        if ( $list =~ /$command/i and $method ne "" ) {
             $moduleloader->execute( $module, $method, @cmd );
         }
         else {
