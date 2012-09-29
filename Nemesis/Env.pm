@@ -94,12 +94,11 @@ sub whereis {
         foreach my $path ( @{ $self->{'path'} } ) {
             @FILES = <$path/*>;
             foreach my $p (@FILES) {
-				return $p if $p eq "$path\/$dependency";
+                return $p if $p eq "$path\/$dependency";
             }
         }
-        
-        
-                foreach my $path ( @{ $self->{'path'} } ) {
+
+        foreach my $path ( @{ $self->{'path'} } ) {
             @FILES = <$path/*>;
             foreach my $p (@FILES) {
                 return $p if $p =~ /$dependency/i;

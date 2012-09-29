@@ -120,13 +120,17 @@ sub info_device() {
     if ( !$device ) {
         return;
     }
-    $IO->print_info("Device: ".$device);
+    $IO->print_info( "Device: " . $device );
     if ( exists( $self->{'devices'}->{$device}->{'IPV4_ADDRESS'} ) ) {
 
-        $IO->print_tabbed("IPv4:\t".$self->{'devices'}->{$device}->{'IPV4_ADDRESS'} . "\t" );
+        $IO->print_tabbed( "IPv4:\t"
+                . $self->{'devices'}->{$device}->{'IPV4_ADDRESS'}
+                . "\t" );
     }
     if ( exists( $self->{'devices'}->{$device}->{'IPV6_ADDRESS'} ) ) {
-        $IO->print_tabbed("IPv6:\t".$self->{'devices'}->{$device}->{'IPV6_ADDRESS'} . "\t" );
+        $IO->print_tabbed( "IPv6:\t"
+                . $self->{'devices'}->{$device}->{'IPV6_ADDRESS'}
+                . "\t" );
     }
 
     if ( exists( $self->{'devices'}->{$device}->{'WIRELESS'} )

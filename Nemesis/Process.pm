@@ -19,7 +19,14 @@ package Nemesis::Process;
         croak "IO and environment must be defined\n"
             if ( !defined( $package->{'CONFIG'}->{'IO'} )
             || !defined( $package->{'CONFIG'}->{'env'} ) );
+        $package->{'CONFIG'}->{'IO'}->debug("Nemesis::Process loaded.");
+
         return $package;
+    }
+
+    sub info {
+        my $self = shift;
+        $self->{'CONFIG'}->{'IO'}->print_info("Process: a main module.");
     }
 
     sub start {
@@ -146,7 +153,7 @@ package Nemesis::Process;
         $self->{'CONFIG'}->{'IO'}->debug("Daemon released me");
         $p = $this_pid->get_pidof($cmd);
         $self->save_pid($p);
-        $self->{'CONFIG'}->{'IO'}->debug("PID: ".$p);
+        $self->{'CONFIG'}->{'IO'}->debug( "PID: " . $p );
         $self->save("Daemon mode\n");
     }
 

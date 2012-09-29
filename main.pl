@@ -203,7 +203,7 @@ else {
 my $attribs = $nemesis_t->Attribs;
 @PUBLIC_LIST = $moduleloader->export_public_methods();
 $attribs->{completion_function} = sub { return @PUBLIC_LIST; };
-$attribs->{special-prefix} = '###';
+##$attribs->{'special-prefix'} = '###';
 my $list = join( " ", @PUBLIC_LIST );
 
 # Main loop. This is inspired from the POD page of Term::Readline.

@@ -233,49 +233,50 @@ sub stop {
     my $group  = $_[1];
     if ( !defined($dev) ) {
         $output->print_alert("You must provide a device");
-  
-    } else {
-    if ( defined($group) ) {
-        $output->print_info(
-            "Stopping all activities on " . $dev . " for $group" );
-
-        my $process = Nemesis::Process->new(
-            env => $self->{'core'}->{'env'},
-            IO  => $output,
-            ID  => $self->{$group}->{$dev}
-            )
-            or $output->print_error(
-            "Can't start reload " . $self->{$group}->{$dev} );
-
-        $process->stop();
-        $process->destroy();
-
-        delete $self->{$group}->{$dev};
 
     }
     else {
-        foreach my $group (@process_groups) {
-            if ( exists( $self->{$group}->{$dev} ) ) {
-                $output->print_title( "Stopping $group on " . $dev . "" );
+        if ( defined($group) ) {
+            $output->print_info(
+                "Stopping all activities on " . $dev . " for $group" );
 
-                my $process = Nemesis::Process->new(
-                    env => $self->{'core'}->{'env'},
-                    IO  => $output,
-                    ID  => $self->{$group}->{$dev}
-                    )
-                    or $output->print_error(
-                    "Can't start reload " . $self->{$group}->{$dev} );
+            my $process = Nemesis::Process->new(
+                env => $self->{'core'}->{'env'},
+                IO  => $output,
+                ID  => $self->{$group}->{$dev}
+                )
+                or $output->print_error(
+                "Can't start reload " . $self->{$group}->{$dev} );
 
-                $process->stop();
-                $process->destroy();
+            $process->stop();
+            $process->destroy();
 
-                delete $self->{$group}->{$dev};
+            delete $self->{$group}->{$dev};
+
+        }
+        else {
+            foreach my $group (@process_groups) {
+                if ( exists( $self->{$group}->{$dev} ) ) {
+                    $output->print_title( "Stopping $group on " . $dev . "" );
+
+                    my $process = Nemesis::Process->new(
+                        env => $self->{'core'}->{'env'},
+                        IO  => $output,
+                        ID  => $self->{$group}->{$dev}
+                        )
+                        or $output->print_error(
+                        "Can't start reload " . $self->{$group}->{$dev} );
+
+                    $process->stop();
+                    $process->destroy();
+
+                    delete $self->{$group}->{$dev};
+                }
             }
         }
-    }
 
-    $output->exec("iptables -t nat -F");
-}
+        $output->exec("iptables -t nat -F");
+    }
 }
 
 sub where {

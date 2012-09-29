@@ -18,17 +18,18 @@ sub new {
 
     return $package;
 }
-sub get_completion_color{
-	
-		return colored('->','cyan bold on_black');
-	
+
+sub get_completion_color {
+
+    return colored( '->', 'cyan bold on_black' );
+
 }
 
 sub get_prompt_out {
 
     return
           colored( "Nemesis", "green on_black" )
-        . colored( "~", "white on_black" )
+        . colored( "~",  "white on_black" )
         . colored( "# ", "blue on_black blink" );
 
 }
@@ -75,10 +76,11 @@ sub set_public_methods() {
 
 sub print_alert() {
     my $self = shift;
-    print colored( "[", "magenta on_black bold" ).colored("Warn", "green on_black bold" ).
-      colored("]\t", "magenta on_black bold" ).
-        colored( $_[0], "cyan on_black").
-         "\n" ;
+    print colored( "[",    "magenta on_black bold" )
+        . colored( "Warn", "green on_black bold" )
+        . colored( "]\t",  "magenta on_black bold" )
+        . colored( $_[0],  "cyan on_black" ) . "\n";
+
     # print "\/\!\\ Nemesis Warning \/\!\\\t " . $_[0] . "\n";
 
 }
@@ -101,12 +103,13 @@ sub debug() {
     my $self = shift;
     if ( $self->{'CONFIG'}->{'debug'} == 1 ) {
 
-        
-      print colored( "[", "magenta on_black bold" ).colored("DEBUG", "bold on_red white" ).
-      colored("]\t", "magenta on_black bold" ).
-        colored( $_[0], "bold on_red white"). 
-        "\n". colored("\tat ".$self->{'CONFIG'}->{'env'}->time_seconds(),"bold on_black cyan").
-         "\n" ;
+        print colored( "[",     "magenta on_black bold" )
+            . colored( "DEBUG", "bold on_red white" )
+            . colored( "]\t",   "magenta on_black bold" )
+            . colored( $_[0],   "bold on_red white" ) . "\n"
+            . colored( "\tat " . $self->{'CONFIG'}->{'env'}->time_seconds(),
+            "bold on_black cyan" )
+            . "\n";
 
         #    print "["
         #       . $self->{'CONFIG'}->{'env'}->time_seconds()
@@ -117,12 +120,13 @@ sub debug() {
 
 sub print_info() {
     my $self = shift;
-    print colored( "[", "magenta on_black bold" ).colored("**", "green on_black bold" ).
-      colored("]\t", "magenta on_black bold" ).
-        colored( $_[0], "blue on_black bold" ).
-         "\n" ;
+    print colored( "[",   "magenta on_black bold" )
+        . colored( "**",  "green on_black bold" )
+        . colored( "]\t", "magenta on_black bold" )
+        . colored( $_[0], "blue on_black bold" ) . "\n";
+
     #print( colored( "~>\t", "green on_black bold" ),
-        #colored( $_[0], "blue on_black bold" ), "\n" );
+    #colored( $_[0], "blue on_black bold" ), "\n" );
     #print "["
     #    . $self->{'CONFIG'}->{'env'}->time_seconds() . "]>\t"
     #    . $_[0] . "\n";
@@ -144,9 +148,10 @@ sub print_error() {
 
 }
 
-sub print_tabbed{
-		print( colored( "\t~> ", "green on_black bold" ),colored( $_[1], "blue on_black bold" ), "\n" );
-		
+sub print_tabbed {
+    print( colored( "\t~> ", "green on_black bold" ),
+        colored( $_[1], "blue on_black bold" ), "\n" );
+
 }
 
 sub print_title {

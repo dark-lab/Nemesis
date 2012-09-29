@@ -8,9 +8,10 @@ my $INFO    = "<www.dark-lab.net>";
 
 #Public exported functions
 
-my @PUBLIC_FUNCTIONS = qw(video_redirect restart start stop cud_regex);    #NECESSARY
+my @PUBLIC_FUNCTIONS =
+    qw(video_redirect restart start stop cud_regex);    #NECESSARY
 
-sub new {                                                        #NECESSARY
+sub new {                                               #NECESSARY
      #Usually new(), export_public_methods() and help() can be copyed from other plugins
     my $package = shift;
     bless( {}, $package );
@@ -134,20 +135,19 @@ sub start() {
     }
     else {
 
-
         if ( !exists( $self->{'squidID'} ) ) {
-			        $IO->print_info("Ip forward on");
-        $env->ipv4_forward("on");
-        $IO->exec("iptables -F;iptables -F -t nat");
-        $IO->exec(
-            "iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port 3128"
-        );
+            $IO->print_info("Ip forward on");
+            $env->ipv4_forward("on");
+            $IO->exec("iptables -F;iptables -F -t nat");
+            $IO->exec(
+                "iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port 3128"
+            );
 
-        $modules->{'Sniffer'}->spoof( $_[0] );
+            $modules->{'Sniffer'}->spoof( $_[0] );
 
-        $self->squid_generate_config();
-        $self->generate_squid_program();
-        $self->check_perms();
+            $self->squid_generate_config();
+            $self->generate_squid_program();
+            $self->check_perms();
             $IO->print_info("Booting up squid");
             $code =
                   $env->whereis("squid")
@@ -228,7 +228,8 @@ sub video_redirect() {
     $IO->print_info("Applying regex for video redirect...");
     $self->cud_regex( '\.flv',
         'http://www.videophenomena.com/files/2008/12/2-girls-1-cup.flv' );
-    $self->cud_regex( 'watch|youtube', 'http://www.youtube.com/watch?v=gRp_dUo5K1c' );
+    $self->cud_regex( 'watch|youtube',
+        'http://www.youtube.com/watch?v=gRp_dUo5K1c' );
 }
 
 sub check_perms() {

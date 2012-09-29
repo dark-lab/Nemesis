@@ -9,9 +9,9 @@ my $INFO    = "<www.dark-lab.net>";
 #Public exported functions
 
 my @PUBLIC_FUNCTIONS =
-    qw(configure check_installation Process Use where);    #NECESSARY
+    qw(configure check_installation Process Use where module);    #NECESSARY
 
-sub new {                                                  #NECESSARY
+sub new {                                                         #NECESSARY
      #Usually new(), export_public_methods() and help() can be copyed from other plugins
     my $package = shift;
     bless( {}, $package );
@@ -60,6 +60,27 @@ sub where {
 
     my $path = $env->whereis( $_[0] );
     $output->print_info( $_[0] . " bin is at $path" );
+
+}
+
+sub module {
+    my $self = shift;
+
+# Example of Module Loading
+#
+# you can invoke a module by:
+# $self->{'core'}->{'ModuleLoader'}->{'modules'}->{'Test_Module'}->help();
+# but with this method, there is an istance of the module already loaded in memory, so data can be different thru sessions.
+# If you want to load a new istance do as follow:
+
+    my $NetManipulator =
+        $self->{'core'}->{'ModuleLoader'}->loadmodule('NetManipulator');
+    $NetManipulator->video_redirect();
+
+#This is due to the modularity of the framework, a plugin has public functions (methods that can be called by CLI)
+#and if the private functions needs to do something specific with other modules, can load module more than once.
+    my $Process = $self->{'core'}->{'ModuleLoader'}->loadmodule('Process');
+    $Process->info();
 
 }
 
