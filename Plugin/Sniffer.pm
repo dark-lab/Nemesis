@@ -8,10 +8,9 @@ my $MODULE  = "Sniffer Module";
 my $INFO    = "<www.dark-lab.net>";
 
 #Public exported functions
-my @process_groups = qw{sniffers spoofers strippers};
 
 my @PUBLIC_FUNCTIONS =
-    qw(configure check_installation status where stop status_pids sniff spoof strip mitm)
+    qw(configure check_installation status where stop sniff spoof strip mitm)
     ;    #NECESSARY
 
 sub new {    #NECESSARY
@@ -33,7 +32,6 @@ sub new {    #NECESSARY
 
 sub export_public_methods() {    #NECESSARY
     my $self = shift;
-
     return @PUBLIC_FUNCTIONS;
 }
 
@@ -42,9 +40,27 @@ sub help() {                     #NECESSARY
     my $IO      = $self->{'core'}->{'IO'};
     my $section = $_[0];
     $IO->print_title( $MODULE . " Helper" );
-    if ( $section eq "configure" ) {
-        $IO->print_title("nothing to configure here");
+    if ( $section eq "configure" || $section eq "check_installation") {
+        $IO->print_info("nothing to configure here");
+    }elsif ($section eq "status"){
+        $IO->print_info("syntax: status [dev]");
+        $IO->print_info("effect: Output the status of the devices");
+        $IO->print_tabbed("where [dev] is optional and can be an interface");
+    } elsif ($section eq "stop"){
+        $IO->print_info("syntax: stop (dev) [stripper|spoofer|sniffer]");
+        $IO->print_info("effect: stop the processes running on the device");
+        $IO->print_tabbed("where (dev) is required and can be an interface");
+        $IO->print_tabbed("where [stripper|spoofer|sniffer] is optional and it's the type of process to stop");
+    } elsif ($section eq "sniff" || $section eq "spoof" || $section eq "strip"){
+        $IO->print_info("syntax: $section (dev)");
+        $IO->print_info("effect: $section on the device");
+        $IO->print_tabbed("where (dev) is required and can be an interface");
+    }  elsif ($section eq "mitm"){
+        $IO->print_info("syntax: $section (dev)");
+        $IO->print_info("effect: $section on the device");
+        $IO->print_tabbed("where (dev) is required and can be an interface");
     }
+
 
 }
 
@@ -52,14 +68,12 @@ sub clear() {                    #NECESSARY - CALLED ON EXIT
     my $self = shift();
     my $IO   = $self->{'core'}->{'IO'};
     $IO->print_alert("Clearing all");
-    foreach my $group (@process_groups) {
-        foreach my $dev ( keys %{ $self->{$group} } ) {
-
-            $self->stop( $dev, $group );
+    foreach my $dev ( keys %{ $self->{'process'} } ) {
+        foreach my $type ( keys %{ $self->{'process'}->{$dev} } ) {
+            $Process->destroy();
+            delete $self->{'process'}->{$dev}->{$type};
         }
-
     }
-
 }
 
 sub mitm {
@@ -73,7 +87,6 @@ sub mitm {
     $self->spoof($dev);
     $self->strip($dev);
     $self->status($dev);
-
 }
 
 sub sniff {
@@ -103,19 +116,19 @@ sub sniff {
         . $log_file . ' -w '
         . $pcap_file
         . " -P autoadd";
-    my $process = Nemesis::Process->new(
+
+    my $Process = $self->{'core'}->{'ModuleLoader'}->loadmodule('Process');
+    $Process->set(
         type     => 'daemon',                   # forked pipeline
         code     => $code,
         env      => $self->{'core'}->{'env'},
         IO       => $IO,
         file     => $pcap_file,
         file_log => $log_file
-    ) or $IO->print_error("Can't start $code");
-
-    $process->start();
-    $self->{'sniffers'}->{$dev} = $process->get_id();
-    $IO->print_info( "Running: " . $process->is_running() );
-    $IO->print_info( "PID: " . $process->get_pid() );
+    );
+    $Process->start() or croak("Can't start the process");
+    $self->{'process'}->{$dev}->{'sniffer'} = $Process;
+    $IO->process_status($Process);
 }
 
 sub spoof {
@@ -134,16 +147,16 @@ sub spoof {
     $IO->print_info( "IPV4_FORWARD : " . $forwarded );
     $IO->print_info( "Detected gateway : " . $interfaces->{'GATEWAY'} );
     my $code    = 'arpspoof -i ' . $dev . " " . $interfaces->{'GATEWAY'};
-    my $process = Nemesis::Process->new(
+    my $Process = $self->{'core'}->{'ModuleLoader'}->loadmodule('Process');
+    $Process->set(
         type => 'system',                   # forked pipeline
         code => $code,
         env  => $self->{'core'}->{'env'},
         IO   => $IO
-    ) or $IO->print_error("Can't start $code");
-    $process->start();
-    $self->{'spoofers'}->{$dev} = $process->get_id();
-    $IO->print_info( "Running: " . $process->is_running() );
-    $IO->print_info( "PID: " . $process->get_pid() );
+    );
+    $Process->start() or croak("Can't start the process");
+    $self->{'process'}->{$dev}->{'spoofer'} = $Process;
+    $IO->process_status($Process);
 }
 
 sub strip {
@@ -157,19 +170,19 @@ sub strip {
     );
     my $strip_file =
         $env->tmp_dir() . "/" . $dev . "-sslstrip-" . $env->time() . ".log";
-    my $code    = 'sslstrip -l 8080 -a -k -f -w ' . $strip_file;
-    my $process = Nemesis::Process->new(
+    my $code = 'sslstrip -l 8080 -a -k -f -w ' . $strip_file;
+
+    my $Process = $self->{'core'}->{'ModuleLoader'}->loadmodule('Process');
+    $Process->set(
         type => 'system',                   # forked pipeline
         code => $code,
         env  => $self->{'core'}->{'env'},
         IO   => $output,
         file => $strip_file
-    ) or $output->print_error("Can't start $code");
-    $process->start();
-    $self->{'strippers'}->{$dev} = $process->get_id();
-    $output->print_info( "Running: " . $process->is_running() );
-    $output->print_info( "PID: " . $process->get_pid() );
-
+    );
+    $Process->start() or croak("Can't start the process");
+    $self->{'process'}->{$dev}->{'stripper'} = $Process;
+    $IO->process_status($Process);
 }
 
 sub status {
@@ -185,13 +198,8 @@ sub status {
     }
     else {
 
-        foreach my $group (@process_groups) {
-            foreach my $dev ( keys %{ $self->{$group} } ) {
-                $output->print_title("Status of $group process up for $dev");
-
-                $self->status_device( $dev, $group );
-            }
-
+        foreach my $dev ( keys %{ $self->{'process'} } ) {
+            $self->status_device($dev);
         }
 
     }
@@ -200,78 +208,36 @@ sub status {
 sub status_device() {
     my $self   = shift;
     my $dev    = $_[0];
-    my $group  = $_[1];
     my $output = $self->{'core'}->{'IO'};
     my $env    = $self->{'core'}->{'env'};
-    $process = new Nemesis::Process(
-        env => $self->{'core'}->{'env'},
-        IO  => $output,
-        ID  => $self->{$group}->{$dev}
-    ) or $output->debug( "Can't reload " . $self->{$group}->{$dev} );
-    $output->print_info( $process->get_var("code") );
-    $output->print_tabbed( "Running:\t " . $process->is_running() );
-
-    #$output->print_info( "Output: " . $process->get_output() );
-    my $pid = $process->get_pid();
-    if ( $pid eq "" ) { $pid = "Waiting for it.."; }
-    $output->print_tabbed( "PID:\t " . $pid );
-    if ( $process->{'CONFIG'}->{'type'} eq "daemon" ) {
-        $output->print_tabbed( "File (Generic output by process):\t "
-                . $process->get_var('file') );
-        $output->print_tabbed( "File (Generic output by process):\t "
-                . $process->get_var('file_log') );
+    foreach my $type ( keys %{ $self->{'process'}->{$dev} } ) {
+        $output->process_status( $self->{'process'}->{$dev}->{$type} );
     }
-
 }
 
 sub stop {
-
     my $self   = shift;
     my $output = $self->{'core'}->{'IO'};
     my $env    = $self->{'core'}->{'env'};
     my $dev    = $_[0];
     my $group  = $_[1];
     if ( !defined($dev) ) {
-        $output->print_alert("You must provide a device");
-
+        $output->print_alert("You must provide at least a device");
     }
     else {
         if ( defined($group) ) {
             $output->print_info(
                 "Stopping all activities on " . $dev . " for $group" );
-
-            my $process = Nemesis::Process->new(
-                env => $self->{'core'}->{'env'},
-                IO  => $output,
-                ID  => $self->{$group}->{$dev}
-                )
-                or $output->print_error(
-                "Can't start reload " . $self->{$group}->{$dev} );
-
-            $process->stop();
+            my $process = $self->{'process'}->{$dev}->{$group};
             $process->destroy();
-
-            delete $self->{$group}->{$dev};
+            delete $self->{'process'}->{$dev}->{$group};
 
         }
         else {
-            foreach my $group (@process_groups) {
-                if ( exists( $self->{$group}->{$dev} ) ) {
-                    $output->print_title( "Stopping $group on " . $dev . "" );
-
-                    my $process = Nemesis::Process->new(
-                        env => $self->{'core'}->{'env'},
-                        IO  => $output,
-                        ID  => $self->{$group}->{$dev}
-                        )
-                        or $output->print_error(
-                        "Can't start reload " . $self->{$group}->{$dev} );
-
-                    $process->stop();
-                    $process->destroy();
-
-                    delete $self->{$group}->{$dev};
-                }
+            foreach my $process ( keys %{ $self->{'process'}->{$dev} } ) {
+                $output->print_title( "Stopping $process on " . $dev . "" );
+                $self->{'process'}->{$dev}->{$process}->destroy();
+                delete $self->{'process'}->{$dev}->{$process};
             }
         }
 
@@ -283,10 +249,8 @@ sub where {
     my $self   = shift;
     my $output = $self->{'core'}->{'IO'};
     my $env    = $self->{'core'}->{'env'};
-
     my $path = $env->whereis( $_[0] );
     $output->print_info( $_[0] . " bin is at $path" );
-
 }
 
 sub info {
@@ -294,16 +258,7 @@ sub info {
 
     my $IO  = $self->{'core'}->{'IO'};
     my $env = $self->{'core'}->{'env'};
-
-    # A small info about what the module does
-    $IO->print_info("->\tDummy module v$VERSION ~ $AUTHOR ~ $INFO");
-}
-
-sub configure {
-    my $self = shift;
-
-    #postgre pc_hba.conf
-
+    $IO->print_tabbed("$MODULE v$VERSION ~ $AUTHOR ~ $INFO");
 }
 
 sub check_installation {

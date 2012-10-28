@@ -1,0 +1,8 @@
+
+ettercap errors during daemonization are reported below:
+
+ERROR : 99, Cannot assign requested address
+[ec_capture.c:get_hw_info:409]
+
+ eth0: no IPv4 address assigned 
+

@@ -29,6 +29,10 @@ sub execute {
 
     # my $object  = "$self->{'Base'}->{'path'}::$module";
     eval( "$self->{'Base'}->{'path'}::$module"->$command(@_) );
+    if ($@) {
+        $self->{'core'}->{'IO'}
+            ->print_error("Something went wrong with $command: $@");
+    }
 
 }
 
@@ -39,6 +43,10 @@ sub execute_on_all {
     foreach my $module ( sort( keys %{ $self->{'modules'} } ) ) {
 
         eval("$self->{'modules'}->{$module}->$met(@command)");
+        if ($@) {
+            $self->{'core'}->{'IO'}
+                ->print_error("Something went wrong calling the method '$met' on '$module': $@");
+        }
     }
 
 }
@@ -172,7 +180,7 @@ sub loadmodules {
         }
 
     }
-    $IO->print_info("> $mods modules available.\n");
+    $IO->print_info("> $mods modules available. Double tab to see them\n");
 
     # delete $self->{'modules'};
     $self->{'modules'} = $modules;

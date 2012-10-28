@@ -64,15 +64,12 @@ sub ipv4_forward {
 
 sub check_root() {
 
-    my $result = 0;
-
-    if ( `id` =~ /uid\=0/i ) {
+    if ( $> == 0 ) {
 
         return 1;
-
     }
 
-    return;
+    return 0;
 
 }
 

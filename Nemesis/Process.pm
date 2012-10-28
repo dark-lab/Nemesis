@@ -19,7 +19,6 @@ package Nemesis::Process;
         croak "IO and environment must be defined\n"
             if ( !defined( $package->{'CONFIG'}->{'IO'} )
             || !defined( $package->{'CONFIG'}->{'env'} ) );
-        $package->{'CONFIG'}->{'IO'}->debug("Nemesis::Process loaded.");
 
         return $package;
     }
@@ -61,6 +60,7 @@ package Nemesis::Process;
     sub destroy() {
 
         my $self = shift;
+        $self->stop();
         unlink(   $self->{'CONFIG'}->{'env'}->tmp_dir() . "/"
                 . $self->{'INDEX'}
                 . ".lock" );
@@ -149,12 +149,18 @@ package Nemesis::Process;
         my $cmd =
             $self->{'CONFIG'}->{'IO'}
             ->generate_command( $self->{'CONFIG'}->{'code'} );
-        system($cmd);
-        $self->{'CONFIG'}->{'IO'}->debug("Daemon released me");
-        $p = $this_pid->get_pidof($cmd);
-        $self->save_pid($p);
-        $self->{'CONFIG'}->{'IO'}->debug( "PID: " . $p );
-        $self->save("Daemon mode\n");
+        if ( system($cmd) == 0 ) {
+            $self->{'CONFIG'}->{'IO'}->debug("Daemon released me");
+            $p = $this_pid->get_pidof($cmd);
+            $self->save_pid($p);
+            $self->{'CONFIG'}->{'IO'}->debug( "PID: " . $p );
+            $self->save("Daemon mode\n");
+        }
+        else {
+            $self->{'CONFIG'}->{'IO'}
+                ->debug("Something went wrong, i'm destroying myself");
+            $self->destroy();
+        }
     }
 
     sub fork {
@@ -303,6 +309,18 @@ package Nemesis::Process;
                 . $self->{'INDEX'}
                 . ".lock" );
 
+    }
+
+    sub setParam() {
+        my $self  = shift;
+        my $VAR   = $_[0];
+        my $VALUE = $_[1];
+        $self->{'CONFIG'}->{$VAR} = $VALUE;
+    }
+
+    sub set() {
+        my $self = shift;
+        %{ $self->{'CONFIG'} } = @_;
     }
 
 }

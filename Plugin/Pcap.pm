@@ -27,6 +27,7 @@ sub new {    #NECESSARY
 
     return $package;
 }
+sub clear(){ 1; }
 
 #sub export_public_methods() {    #NECESSARY
 #my $self = shift;

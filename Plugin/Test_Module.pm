@@ -43,7 +43,7 @@ sub help() {                     #NECESSARY
     }
 
 }
-
+sub clear { 1; } # Do what you want to do here when the nemesis framework is going to be shut down.
 sub start {
     my $self = shift;
     my $IO   = $self->{'core'}->{'IO'};
@@ -107,26 +107,27 @@ sub configure {    #postgre pc_hba.conf
 sub Process {
     my $self = shift;
     my $IO   = $self->{'core'}->{'IO'};
+  my $Process = $self->{'core'}->{'ModuleLoader'}->loadmodule('Process');
 
-    my $process = new Nemesis::Process(
+    $Process->set(
         type => 'system',                   # forked pipeline
         code => join( ' ', @_ ),
         env  => $self->{'core'}->{'env'},
         IO   => $IO
     );
-    $process->start();
-    sleep 4;
+    $Process->start();
 
     $IO->print_title(
         "Testing process module functions with " . join( ' ', @_ ) );
-    $IO->print_info( "Is running: " . $process->is_running() );
-    $IO->print_info( "associated pid : " . $process->get_pid() );
-    while ( $process->is_running() == 1 ) {
+    $IO->print_info( "Is running: " . $Process->is_running() );
+    $IO->print_info( "associated pid : " . $Process->get_pid() );
+    $IO->process_status($Process);
+    while ( $Process->is_running() == 1 ) {
         $IO->print_info("Waiting the process stop");
         sleep 1;
     }
-    @output = $process->get_output();
-    $process->destroy();
+    @output = $Process->get_output();
+    $Process->destroy();
     print "@output" . "\n";
 
 }

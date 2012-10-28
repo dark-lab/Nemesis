@@ -109,7 +109,7 @@ sub scan_avaible_devices() {
 
         }
     }
-    $IO->print_tabbed( "Local gateway: " . $self->{'GATEWAY'} )
+    $IO->print_info( "Local gateway: " . $self->{'GATEWAY'} )
         if exists( $self->{'GATEWAY'} );
 }
 

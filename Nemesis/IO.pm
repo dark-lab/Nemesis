@@ -2,6 +2,7 @@ package Nemesis::IO;
 use warnings;
 use Term::UI;    #VOGLIO PASSARE A IO LA FUNZIONE di term::readline
 use Term::ANSIColor;
+use Carp qw( croak );
 
 sub new {
     my $package = shift;
@@ -12,10 +13,7 @@ sub new {
     #open STDIN, '/dev/null'   or die "Can't read /dev/null: $!";
     #open STDOUT, '>>/dev/null';
     open STDERR, '>>/dev/null';
-
     umask 0;
-    $package->debug("Nemesis::IO loaded");
-
     return $package;
 }
 
@@ -34,38 +32,19 @@ sub get_prompt_out {
 
 }
 
-sub print_motd {
+sub print_ascii {
+    my $self = shift;
+    my $FILE = $_[0];
+    my $COLOR=$_[1];
 
-    print colored(
-        q{ 	               ,
-                      dM
-                      MMr
-                     4MMML                  .
-                     MMMMM.                xf
-     .              "M6MMM               .MM-
-      Mh..          +MM5MMM            .MMMM
-      .MMM.         .MMMMML.          MMMMMh
-       )MMMh.        MM5MMM         MMMMMMM
-        3MMMMx.     'MMM3MMf      xnMMMMMM"
-        '*MMMMM      MMMMMM.     nMMMMMMP"
-          *MMMMMx    "MMM5M\    .MMMMMMM=
-           *MMMMMh   "MMMMM"   JMMMMMMP
-             MMMMMM   GMMMM.  dMMMMMM            .
-              MMMMMM  "MMMM  .MMMMM(        .nnMP"
-   ..          *MMMMx  MMM"  dMMMM"    .nnMMMMM*
-    "MMn...     'MMMMr 'MM   MMM"   .nMMMMMMM*"
-     "4MMMMnn..   *MMM  MM  MMP"  .dMMMMMMM""
-       ^MMMMMMMMx.  *ML "M .M*  .MMMMMM**"
-          *PMMMMMMhn. *x > M  .MMMM**""
-             ""**MMMMhx/.h/ .=*"
-                      .3P"%....
-                    nP"     "*MMnx      [Nemesis is an automated pentest framework powered by weed]
-									[just thoughts: what if there is a POE module that passively listen to the network
-													and attack when it match some vectors.]
-	
-		
-	}, "blue on_black bold"
-    ) . "\n";
+    open( my $fh, "<" . $FILE ) or croak("Can't open $FILE");
+
+    while ( my $line = <$fh> ) {
+        print colored( $line, $COLOR );
+    }
+
+    close $fh;
+
 }
 
 sub set_public_methods() {
@@ -80,9 +59,6 @@ sub print_alert() {
         . colored( "Warn", "green on_black bold" )
         . colored( "]\t",  "magenta on_black bold" )
         . colored( $_[0],  "cyan on_black" ) . "\n";
-
-    # print "\/\!\\ Nemesis Warning \/\!\\\t " . $_[0] . "\n";
-
 }
 
 sub print_verbose() {
@@ -94,75 +70,88 @@ sub print_verbose() {
     }
 }
 
-sub sighandler() {
-    my $self = shift;
-    $self->print_alert("Caught a nice signal... this was a good one");
-}
-
 sub debug() {
     my $self = shift;
     if ( $self->{'CONFIG'}->{'debug'} == 1 ) {
+        print colored( "[",  "magenta on_black bold" )
+            . colored( "Debug", "white on_black bold" )
+            . colored( "]",  "magenta on_black bold" )
+            . colored( " (" , "magenta on_black bold" ) 
+            . colored(  $self->{'CONFIG'}->{'env'}->time_seconds(), "bold on_black white" )
+            . colored(") ", "magenta on_black bold" )
+            . colored( $_[0], "white on_black bold" ) . "\n";
 
-        print colored( "[",     "magenta on_black bold" )
-            . colored( "DEBUG", "bold on_red white" )
-            . colored( "]\t",   "magenta on_black bold" )
-            . colored( $_[0],   "bold on_red white" ) . "\n"
-            . colored( "\tat " . $self->{'CONFIG'}->{'env'}->time_seconds(),
-            "bold on_black cyan" )
-            . "\n";
-
-        #    print "["
-        #       . $self->{'CONFIG'}->{'env'}->time_seconds()
-        #      . "]\t"
-        #      . $_[0] . "\n";
-    }
+   }
 }
 
 sub print_info() {
     my $self = shift;
-    print colored( "[",   "magenta on_black bold" )
-        . colored( "**",  "green on_black bold" )
-        . colored( "]\t", "magenta on_black bold" )
-        . colored( $_[0], "blue on_black bold" ) . "\n";
 
-    #print( colored( "~>\t", "green on_black bold" ),
-    #colored( $_[0], "blue on_black bold" ), "\n" );
-    #print "["
-    #    . $self->{'CONFIG'}->{'env'}->time_seconds() . "]>\t"
-    #    . $_[0] . "\n";
+    print colored( "[",  "magenta on_black bold" )
+        . colored( "**", "green on_black bold" )
+        . colored( "]",  "magenta on_black bold" )
+        . colored( " (" , "magenta on_black bold" ) 
+        . colored(  $self->{'CONFIG'}->{'env'}->time_seconds(), "bold on_black cyan" )
+        . colored(") ", "magenta on_black bold" )
+        . colored( $_[0], "blue on_black bold" ) . "\n";
 }
 
 sub print_error() {
     my $self = shift;
 
-    print colored( "[ERROR]\t", "bold red on_black blink" )
-        . colored(
-        "[" . $self->{'CONFIG'}->{'env'}->time_seconds() . "]\n" . $_[0],
-        "bold red on_black" )
-        . "\n";
-
-    #  print "["
-    #      . $self->{'CONFIG'}->{'env'}->time_seconds()
-    #     . "] !!! Nemesis Error !!!\t"
-    #     . $_[0] . "\n";
+    print colored( "[",    "magenta on_black bold" )
+        . colored( "Err", "red on_black bold" )
+        . colored( "]",  "magenta on_black bold" )
+        . colored( " (" , "magenta on_black bold" ) 
+        . colored($self->{'CONFIG'}->{'env'}->time_seconds(),"bold on_black red" )
+        . colored(") ", "magenta on_black bold" )
+        . colored( $_[0],  "red on_black" ) . "\n";
 
 }
 
 sub print_tabbed {
-    print( colored( "\t~> ", "green on_black bold" ),
-        colored( $_[1], "blue on_black bold" ), "\n" );
+    my $self = shift;
+    $num = $_[1] || 1;
+    print( colored( ( "\t" x $num ) . "~> ", "green on_black bold" ),
+        colored( $_[0], "blue on_black bold" ), "\n" );
 
 }
 
 sub print_title {
     my $self = shift;
     my ($msg) = @_;
-    printf "\n\n";
-
-    #printf colored("=" x length($msg),"white on_yellow");
     printf "\n" . colored( $msg, "yellow on_black bold" ) . "\n";
     printf colored( "=" x length($msg), "white on_yellow" );
     printf "\n\n";
+}
+
+sub process_status {
+    my $self    = shift;
+    my $Process = $_[0];
+    $self->print_info( $Process->get_var("code") );
+    if ( $Process->is_running() ) {
+        my $pid = $Process->get_pid();
+        if ( $pid eq "" ) {
+            $pid = "n/a";
+        }
+        $self->print_tabbed( "PID:\t " . $pid, 1 );
+        if ( $Process->get_var('file') ) {
+            $self->print_tabbed(
+                "Output (STDOUT):\t " . $Progess->get_var('file'), 1 );
+        }
+        if ( $Process->get_var('file_log') ) {
+            $self->print_tabbed(
+                "Output (Log):\t " . $Progess->get_var('file_log'), 1 );
+        }
+        if ( $Process->is_running() ) {
+            $self->print_tabbed( "RUNNING", 1 );
+        }
+        else {
+            $self->print_tabbed( "STOPPED", 1 );
+        }
+
+    }
+
 }
 
 sub shell() {
