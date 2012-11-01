@@ -100,7 +100,6 @@ sub scan_avaible_devices() {
 
     #Locating default gateway-
 
-    $self->print_devices();
     @output = $IO->exec("ip route");
     foreach my $o (@output) {
         if ( $o =~ /default/ ) {
@@ -109,8 +108,7 @@ sub scan_avaible_devices() {
 
         }
     }
-    $IO->print_info( "Local gateway: " . $self->{'GATEWAY'} )
-        if exists( $self->{'GATEWAY'} );
+
 }
 
 sub info_device() {
@@ -160,7 +158,8 @@ sub print_devices() {
     foreach my $dev ( keys %{ $self->{'devices'} } ) {
         $self->info_device($dev);
     }
-
+    $output->print_info( "Local gateway: " . $self->{'GATEWAY'} )
+        if exists( $self->{'GATEWAY'} );
 }
 
 sub connected() {

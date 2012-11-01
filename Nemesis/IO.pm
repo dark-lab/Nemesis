@@ -12,7 +12,7 @@ sub new {
 
     #open STDIN, '/dev/null'   or die "Can't read /dev/null: $!";
     #open STDOUT, '>>/dev/null';
-    open STDERR, '>>/dev/null';
+    open STDERR, \&debug();
     umask 0;
     return $package;
 }
@@ -33,9 +33,9 @@ sub get_prompt_out {
 }
 
 sub print_ascii {
-    my $self = shift;
-    my $FILE = $_[0];
-    my $COLOR=$_[1];
+    my $self  = shift;
+    my $FILE  = $_[0];
+    my $COLOR = $_[1];
 
     open( my $fh, "<" . $FILE ) or croak("Can't open $FILE");
 
@@ -73,15 +73,16 @@ sub print_verbose() {
 sub debug() {
     my $self = shift;
     if ( $self->{'CONFIG'}->{'debug'} == 1 ) {
-        print colored( "[",  "magenta on_black bold" )
+        print colored( "[",     "magenta on_black bold" )
             . colored( "Debug", "white on_black bold" )
-            . colored( "]",  "magenta on_black bold" )
-            . colored( " (" , "magenta on_black bold" ) 
-            . colored(  $self->{'CONFIG'}->{'env'}->time_seconds(), "bold on_black white" )
-            . colored(") ", "magenta on_black bold" )
+            . colored( "]",     "magenta on_black bold" )
+            . colored( " (",    "magenta on_black bold" )
+            . colored( $self->{'CONFIG'}->{'env'}->time_seconds(),
+            "bold on_black white" )
+            . colored( ") ",  "magenta on_black bold" )
             . colored( $_[0], "white on_black bold" ) . "\n";
 
-   }
+    }
 }
 
 sub print_info() {
@@ -90,22 +91,24 @@ sub print_info() {
     print colored( "[",  "magenta on_black bold" )
         . colored( "**", "green on_black bold" )
         . colored( "]",  "magenta on_black bold" )
-        . colored( " (" , "magenta on_black bold" ) 
-        . colored(  $self->{'CONFIG'}->{'env'}->time_seconds(), "bold on_black cyan" )
-        . colored(") ", "magenta on_black bold" )
+        . colored( " (", "magenta on_black bold" )
+        . colored( $self->{'CONFIG'}->{'env'}->time_seconds(),
+        "bold on_black cyan" )
+        . colored( ") ",  "magenta on_black bold" )
         . colored( $_[0], "blue on_black bold" ) . "\n";
 }
 
 sub print_error() {
     my $self = shift;
 
-    print colored( "[",    "magenta on_black bold" )
+    print colored( "[",   "magenta on_black bold" )
         . colored( "Err", "red on_black bold" )
-        . colored( "]",  "magenta on_black bold" )
-        . colored( " (" , "magenta on_black bold" ) 
-        . colored($self->{'CONFIG'}->{'env'}->time_seconds(),"bold on_black red" )
-        . colored(") ", "magenta on_black bold" )
-        . colored( $_[0],  "red on_black" ) . "\n";
+        . colored( "]",   "magenta on_black bold" )
+        . colored( " (",  "magenta on_black bold" )
+        . colored( $self->{'CONFIG'}->{'env'}->time_seconds(),
+        "bold on_black red" )
+        . colored( ") ",  "magenta on_black bold" )
+        . colored( $_[0], "red on_black" ) . "\n";
 
 }
 
@@ -131,24 +134,25 @@ sub process_status {
     $self->print_info( $Process->get_var("code") );
     if ( $Process->is_running() ) {
         my $pid = $Process->get_pid();
-        if ( $pid eq "" ) {
+        if ( !$pid ) {
             $pid = "n/a";
         }
         $self->print_tabbed( "PID:\t " . $pid, 1 );
         if ( $Process->get_var('file') ) {
             $self->print_tabbed(
-                "Output (STDOUT):\t " . $Progess->get_var('file'), 1 );
+                "Output (STDOUT):\t " . $Process->get_var('file'), 1 );
         }
         if ( $Process->get_var('file_log') ) {
             $self->print_tabbed(
-                "Output (Log):\t " . $Progess->get_var('file_log'), 1 );
+                "Output (Log):\t " . $Process->get_var('file_log'), 1 );
         }
         if ( $Process->is_running() ) {
             $self->print_tabbed( "RUNNING", 1 );
         }
-        else {
-            $self->print_tabbed( "STOPPED", 1 );
-        }
+
+    }
+    else {
+        $self->print_tabbed( "NOT RUNNING", 1 );
 
     }
 

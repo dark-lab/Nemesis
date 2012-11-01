@@ -2,6 +2,7 @@ package Nemesis::ModuleLoader;
 
 use strict;
 use Carp qw( croak );
+use Storable qw(dclone freeze thaw);
 
 #external modules
 
@@ -44,8 +45,9 @@ sub execute_on_all {
 
         eval("$self->{'modules'}->{$module}->$met(@command)");
         if ($@) {
-            $self->{'core'}->{'IO'}
-                ->print_error("Something went wrong calling the method '$met' on '$module': $@");
+            $self->{'core'}->{'IO'}->print_error(
+                "Something went wrong calling the method '$met' on '$module': $@"
+            );
         }
     }
 
@@ -92,47 +94,45 @@ sub loadmodule() {
     my $module = $_[0];
     my $IO     = $self->{'core'}->{'IO'};
     my $path   = $self->{'Base'}->{'pwd'} . $self->{'Base'}->{'path'};
+    my $base;
 
-    local *DIR;
-    if ( !opendir( DIR, "$path" ) ) {
-        return "[LOADMODULES] - (*) No such file or directory ($path)";
+    if ( -e $self->{'Base'}->{'path'} . "/" . $module . ".pm" ) {
+
+        $base = $self->{'Base'}->{'path'};
+
     }
-    my @files = grep( !/^\.\.?$/, readdir(DIR) );
-    closedir(DIR);
-
-    my $base   = $self->{'Base'}->{'path'} . "/" . $module . ".pm";
-    my $result = do($base);
-
-    if ( !$result ) {
-        $IO->debug(
-            "Module not found in the plugin directory trying to search in main modules"
-        );
-        delete $INC{ $self->{'Base'}->{'path'} . "/" . $module };
-        my $base = $self->{'Base'}->{'main_modules'} . "/" . $module . ".pm";
-        $result = do($base);
-        if ( !$result ) {
-            $IO->print_error("module ($base) did not return true\n");
-
-        }
-        else {
-            $IO->debug("Module found in $self->{'Base'}->{'main_modules'}");
-            my $object = "$self->{'Base'}->{'main_modules'}::$module";
-            eval {
-                return $object->new( %{ $self->{'core'} },
-                    ModuleLoader => $self );
-            };
-        }
+    elsif ( -e $self->{'Base'}->{'main_modules'} . "/" . $module . ".pm" ) {
+        $base = $self->{'Base'}->{'main_modules'};
 
     }
     else {
 
-        my $object = "$self->{'Base'}->{'path'}::$module";
-        eval {
-            return $object->new( %{ $self->{'core'} },
-                ModuleLoader => $self );
-        };
+        return ();
+
     }
 
+    $IO->debug("Module $module found in $base");
+
+    my $object = $base . "::" . $module;
+
+    if (eval {
+
+            $module =
+                $object->new( %{ $self->{'core'} }, ModuleLoader => $self );
+
+        }
+        )
+    {
+
+        return $module;
+    }
+    else {
+
+        $self->{'core'}->{'IO'}
+            ->print_error("Something went wrong with $object: $@");
+
+    }
+    return ();
 }
 
 sub loadmodules {

@@ -12,16 +12,16 @@ my $INFO    = "<www.dark-lab.net>";
 my @PUBLIC_FUNCTIONS =
     qw(configure check_installation status where stop status_pids sniff spoof strip mitm)
     ;    #NECESSARY
-    
-    
-my $CONF={
+
+my $CONF = {
     VARS => {
-                MSFRPCD_USER => 'spike',
-                MSFRCPD_PASS => 'spiketest',
-                MSFRCPD_PORT => 5553
-                }
-    
-    };
+        MSFRPCD_USER => 'spike',
+        MSFRCPD_PASS => 'spiketest',
+        MSFRCPD_PORT => 5553
+        }
+
+};
+
 sub new {    #NECESSARY
      #Usually new(), export_public_methods() and help() can be copyed from other plugins
     my $package = shift;
@@ -56,28 +56,7 @@ sub help() {                     #NECESSARY
 }
 
 sub clear() {                    #NECESSARY - CALLED ON EXIT
-    my $self = shift();
-    my $IO   = $self->{'core'}->{'IO'};
-    $IO->print_alert("Clearing all");
-    foreach my $dev ( keys %{ $self->{'process'} } ) {
-        foreach my $type ( keys %{ $self->{'process'}->{$dev} } ) {
-            $Process->destroy();
-            delete $self->{'process'}->{$dev}->{$type};
-        }
-    }
-}
-
-sub mitm {
-    my $self       = shift;
-    my $IO         = $self->{'core'}->{'IO'};
-    my $env        = $self->{'core'}->{'env'};
-    my $interfaces = $self->{'core'}->{'interfaces'};
-    my $dev        = $_[0];
-    $IO->print_title("Mitm - Man in the middle on $dev");
-    $self->sniff($dev);
-    $self->spoof($dev);
-    $self->strip($dev);
-    $self->status($dev);
+    1;
 }
 
 sub msfrpcd {
@@ -94,7 +73,11 @@ sub msfrpcd {
         }
     }
     else {
-        my $code = 'msfrpcd -U '.$CONF{'VAR'}{'MSFRPCD_USER'}.' -P '.$CONF{'VAR'}{'MSFRPCD_PASS'}.' -p '.$CONF{'VAR'}{'MSFRPCD_PORT'}.' -S';
+        my $code =
+              'msfrpcd -U '
+            . $CONF{'VARS'}{'MSFRPCD_USER'} . ' -P '
+            . $CONF{'VARS'}{'MSFRPCD_PASS'} . ' -p '
+            . $CONF{'VARS'}{'MSFRPCD_PORT'} . ' -S';
         $Io->print_info("Starting msfrpcd service.");
         my $Process =
             $self->{'core'}->{'ModuleLoader'}->loadmodule('Process');

@@ -2,6 +2,7 @@ package Plugin::Sniffer;
 use warnings;
 use Carp qw( croak );
 use Nemesis::Process;
+use Nemesis::Session;
 my $VERSION = '0.1a';
 my $AUTHOR  = "mudler";
 my $MODULE  = "Sniffer Module";
@@ -26,7 +27,8 @@ sub new {    #NECESSARY
         if ( !defined( $package->{'core'}->{'IO'} )
         || !defined( $package->{'core'}->{'env'} )
         || !defined( $package->{'core'}->{'interfaces'} ) );
-
+    $package->{'Session'} = $package->{'core'}->{'ModuleLoader'}->loadmodule("Session");
+    $package->{'Session'}->initialize($MODULE);
     return $package;
 }
 
@@ -40,37 +42,44 @@ sub help() {                     #NECESSARY
     my $IO      = $self->{'core'}->{'IO'};
     my $section = $_[0];
     $IO->print_title( $MODULE . " Helper" );
-    if ( $section eq "configure" || $section eq "check_installation") {
+    if ( $section eq "configure" || $section eq "check_installation" ) {
         $IO->print_info("nothing to configure here");
-    }elsif ($section eq "status"){
+    }
+    elsif ( $section eq "status" ) {
         $IO->print_info("syntax: status [dev]");
         $IO->print_info("effect: Output the status of the devices");
         $IO->print_tabbed("where [dev] is optional and can be an interface");
-    } elsif ($section eq "stop"){
+    }
+    elsif ( $section eq "stop" ) {
         $IO->print_info("syntax: stop (dev) [stripper|spoofer|sniffer]");
         $IO->print_info("effect: stop the processes running on the device");
         $IO->print_tabbed("where (dev) is required and can be an interface");
-        $IO->print_tabbed("where [stripper|spoofer|sniffer] is optional and it's the type of process to stop");
-    } elsif ($section eq "sniff" || $section eq "spoof" || $section eq "strip"){
+        $IO->print_tabbed(
+            "where [stripper|spoofer|sniffer] is optional and it's the type of process to stop"
+        );
+    }
+    elsif ($section eq "sniff"
+        || $section eq "spoof"
+        || $section eq "strip" )
+    {
         $IO->print_info("syntax: $section (dev)");
         $IO->print_info("effect: $section on the device");
         $IO->print_tabbed("where (dev) is required and can be an interface");
-    }  elsif ($section eq "mitm"){
+    }
+    elsif ( $section eq "mitm" ) {
         $IO->print_info("syntax: $section (dev)");
         $IO->print_info("effect: $section on the device");
         $IO->print_tabbed("where (dev) is required and can be an interface");
     }
 
-
 }
 
-sub clear() {                    #NECESSARY - CALLED ON EXIT
+sub clear() {    #NECESSARY - CALLED ON EXIT
     my $self = shift();
     my $IO   = $self->{'core'}->{'IO'};
-    $IO->print_alert("Clearing all");
     foreach my $dev ( keys %{ $self->{'process'} } ) {
         foreach my $type ( keys %{ $self->{'process'}->{$dev} } ) {
-            $Process->destroy();
+            $self->{'process'}->{$dev}->{$type}->destroy();
             delete $self->{'process'}->{$dev}->{$type};
         }
     }
@@ -100,35 +109,39 @@ sub sniff {
     #
     #
 
-    my $self       = shift;
-    my $IO         = $self->{'core'}->{'IO'};
-    my $env        = $self->{'core'}->{'env'};
+    my $self    = shift;
+    my $IO      = $self->{'core'}->{'IO'};
+    my $env     = $self->{'core'}->{'env'};
+    my $Session = $self->{'Session'};
+
     my $interfaces = $self->{'core'}->{'interfaces'};
     my $code;
     my $dev = $_[0];
-    my $pcap_file =
-        $env->tmp_dir() . "/" . $dev . "-ettercap-" . $env->time() . ".pcap";
-
-    my $log_file = $env->tmp_dir() . "/" . $dev . "-etterlog-" . $env->time();
+   my $pcap_file =
+        $Session->new_file( $dev . "-ettercap-" . $env->time() . ".pcap" );
+    my $log_file = $Session->new_file( $dev . "-etterlog-" . $env->time() );
     $code =
           'ettercap -Du -i ' 
         . $dev . ' -L '
         . $log_file . ' -w '
         . $pcap_file
         . " -P autoadd";
-
-    my $Process = $self->{'core'}->{'ModuleLoader'}->loadmodule('Process');
+    my $Process = $Session->new_module("Process");
     $Process->set(
-        type     => 'daemon',                   # forked pipeline
-        code     => $code,
-        env      => $self->{'core'}->{'env'},
-        IO       => $IO,
-        file     => $pcap_file,
-        file_log => $log_file
+        type => 'daemon',                   # forked pipeline
+        code => $code,
+        env  => $self->{'core'}->{'env'},
+        IO   => $IO,
     );
-    $Process->start() or croak("Can't start the process");
+    if($Process->start()){
     $self->{'process'}->{$dev}->{'sniffer'} = $Process;
     $IO->process_status($Process);
+    $Session->save();
+    $IO->debug("i can save!");
+    } else {
+        $IO->print_alert("Process cannot be executed, maybe lack of permissions?");
+        
+    }
 }
 
 sub spoof {
@@ -142,12 +155,13 @@ sub spoof {
     my $IO         = $self->{'core'}->{'IO'};
     my $env        = $self->{'core'}->{'env'};
     my $interfaces = $self->{'core'}->{'interfaces'};
+    my $Session    = $self->{'Session'};
     my $dev        = $_[0];
     my $forwarded  = $env->ipv4_forward("on");
     $IO->print_info( "IPV4_FORWARD : " . $forwarded );
     $IO->print_info( "Detected gateway : " . $interfaces->{'GATEWAY'} );
     my $code    = 'arpspoof -i ' . $dev . " " . $interfaces->{'GATEWAY'};
-    my $Process = $self->{'core'}->{'ModuleLoader'}->loadmodule('Process');
+    my $Process = $Session->new_module('Process');
     $Process->set(
         type => 'system',                   # forked pipeline
         code => $code,
@@ -157,22 +171,25 @@ sub spoof {
     $Process->start() or croak("Can't start the process");
     $self->{'process'}->{$dev}->{'spoofer'} = $Process;
     $IO->process_status($Process);
+    $Session->save();
 }
 
 sub strip {
-    my $self   = shift;
-    my $output = $self->{'core'}->{'IO'};
-    my $env    = $self->{'core'}->{'env'};
-    my $dev    = $_[0];
+    my $self    = shift;
+    my $output  = $self->{'core'}->{'IO'};
+    my $env     = $self->{'core'}->{'env'};
+    my $dev     = $_[0];
+    my $Session = $self->{'Session'};
+
     $output->print_info("Setting iptables to redirect to sslstrip port..");
     $output->exec(
         "iptables -t nat -A PREROUTING -p tcp -i $dev --destination-port 80 -j REDIRECT --to-port 8080"
     );
     my $strip_file =
-        $env->tmp_dir() . "/" . $dev . "-sslstrip-" . $env->time() . ".log";
+        $Session->new_file( $dev . "-sslstrip-" . $env->time() . ".log" );
     my $code = 'sslstrip -l 8080 -a -k -f -w ' . $strip_file;
 
-    my $Process = $self->{'core'}->{'ModuleLoader'}->loadmodule('Process');
+    my $Process = $Session->new_module('Process');
     $Process->set(
         type => 'system',                   # forked pipeline
         code => $code,
@@ -183,6 +200,7 @@ sub strip {
     $Process->start() or croak("Can't start the process");
     $self->{'process'}->{$dev}->{'stripper'} = $Process;
     $IO->process_status($Process);
+    $Session->save();
 }
 
 sub status {
@@ -249,7 +267,7 @@ sub where {
     my $self   = shift;
     my $output = $self->{'core'}->{'IO'};
     my $env    = $self->{'core'}->{'env'};
-    my $path = $env->whereis( $_[0] );
+    my $path   = $env->whereis( $_[0] );
     $output->print_info( $_[0] . " bin is at $path" );
 }
 

@@ -9,13 +9,14 @@ use Term::ReadLine::Gnu;
 
 ##General Settings
 
-
 my $Init = new Nemesis::Init();
 $0 = "SpikeNemesis";
-my $output=$Init->{'Io'};
-my $moduleloader=$Init->{'ModuleLoader'};
-$output->print_ascii('ascii/logo.txt',"red on_black bold");
-$output->print_ascii('ascii/motd.txt',"red on_black bold");
+my $output       = $Init->{'Io'};
+my $moduleloader = $Init->{'ModuleLoader'};
+$output->print_ascii( 'ascii/logo.txt', "red on_black bold" );
+$output->print_ascii( 'ascii/motd.txt', "red on_black bold" );
+$Init->{'Interfaces'}->print_devices();
+
 $SIG{'INT'} = sub { $Init->sighandler(); };
 
 # Setting the terminal

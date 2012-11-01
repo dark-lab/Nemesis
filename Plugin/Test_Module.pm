@@ -43,7 +43,11 @@ sub help() {                     #NECESSARY
     }
 
 }
-sub clear { 1; } # Do what you want to do here when the nemesis framework is going to be shut down.
+
+sub clear {
+    1;
+} # Do what you want to do here when the nemesis framework is going to be shut down.
+
 sub start {
     my $self = shift;
     my $IO   = $self->{'core'}->{'IO'};
@@ -105,9 +109,9 @@ sub configure {    #postgre pc_hba.conf
 }
 
 sub Process {
-    my $self = shift;
-    my $IO   = $self->{'core'}->{'IO'};
-  my $Process = $self->{'core'}->{'ModuleLoader'}->loadmodule('Process');
+    my $self    = shift;
+    my $IO      = $self->{'core'}->{'IO'};
+    my $Process = $self->{'core'}->{'ModuleLoader'}->loadmodule('Process');
 
     $Process->set(
         type => 'system',                   # forked pipeline

@@ -2,6 +2,7 @@ package Nemesis::Process;
 {
     use Carp qw( croak );
     use Unix::PID;
+    use Data::Dumper;
 
     sub new {
 
@@ -12,7 +13,6 @@ package Nemesis::Process;
             $package->{'INDEX'} = $package->{'CONFIG'}->{'ID'};
             $package->load();
         }
-
         my $pid;
         my $output;
 
@@ -30,6 +30,7 @@ package Nemesis::Process;
 
     sub start {
         my $self = shift;
+        my $state;
         $self->{'INDEX'} = $self->generate_lock()
             if !exists( $self->{'CONFIG'}->{'ID'} );
         if ( !defined( $self->{'CONFIG'}->{'type'} ) ) {
@@ -37,24 +38,23 @@ package Nemesis::Process;
         }
         else {
             if ( $self->{'CONFIG'}->{'type'} eq 'daemon' ) {
-                $self->daemon();
+                $state = $self->daemon();
             }
             else {
-                $self->fork;
+                $state = $self->fork;
             }
         }
         $self->{'CONFIG'}->{'IO'}
             ->debug( "Starting ..  " . $self->{'CONFIG'}->{'code'} );
-        return $self->get_id();
+        return $state ? $self->get_id() : ();
     }
 
     sub stop() {
         my $self = shift;
-
-        kill 9 => $self->get_pid();
-        kill( 9, $self->get_pid() );
-
-        $self->destroy();
+        if ( $self->get_pid() ) {
+            kill 9 => $self->get_pid();
+            kill( 9, $self->get_pid() );
+        }
     }
 
     sub destroy() {
@@ -75,25 +75,13 @@ package Nemesis::Process;
 
     sub is_running() {
         my $self = shift;
-        if ( !exists( $self->{'CONFIG'}->{'daemon'} ) ) {
-            if (  -e $self->{'CONFIG'}->{'env'}->tmp_dir() . "/"
-                . $self->{'INDEX'}
-                . ".lock" )
-            {
-                return 1;
-            }
-            else {
-                return 0;
-            }
+        my $pid  = Unix::PID->new();
+        if ( $self->get_pid and $pid->is_pid_running( $self->get_pid() ) ) {
+            return 1;
         }
         else {
-            my $pid = Unix::PID->new();
-            if ( $pid->is_pid_running( $self->get_pid() ) ) {
-                return 1;
-            }
-            else {
-                return 0;
-            }
+            return 0;
+
         }
     }
 
@@ -146,25 +134,39 @@ package Nemesis::Process;
         my $self = shift;
         croak "You have not run start..\n" if !exists( $self->{'INDEX'} );
         my $this_pid = Unix::PID->new();
+        my $p;
         my $cmd =
             $self->{'CONFIG'}->{'IO'}
             ->generate_command( $self->{'CONFIG'}->{'code'} );
+        $self->{'CONFIG'}->{'IO'}->set_debug(1);
         if ( system($cmd) == 0 ) {
-            $self->{'CONFIG'}->{'IO'}->debug("Daemon released me");
-            $p = $this_pid->get_pidof($cmd);
-            $self->save_pid($p);
-            $self->{'CONFIG'}->{'IO'}->debug( "PID: " . $p );
-            $self->save("Daemon mode\n");
+            $self->{'CONFIG'}->{'IO'}
+                ->debug("Daemon released me, now i try to search for $cmd");
+            if ( $p = $self->pidof($cmd) ) {
+                $self->save_pid($p);
+                $self->save("Daemon mode\n");
+                return 1;
+            }
+            else {
+                $self->{'CONFIG'}->{'IO'}->debug(
+                    "PID Cannnot be found destroying the process, look at your process activity and kill manually: "
+                        . $self->{'CONFIG'}->{'code'} );
+                $self->destroy();
+                return ();
+            }
         }
         else {
             $self->{'CONFIG'}->{'IO'}
                 ->debug("Something went wrong, i'm destroying myself");
             $self->destroy();
+            return ();
         }
+        $self->{'CONFIG'}->{'IO'}->set_debug(0);
     }
 
     sub fork {
         my $self = shift;
+        my $p;
         croak "You have not run start..\n" if !exists( $self->{'INDEX'} );
         if ( my $pid = fork ) {
             waitpid( $pid, 0 );
@@ -183,16 +185,51 @@ package Nemesis::Process;
                     ->generate_command( $self->{'CONFIG'}->{'code'} );
                 open( $handle, "$cmd  2>&1 |" )
                     or croak "Failed to open pipeline $!";
-                $p = $this_pid->get_pidof( $self->{'CONFIG'}->{'code'} );
-                $self->save_pid($p);
-                while (<$handle>) {
-                    $self->save($_);
+
+                if ( $p = $self->pidof($cmd) ) {
+                    $self->save_pid($p);
+                    while (<$handle>) {
+                        $self->save($_);
+                    }
+                    $self->remove_lock();
                 }
-                $self->remove_lock();
+                else {
+                    $self->{'CONFIG'}->{'IO'}
+                        ->print_alert("Can't get pid of the forked process");
+                    $self->destroy();
+                    close($handle);
+                }
 
             }
             exit;
         }
+
+    }
+
+    sub pidof($) {
+        my $self     = shift;
+        my $this_pid = Unix::PID->new();
+        my $p;
+        my @PIECES = split( /\s+/, $_[0] );
+        my %matr;
+        $self->{'CONFIG'}->{'IO'}
+            ->debug( "getting the pid of: " . $PIECES[0] );
+
+        foreach my $piece (@PIECES) {
+            my @FOUND_PIDS = $this_pid->get_pidof($piece);
+            foreach my $found_pid (@FOUND_PIDS) {
+                $matr{$found_pid}++;
+            }
+        }
+
+        foreach ( sort { $matr{$b} <=> $matr{$a} } ( keys(%matr) ) ) {
+            $p = $_;
+            last;
+        }    # end-foreach
+
+        $self->{'CONFIG'}->{'IO'}->debug( "MAX PID " . $p );
+
+        return ($p);
 
     }
 
@@ -247,7 +284,7 @@ package Nemesis::Process;
             . $self->{'INDEX'} . ".pid";
         my @pid = <FILE>;
         close FILE;
-        return "@pid";
+        return $pid[0] if ( $pid[0] );
 
     }
 
