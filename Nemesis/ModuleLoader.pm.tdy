@@ -1,5 +1,6 @@
 package Nemesis::ModuleLoader;
 
+use strict;
 use Carp qw( croak );
 use Storable qw(dclone freeze thaw);
 
@@ -17,7 +18,7 @@ sub new {
     my (%Obj) = @_;
     %{ $self->{'core'} } = %Obj;
     die("IO and environment must be defined\n")
-        if ( !defined( $self->{'core'}->{'IO'} )
+      if ( !defined( $self->{'core'}->{'IO'} )
         || !defined( $self->{'core'}->{'env'} ) );
     return bless $self, $class;
 }
@@ -28,13 +29,10 @@ sub execute {
     my $command = shift @_;
 
     # my $object  = "$self->{'Base'}->{'path'}::$module";
-    #eval( "$self->{'Base'}->{'path'}::$module"->$command(@_) );
-    
-    $self->{'modules'}->{$module}->$command(@_);
-    
+    eval( "$self->{'Base'}->{'path'}::$module"->$command(@_) );
     if ($@) {
         $self->{'core'}->{'IO'}
-            ->print_error("Something went wrong with $command: $@");
+          ->print_error("Something went wrong with $command: $@");
     }
 
 }
@@ -48,7 +46,7 @@ sub execute_on_all {
         eval("$self->{'modules'}->{$module}->$met(@command)");
         if ($@) {
             $self->{'core'}->{'IO'}->print_error(
-                "Something went wrong calling the method '$met' on '$module': $@"
+"Something went wrong calling the method '$met' on '$module': $@"
             );
         }
     }
@@ -61,16 +59,18 @@ sub export_public_methods() {
     my @PUBLIC_FUNC;
     foreach my $module ( sort( keys %{ $self->{'modules'} } ) ) {
 
+        eval {
 
-
-      @PUBLIC_FUNC = ();
-            @PUBLIC_FUNC = eval{
-                $self->{'modules'}->{$module}->export_public_methods()};
+            @PUBLIC_FUNC = ();
+            @PUBLIC_FUNC =
+              $self->{'modules'}->{$module}->export_public_methods();
             foreach my $method (@PUBLIC_FUNC) {
                 $method = $module . "." . $method;
 
             }
             push( @OUT, @PUBLIC_FUNC );
+
+        }
 
     }
     return @OUT;
@@ -84,7 +84,7 @@ sub listmodules {
     foreach my $module ( sort( keys %{ $self->{'modules'} } ) ) {
         $IO->print_info("$module");
         $self->{'modules'}->{$module}->info()
-            ; #so i can call also configure() and another function to display avaible settings!
+          ; #so i can call also configure() and another function to display avaible settings!
     }
 
 }
@@ -113,25 +113,27 @@ sub loadmodule() {
 
     $IO->debug("Module $module found in $base");
 
-    my $object = "$base" . "::" . "$module";
+    my $object = $base . "::" . $module;
 
-    $object = eval {
-        my $o     = dclone( \$object );
-        my $realO = $$o;
-        return $realO->new( %{ $self->{'core'} }, ModuleLoader => $self );
+    if (
+        eval {
 
-    };
-    if ($@) {
-        $self->{'core'}->{'IO'}
-            ->print_error("Something went wrong with $object: $@");
-        return ();
+            $module =
+              $object->new( %{ $self->{'core'} }, ModuleLoader => $self );
 
+        }
+      )
+    {
+
+        return $module;
     }
     else {
-        return $object;
+
+        $self->{'core'}->{'IO'}
+          ->print_error("Something went wrong with $object: $@");
 
     }
-
+    return ();
 }
 
 sub loadmodules {
@@ -151,25 +153,39 @@ sub loadmodules {
     foreach my $f (@files) {
         my $base = $self->{'Base'}->{'path'} . "/" . $f;
         my ($name) = $f =~ m/([^\.]+)\.pm/;
-        
-        
-        
-                my $result = do($base);
+        delete $INC{ $self->{'Base'}->{'path'} . "/" . $name };
+
+        $IO->debug("Loading module: $base");
+        my $result = do($base);
 
         if ($@) {
             $IO->print_error($@);
             delete $INC{ $self->{'Base'}->{'path'} . "/" . $name };
             next;
         }
-        $self->{'modules'}->{$name}=$self->loadmodule($name);
-        $mods++;
-        
-        
+        if ( !$result ) {
+            $IO->print_error("module ($base) did not return true\n");
+            next;
+        }
+        my $object = "$self->{'Base'}->{'path'}::$name";
+        if (
+            eval {
+                $modules->{$name} =
+                  $object->new( %{ $self->{'core'} }, ModuleLoader => $self );
+            }
+          )
+        {    #Verify object's creation
+            $mods++;
+        }
+        else {
+            $IO->print_error("Error: module ($base): $@");
+        }
 
     }
     $IO->print_info("> $mods modules available. Double tab to see them\n");
 
     # delete $self->{'modules'};
+    $self->{'modules'} = $modules;
     return 1;
 }
 

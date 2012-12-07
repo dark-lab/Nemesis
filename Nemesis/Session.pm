@@ -2,8 +2,10 @@ package Nemesis::Session;
 {
     use Carp qw( croak );
     use Clone qw(clone);
-    use Storable qw(nstore store_fd nstore_fd freeze thaw dclone);
+    use Storable qw( nstore store_fd nstore_fd freeze thaw dclone retrieve);
     use Data::Dumper;
+    use Scalar::Util 'reftype';
+    use DBM::Deep;
     my $CONF = {
         VARS => { SESSION_DIR => "Sessions" }
 
@@ -23,9 +25,10 @@ package Nemesis::Session;
 
             }
         }
+    
         $package->{'CONF'}->{'VARS'}->{'SESSION_DIR'} =
             $CONF->{'VARS'}->{'SESSION_DIR'};
-
+        print "Session was created heere \n";
         return $package;
     }
 
@@ -35,6 +38,10 @@ package Nemesis::Session;
         $var =~ s/\s+/_/g;
 
         return $var;
+    }
+
+    sub info() {
+        print "Session module\n";
     }
 
     sub initialize($) {
@@ -84,6 +91,7 @@ package Nemesis::Session;
 #A sessionhandler plugin is required
 #Il sessionhandler, per salvare lo "stato " dei plugin in una giornata, salverà il tutto in una
 #Session, e inserendoci dentro il moduleloader stesso ( e per il restore basta caricare la session corrispondente e sovrascrivere la referenza del loader).
+return $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'};
 
     }
 
@@ -97,6 +105,26 @@ package Nemesis::Session;
             return $CONF{'VARS'}{'IS_STATE'};
         }
 
+    }
+    
+    sub exists(){
+        my $self=shift;
+        if($_[0]){
+              if ( -d $self->{'core'}->{'env'}->workspace() . "/"
+                . $CONF->{'VARS'}->{'SESSION_DIR'}."/".$_[0]){ return 1; } else { return 0; }
+            
+        } else {
+             
+             if(exists($self->{'CONF'}->{'VARS'}->{'SESSION_NAME'})){
+                 return 1;
+             } else {
+                 return 0;
+             }
+            
+        }
+        
+        
+        
     }
 
     sub new_file() {
@@ -126,27 +154,29 @@ package Nemesis::Session;
         while ( exists( $self->{'modules'}->{$id} ) ) {
             $id = int( rand(10000) );
         }
-        $self->{'modules'}->{$id}->{'Obj'} =
+        $self->{'modules'}->{$id} =
             $self->{'core'}->{'ModuleLoader'}->loadmodule($module_name);
-        $self->{'modules'}->{$id}->{'Name'} = $module_name;
+       
         return
-            wantarray ? ( $self->{'modules'}->{$id}->{'Obj'}, $id ) : $module;
+            wantarray
+            ? ( $self->{'modules'}->{$id}, $id )
+            : $self->{'modules'}->{$id};
 
         #return $module;
     }
 
-    sub save_module($) {
+    sub save_module() {
         my $self = shift;
         croak 'No name defined'
             if ( !exists( $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'} ) );
-        my $module = shift;
+        my $module = $_[0];
         my $id     = int( rand(10000) );
         while ( exists( $self->{'modules'}->{$id} ) ) {
             $id = int( rand(10000) );
         }
         $module->info();
-        $self->{'modules'}->{$id}->{'Obj'}  = clone($module);
-        $self->{'modules'}->{$id}->{'Name'} = "saved";
+
+        $self->{'modules'}->{$id} = $module;
         return $id;
     }
 
@@ -155,83 +185,146 @@ package Nemesis::Session;
 
         croak 'No name defined'
             if ( !exists( $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'} ) );
+            croak 'No id given' if (!$_[0]);
         my $id = $_[0];
-        return $self->{'modules'}->{$id}->{'Obj'};
+        return $self->{'modules'}->{$id};
     }
 
     sub save() {
         my $self = shift;
+$Data::Dumper::Purity=1;
+$Data::Dumper::Terse=1;
+
+$Data::Dumper::Deepcopy=1;
 
         croak 'No name defined'
             if ( !exists( $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'} ) );
-        use Data::Dumper;
-        print Dumper( $self->{'modules'} );
-        nstore( \$self,
-            $self->{'CONF'}->{'VARS'}->{'SESSION_PATH_STRIPPED'}
-                . "/.session" );
-        nstore( \$self->{'CONF'},
-            $self->{'CONF'}->{'VARS'}->{'SESSION_PATH_STRIPPED'}
-                . "/.session.conf" );
-        nstore( \$self->{'modules'},
-            $self->{'CONF'}->{'VARS'}->{'SESSION_PATH_STRIPPED'}
-                . "/.session.modules" );
-        foreach my $key ( ( keys %{ $self->{'modules'} } ) ) {
-            print Dumper( ( keys %{ $self->{'modules'}->{$key}->{'Obj'} } ) );
-            nstore( \$self->{'modules'}->{$key}->{'Obj'},
-                      $self->{'CONF'}->{'VARS'}->{'SESSION_PATH_STRIPPED'}
-                    . "/.session.modules."
-                    . $key );
-            foreach
-                my $key2 ( ( keys %{ $self->{'modules'}->{$key}->{'Obj'} } ) )
-            {
-                print Dumper($key2);
-                nstore( \$self->{'modules'}->{$key}->{'Obj'}->{$key2},
-                          $self->{'CONF'}->{'VARS'}->{'SESSION_PATH_STRIPPED'}
-                        . "/.session.modules."
-                        . $key . "."
-                        . $key2 );
-            }
-        }
+        
+       
+
+ 
+        nstore(\$self->{'CONF'},$self->{'CONF'}->{'VARS'}->{'SESSION_PATH'}."/.session.CONF");
+        nstore(\$self->{'modules'},$self->{'CONF'}->{'VARS'}->{'SESSION_PATH'}."/.session.modules");
+            my $dd = Data::Dumper->new([$self->{'modules'}]);
+
+        $self->recursive_save($self->{'modules'},'modules',$dd);
+     
+
+        
+        #my $dbm= DBM::Deep->new($self->{'CONF'}->{'VARS'}->{'SESSION_PATH'}."session.db");
+        ## OO usage
+    $dd->Purity(1)->Terse(1)->Deepcopy(1);
+    #print "Dumping that.\n";
+    #$dbm->put("session", $dd->Dump); # for hashes           
 
     }
+    
+    
+    sub recursive_save(){
+        
+        my $self=shift;
+        my $modules=$_[0];
+        my $name=$_[1];
+        my $dd=$_[2];
+     
+        foreach my $key (keys %{ $modules }){
+            #next if $dd->Seen($modules);
+            next if $key eq "core";
+
+             
+             nstore(\$modules->{$key},$self->{'CONF'}->{'VARS'}->{'SESSION_PATH'}."/.session.".$name.".".$key);
+             my $my=${retrieve($self->{'CONF'}->{'VARS'}->{'SESSION_PATH'}."/.session.".$name.".".$key)};
+         #    $my->info();
+
+             $self->recursive_save($modules->{$key},$name.".".$key,$dd);
+             
+            
+        }
+        
+        
+    }
+    
 
     sub restore() {
         my $self    = shift;
-        my $env     = new Nemesis::Env;
+        my $env     = $self->{'core'}->{'env'};
         my $session = $_[0];
         my $S_PATH =
               $env->workspace() . "/"
             . $self->{'CONF'}->{'VARS'}->{'SESSION_DIR'} . "/"
-            . $session
-            . "/";
-opendir(DIR,$S_PATH);
-my @FILES= readdir(DIR); 
+            . $session . "/";
+            
+        opendir(DIR, $S_PATH);
+        my @modules = grep { /^\./ } readdir(DIR); #solo quelli con il punto davanti.
+        close DIR;
 
-        foreach my $f(@FILES){
-            next if $f eq "." or if $f eq "..";
-            
-            if($f eq ".session"){
-                $self = retrieve($S_PATH.$f);
-                
-            }
-            $f=~s///g;
-            if($f=~//){
-                
-            }
-            
-            
-         print $f."\n"   ;
-            
-        }
+        print join(" ",@modules)."\n";
+        
 
 
-        if ( -e $S_PATH ) {
-          #  $self = retrieve($S_PATH);
-        }
-        else {
-            return ();
+      $self->{'CONF'}=${retrieve($S_PATH.".session.CONF") };
+        $self->{'modules'}=${retrieve($S_PATH.".session.modules") };
+        print "Restoring confs.\n";
+        print Dumper($self->{'CONF'})."\n";
+        print "Restoring modules.\n";
+        print Dumper($self->{'modules'})."\n";
+        foreach my $key (keys %{ $self->{'modules'} }){
+            print "finding for $key\n";
+            $self->{'modules'}->{$key}->{'core'}=$self->{'core'};#..... check?!
+            $self->{'modules'}->{$key}=${retrieve($self->{'CONF'}->{'VARS'}->{'SESSION_PATH'}."/.session.modules.".$key)};
+             $self->module_restore($key,@modules);
+             print "Key $key\n";
+             $self->{'modules'}->{$key}->info();           
         }
     }
+    
+    
+    sub module_restore(){
+          my $self=shift;
+        my $module=shift;
+        my @a_modules=@_;
+        print "Module restore for $module\n";
+        print "I moduli? sono questi @a_modules\n";
+        
+        
+     #   print keys %{$self->{'modules'}->{$module}}."\n";
+
+        foreach my $m(sort {length $a <=> length $b} @a_modules){ #In questo modo i moduli inner( i padri) dovrebbero uscire per primi
+            print "File... ".$m."\n";
+            my @PIECES=split(/\./,$m);
+            shift(@PIECES);#i need this??! check please..
+            if($PIECES[0] and $PIECES[1] and $PIECES[2] and $PIECES[0] eq "session" and $PIECES[1] eq "modules" and $PIECES[2] eq $module){#controllo che sto visionando il modulo specificato
+                print "FOUND!!!!!\n";
+                my @nested = splice(@PIECES, 3); #mi scorro come la referenza deve essere contenuta.
+                print "Nested: ".join("->",@nested)."\n";
+                my $ref=$self->{'modules'}->{$module};#Inizialmente è a modules.
+                print "Ref is ".Dumper($ref)."\n";
+                foreach my $g(@nested){
+                    $ref = $ref->{$g}; #LA scorro fino alla fine delle referenze (necessarie)
+                    print "G is : ".$g."\n"."Ref is ".Dumper($ref)."\n";
+                }
+                my $newref=retrieve($self->{'CONF'}->{'VARS'}->{'SESSION_PATH'}."/".$m);
+                $ref = $newref; #Eseguo il retrieve.
+            
+                print "Reference dumped..".Dumper($ref)." type ".reftype(\$ref)."\n";
+           
+           
+            }
+            
+            
+        
+                
+                
+ 
+            
+        }
+        
+        
+        
+        
+    }
+    
+    
 
 }
 

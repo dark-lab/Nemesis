@@ -8,27 +8,31 @@ package Nemesis::Process;
 
         my $package = shift;
         bless( {}, $package );
-        %{ $package->{'core'} } = @_;
+        %{ $package->{'CONFIG'} } = @_;
+        if ( exists( $package->{'CONFIG'}->{'ID'} ) ) {
+            $package->{'INDEX'} = $package->{'CONFIG'}->{'ID'};
+            $package->load();
+        }
         my $pid;
         my $output;
 
         croak "IO and environment must be defined\n"
-            if ( !defined( $package->{'core'}->{'IO'} )
-            || !defined( $package->{'core'}->{'env'} ) );
+          if ( !defined( $package->{'CONFIG'}->{'IO'} )
+            || !defined( $package->{'CONFIG'}->{'env'} ) );
 
         return $package;
     }
 
     sub info {
         my $self = shift;
-        $self->{'core'}->{'IO'}->print_info("Process: a main module.");
+        $self->{'CONFIG'}->{'IO'}->print_info("Process: a main module.");
     }
 
     sub start {
         my $self = shift;
         my $state;
-        $self->{'CONFIG'}->{'INDEX'} = $self->generate_lock()
-            if !exists( $self->{'CONFIG'}->{'INDEX'} );
+        $self->{'INDEX'} = $self->generate_lock()
+          if !exists( $self->{'CONFIG'}->{'ID'} );
         if ( !defined( $self->{'CONFIG'}->{'type'} ) ) {
             croak "No type defined, aborting..";
         }
@@ -40,8 +44,8 @@ package Nemesis::Process;
                 $state = $self->fork;
             }
         }
-        $self->{'core'}->{'IO'}
-            ->debug( "Running: " . $self->{'CONFIG'}->{'code'} );
+        $self->{'CONFIG'}->{'IO'}
+          ->debug( "Starting ..  " . $self->{'CONFIG'}->{'code'} );
         return $state ? $self->get_id() : ();
     }
 
@@ -57,15 +61,15 @@ package Nemesis::Process;
 
         my $self = shift;
         $self->stop();
-        unlink(   $self->{'core'}->{'env'}->tmp_dir() . "/"
-                . $self->{'CONFIG'}->{'INDEX'}
-                . ".lock" );
-        unlink(   $self->{'core'}->{'env'}->tmp_dir() . "/"
-                . $self->{'CONFIG'}->{'INDEX'}
-                . ".out" );
-        unlink(   $self->{'core'}->{'env'}->tmp_dir() . "/"
-                . $self->{'CONFIG'}->{'INDEX'}
-                . ".pid" );
+        unlink( $self->{'CONFIG'}->{'env'}->tmp_dir() . "/"
+              . $self->{'INDEX'}
+              . ".lock" );
+        unlink( $self->{'CONFIG'}->{'env'}->tmp_dir() . "/"
+              . $self->{'INDEX'}
+              . ".out" );
+        unlink( $self->{'CONFIG'}->{'env'}->tmp_dir() . "/"
+              . $self->{'INDEX'}
+              . ".pid" );
 
     }
 
@@ -84,34 +88,33 @@ package Nemesis::Process;
     sub generate_lock {
         my $self            = shift;
         my $generated_index = int( rand(9000) );
-        while ( -e $self->{'core'}->{'env'}->tmp_dir() . "/"
+        while ( -e $self->{'CONFIG'}->{'env'}->tmp_dir() . "/"
             . $generated_index
             . ".lock" )
         {
             $generated_index = int( rand() );
         }
         open FILE,
-              ">"
-            . $self->{'core'}->{'env'}->tmp_dir() . "/"
-            . $generated_index . ".lock";
+            ">"
+          . $self->{'CONFIG'}->{'env'}->tmp_dir() . "/"
+          . $generated_index . ".lock";
         foreach my $key ( sort( keys %{ $self->{'CONFIG'} } ) ) {
             next if $key eq "ID";
             next if $key eq "IO";
             next if $key eq "env";
             print FILE "$key:" . $self->{'CONFIG'}->{$key} . "\n";
         }
-        print FILE "TIME:" . $self->{'core'}->{'env'}->time() . "\n";
+        print FILE "TIME:" . $self->{'CONFIG'}->{'env'}->time() . "\n";
         close FILE;
         return $generated_index;
     }
 
     sub load {
         my $self = shift;
-        my $id=$_[0];
         open FILE,
-              "<"
-            . $self->{'core'}->{'env'}->tmp_dir() . "/"
-            . $id . ".lock";
+            "<"
+          . $self->{'CONFIG'}->{'env'}->tmp_dir() . "/"
+          . $self->{'CONFIG'}->{'ID'} . ".lock";
         my @FILE = <FILE>;
         close FILE;
         chomp(@FILE);
@@ -129,42 +132,42 @@ package Nemesis::Process;
 
     sub daemon {
         my $self = shift;
-        croak "You have not run start..\n" if !exists( $self->{'CONFIG'}->{'INDEX'} );
+        croak "You have not run start..\n" if !exists( $self->{'INDEX'} );
         my $this_pid = Unix::PID->new();
         my $p;
         my $cmd =
-            $self->{'core'}->{'IO'}
-            ->generate_command( $self->{'CONFIG'}->{'code'} );
-        $self->{'core'}->{'IO'}->set_debug(1);
+          $self->{'CONFIG'}->{'IO'}
+          ->generate_command( $self->{'CONFIG'}->{'code'} );
+        $self->{'CONFIG'}->{'IO'}->set_debug(1);
         if ( system($cmd) == 0 ) {
-            $self->{'core'}->{'IO'}
-                ->debug("Daemon released me, now i try to search for $cmd");
+            $self->{'CONFIG'}->{'IO'}
+              ->debug("Daemon released me, now i try to search for $cmd");
             if ( $p = $self->pidof($cmd) ) {
                 $self->save_pid($p);
                 $self->save("Daemon mode\n");
                 return 1;
             }
             else {
-                $self->{'core'}->{'IO'}->debug(
-                    "PID Cannnot be found destroying the process, look at your process activity and kill manually: "
-                        . $self->{'CONFIG'}->{'code'} );
+                $self->{'CONFIG'}->{'IO'}->debug(
+"PID Cannnot be found destroying the process, look at your process activity and kill manually: "
+                      . $self->{'CONFIG'}->{'code'} );
                 $self->destroy();
                 return ();
             }
         }
         else {
-            $self->{'core'}->{'IO'}
-                ->debug("Something went wrong, i'm destroying myself");
+            $self->{'CONFIG'}->{'IO'}
+              ->debug("Something went wrong, i'm destroying myself");
             $self->destroy();
             return ();
         }
-        $self->{'core'}->{'IO'}->set_debug(0);
+        $self->{'CONFIG'}->{'IO'}->set_debug(0);
     }
 
     sub fork {
         my $self = shift;
         my $p;
-        croak "You have not run start..\n" if !exists( $self->{'CONFIG'}->{'INDEX'} );
+        croak "You have not run start..\n" if !exists( $self->{'INDEX'} );
         if ( my $pid = fork ) {
             waitpid( $pid, 0 );
         }
@@ -178,10 +181,10 @@ package Nemesis::Process;
 
                 my $this_pid = Unix::PID->new();
                 my $cmd =
-                    $self->{'core'}->{'IO'}
-                    ->generate_command( $self->{'CONFIG'}->{'code'} );
+                  $self->{'CONFIG'}->{'IO'}
+                  ->generate_command( $self->{'CONFIG'}->{'code'} );
                 open( $handle, "$cmd  2>&1 |" )
-                    or croak "Failed to open pipeline $!";
+                  or croak "Failed to open pipeline $!";
 
                 if ( $p = $self->pidof($cmd) ) {
                     $self->save_pid($p);
@@ -191,8 +194,8 @@ package Nemesis::Process;
                     $self->remove_lock();
                 }
                 else {
-                    $self->{'core'}->{'IO'}
-                        ->print_alert("Can't get pid of the forked process");
+                    $self->{'CONFIG'}->{'IO'}
+                      ->print_alert("Can't get pid of the forked process");
                     $self->destroy();
                     close($handle);
                 }
@@ -209,8 +212,7 @@ package Nemesis::Process;
         my $p;
         my @PIECES = split( /\s+/, $_[0] );
         my %matr;
-        $self->{'core'}->{'IO'}
-            ->debug( "getting the pid of: " . $PIECES[0] );
+        $self->{'CONFIG'}->{'IO'}->debug( "getting the pid of: " . $PIECES[0] );
 
         foreach my $piece (@PIECES) {
             my @FOUND_PIDS = $this_pid->get_pidof($piece);
@@ -224,7 +226,7 @@ package Nemesis::Process;
             last;
         }    # end-foreach
 
-        $self->{'core'}->{'IO'}->debug( "MAX PID " . $p );
+        $self->{'CONFIG'}->{'IO'}->debug( "MAX PID " . $p );
 
         return ($p);
 
@@ -233,21 +235,20 @@ package Nemesis::Process;
     sub save_pid() {
         my $self = shift;
         open FILE,
-              ">"
-            . $self->{'core'}->{'env'}->tmp_dir() . "/"
-            . $self->{'CONFIG'}->{'INDEX'} . ".pid";
+            ">"
+          . $self->{'CONFIG'}->{'env'}->tmp_dir() . "/"
+          . $self->{'INDEX'} . ".pid";
         print FILE $_[0];
         close FILE;
-        $self->{'CONFIG'}->{'PID'}=$_[0];
     }
 
     sub save() {
         my $self = shift;
 
         open FILE,
-              ">>"
-            . $self->{'core'}->{'env'}->tmp_dir() . "/"
-            . $self->{'CONFIG'}->{'INDEX'} . ".out";
+            ">>"
+          . $self->{'CONFIG'}->{'env'}->tmp_dir() . "/"
+          . $self->{'INDEX'} . ".out";
         print FILE $_[0];
         close FILE;
 
@@ -257,17 +258,17 @@ package Nemesis::Process;
         my $self = shift;
         if ( $_[1] ) {
             open FILE,
-                  ">"
-                . $self->{'core'}->{'env'}->tmp_dir() . "/"
-                . $self->{'CONFIG'}->{'INDEX'} . ".out";
+                ">"
+              . $self->{'CONFIG'}->{'env'}->tmp_dir() . "/"
+              . $self->{'INDEX'} . ".out";
             print FILE @_;
             close FILE;
         }
         else {
             open FILE,
-                  ">"
-                . $self->{'core'}->{'env'}->tmp_dir() . "/"
-                . $self->{'CONFIG'}->{'INDEX'} . ".out";
+                ">"
+              . $self->{'CONFIG'}->{'env'}->tmp_dir() . "/"
+              . $self->{'INDEX'} . ".out";
             print FILE $_[0];
             close FILE;
         }
@@ -277,9 +278,9 @@ package Nemesis::Process;
     sub get_pid() {
         my $self = shift;
         open FILE,
-              "<"
-            . $self->{'core'}->{'env'}->tmp_dir() . "/"
-            . $self->{'CONFIG'}->{'INDEX'} . ".pid";
+            "<"
+          . $self->{'CONFIG'}->{'env'}->tmp_dir() . "/"
+          . $self->{'INDEX'} . ".pid";
         my @pid = <FILE>;
         close FILE;
         return $pid[0] if ( $pid[0] );
@@ -289,21 +290,21 @@ package Nemesis::Process;
     sub get_output_file() {
         my $self = shift;
         return
-              $self->{'core'}->{'env'}->tmp_dir() . "/"
-            . $self->{'CONFIG'}->{'INDEX'} . ".out";
+            $self->{'CONFIG'}->{'env'}->tmp_dir() . "/"
+          . $self->{'INDEX'} . ".out";
 
     }
 
     sub get_output() {
         my $self = shift;
-        if (  -e $self->{'core'}->{'env'}->tmp_dir() . "/"
-            . $self->{'CONFIG'}->{'INDEX'}
+        if (  -e $self->{'CONFIG'}->{'env'}->tmp_dir() . "/"
+            . $self->{'INDEX'}
             . ".out" )
         {
             open FILE,
-                  "<"
-                . $self->{'core'}->{'env'}->tmp_dir() . "/"
-                . $self->{'CONFIG'}->{'INDEX'} . ".out";
+                "<"
+              . $self->{'CONFIG'}->{'env'}->tmp_dir() . "/"
+              . $self->{'INDEX'} . ".out";
             my @out = <FILE>;
             close FILE;
             return "@out";
@@ -316,20 +317,20 @@ package Nemesis::Process;
 
     sub get_id() {
         my $self = shift;
-        return $self->{'CONFIG'}->{'INDEX'};
+        return $self->{'INDEX'};
 
     }
 
     sub output() {
         my $self = shift;
-        if (  -e $self->{'core'}->{'env'}->tmp_dir() . "/"
-            . $self->{'CONFIG'}->{'INDEX'}
+        if (  -e $self->{'CONFIG'}->{'env'}->tmp_dir() . "/"
+            . $self->{'INDEX'}
             . ".out" )
         {
             open FILE,
-                  "<"
-                . $self->{'core'}->{'env'}->tmp_dir() . "/"
-                . $self->{'CONFIG'}->{'INDEX'} . ".out";
+                "<"
+              . $self->{'CONFIG'}->{'env'}->tmp_dir() . "/"
+              . $self->{'INDEX'} . ".out";
             return FILE;
         }
         else {
@@ -340,9 +341,9 @@ package Nemesis::Process;
 
     sub remove_lock() {
         my $self = shift;
-        unlink(   $self->{'core'}->{'env'}->tmp_dir() . "/"
-                . $self->{'CONFIG'}->{'INDEX'}
-                . ".lock" );
+        unlink( $self->{'CONFIG'}->{'env'}->tmp_dir() . "/"
+              . $self->{'INDEX'}
+              . ".lock" );
 
     }
 

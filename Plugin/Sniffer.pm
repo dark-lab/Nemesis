@@ -27,8 +27,8 @@ sub new {    #NECESSARY
         if ( !defined( $package->{'core'}->{'IO'} )
         || !defined( $package->{'core'}->{'env'} )
         || !defined( $package->{'core'}->{'interfaces'} ) );
-    $package->{'Session'} = $package->{'core'}->{'ModuleLoader'}->loadmodule("Session");
-    $package->{'Session'}->initialize($MODULE);
+    #$package->{'Session'} = $package->{'core'}->{'ModuleLoader'}->loadmodule("Session");
+    #$package->{'Session'}->initialize($MODULE);
     return $package;
 }
 
@@ -112,8 +112,11 @@ sub sniff {
     my $self    = shift;
     my $IO      = $self->{'core'}->{'IO'};
     my $env     = $self->{'core'}->{'env'};
-    my $Session = $self->{'Session'};
-
+    #cambiare utilizzo di session: Viene inizializzata una
+    #nuova session nel caso in cui, non c'è un id specificato (Ovvero dove il modulo prenderà le informazioni), altrimenti si utilizza quella session.
+        $Session=$self->{'core'}->{'Session'};
+ 
+    
     my $interfaces = $self->{'core'}->{'interfaces'};
     my $code;
     my $dev = $_[0];
@@ -126,18 +129,17 @@ sub sniff {
         . $log_file . ' -w '
         . $pcap_file
         . " -P autoadd";
-    my $Process = $Session->new_module("Process");
+    my $Process = $self->{'core'}->{'ModuleLoader'}->loadmodule("Process");
     $Process->set(
         type => 'daemon',                   # forked pipeline
-        code => $code,
-        env  => $self->{'core'}->{'env'},
-        IO   => $IO,
+        code => $code
     );
     if($Process->start()){
-    $self->{'process'}->{$dev}->{'sniffer'} = $Process;
-    $IO->process_status($Process);
-    $Session->save();
-    $IO->debug("i can save!");
+        $self->{'process'}->{$dev}->{'sniffer'}->{'module'} = $Session->save_module($Process);
+        $self->{'process'}->{$dev}->{'sniffer'}->{'id'} =$Session_Name;
+        $IO->process_status($Process);
+        $Session->save();
+        $IO->debug("i can save!");
     } else {
         $IO->print_alert("Process cannot be executed, maybe lack of permissions?");
         
@@ -219,7 +221,6 @@ sub status {
         foreach my $dev ( keys %{ $self->{'process'} } ) {
             $self->status_device($dev);
         }
-
     }
 }
 
@@ -228,9 +229,13 @@ sub status_device() {
     my $dev    = $_[0];
     my $output = $self->{'core'}->{'IO'};
     my $env    = $self->{'core'}->{'env'};
+    my $Session = $self->{'core'}->{'Session'};
     foreach my $type ( keys %{ $self->{'process'}->{$dev} } ) {
-        $output->process_status( $self->{'process'}->{$dev}->{$type} );
+            
+        $output->process_status( $Session->get_module($self->{'process'}->{$dev}->{$type}->{'module'}) );
+    
     }
+    
 }
 
 sub stop {

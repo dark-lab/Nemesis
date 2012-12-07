@@ -9,9 +9,10 @@ sub new {
     bless( {}, $package );
     my (%config) = @_;
     %{ $package->{'CONFIG'} } = %config;
+
     #open STDIN, '/dev/null'   or die "Can't read /dev/null: $!";
     #open STDOUT, '>>/dev/null';
-    open STDERR, sub { $self->debug($_); };
+    open STDERR, \&debug();
     umask 0;
     return $package;
 }
@@ -22,20 +23,12 @@ sub get_completion_color {
 
 }
 
-
-sub set_session(){
-        my $self=shift;
-    $self->{'CONFIG'}->{'SESSION'}=$_[0];
-    
-}
-
-
 sub get_prompt_out {
-    my $self=shift;
+
     return
-          colored( "Nemesis", "green on_black" )
-        . colored( "<".$self->{'CONFIG'}->{'SESSION'}.">",  "white on_black" )
-        . colored( "# ", "blue on_black blink" );
+        colored( "Nemesis", "green on_black" )
+      . colored( "~",  "white on_black" )
+      . colored( "# ", "blue on_black blink" );
 
 }
 
@@ -62,10 +55,10 @@ sub set_public_methods() {
 
 sub print_alert() {
     my $self = shift;
-    print colored( "[",    "magenta on_black bold" )
-        . colored( "Warn", "green on_black bold" )
-        . colored( "]\t",  "magenta on_black bold" )
-        . colored( $_[0],  "cyan on_black" ) . "\n";
+    print colored( "[", "magenta on_black bold" )
+      . colored( "Warn", "green on_black bold" )
+      . colored( "]\t",  "magenta on_black bold" )
+      . colored( $_[0],  "cyan on_black" ) . "\n";
 }
 
 sub print_verbose() {
@@ -79,15 +72,15 @@ sub print_verbose() {
 
 sub debug() {
     my $self = shift;
-    if ( exists($self->{'CONFIG'}->{'debug'}) and  $self->{'CONFIG'}->{'debug'} == 1 ) {
-        print colored( "[",     "magenta on_black bold" )
-            . colored( "Debug", "white on_black bold" )
-            . colored( "]",     "magenta on_black bold" )
-            . colored( " (",    "magenta on_black bold" )
-            . colored( $self->{'CONFIG'}->{'env'}->time_seconds(),
+    if ( $self->{'CONFIG'}->{'debug'} == 1 ) {
+        print colored( "[", "magenta on_black bold" )
+          . colored( "Debug", "white on_black bold" )
+          . colored( "]",     "magenta on_black bold" )
+          . colored( " (",    "magenta on_black bold" )
+          . colored( $self->{'CONFIG'}->{'env'}->time_seconds(),
             "bold on_black white" )
-            . colored( ") ",  "magenta on_black bold" )
-            . colored( $_[0], "white on_black bold" ) . "\n";
+          . colored( ") ",  "magenta on_black bold" )
+          . colored( $_[0], "white on_black bold" ) . "\n";
 
     }
 }
@@ -95,27 +88,27 @@ sub debug() {
 sub print_info() {
     my $self = shift;
 
-    print colored( "[",  "magenta on_black bold" )
-        . colored( "**", "green on_black bold" )
-        . colored( "]",  "magenta on_black bold" )
-        . colored( " (", "magenta on_black bold" )
-        . colored( $self->{'CONFIG'}->{'env'}->time_seconds(),
+    print colored( "[", "magenta on_black bold" )
+      . colored( "**", "green on_black bold" )
+      . colored( "]",  "magenta on_black bold" )
+      . colored( " (", "magenta on_black bold" )
+      . colored( $self->{'CONFIG'}->{'env'}->time_seconds(),
         "bold on_black cyan" )
-        . colored( ") ",  "magenta on_black bold" )
-        . colored( $_[0], "blue on_black bold" ) . "\n";
+      . colored( ") ",  "magenta on_black bold" )
+      . colored( $_[0], "blue on_black bold" ) . "\n";
 }
 
 sub print_error() {
     my $self = shift;
 
-    print colored( "[",   "magenta on_black bold" )
-        . colored( "Err", "red on_black bold" )
-        . colored( "]",   "magenta on_black bold" )
-        . colored( " (",  "magenta on_black bold" )
-        . colored( $self->{'CONFIG'}->{'env'}->time_seconds(),
+    print colored( "[", "magenta on_black bold" )
+      . colored( "Err", "red on_black bold" )
+      . colored( "]",   "magenta on_black bold" )
+      . colored( " (",  "magenta on_black bold" )
+      . colored( $self->{'CONFIG'}->{'env'}->time_seconds(),
         "bold on_black red" )
-        . colored( ") ",  "magenta on_black bold" )
-        . colored( $_[0], "red on_black" ) . "\n";
+      . colored( ") ",  "magenta on_black bold" )
+      . colored( $_[0], "red on_black" ) . "\n";
 
 }
 
