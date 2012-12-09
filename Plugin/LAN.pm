@@ -16,7 +16,10 @@ sub new {
 
     return $package;
 }
-
+sub export_public_methods() {    #NECESSARY
+    my $self = shift;
+    return @PUBLIC_FUNCTIONS;
+}
 sub clear() {
     return 1;
 }

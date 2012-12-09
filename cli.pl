@@ -8,7 +8,6 @@ use Getopt::Long;
 use Term::ReadLine::Gnu;
 
 ##General Settings
-
 my $Init = new Nemesis::Init();
 $0 = "SpikeNemesis";
 my $output       = $Init->{'Io'};
@@ -19,8 +18,8 @@ $Init->{'Interfaces'}->print_devices();
 
 $SIG{'INT'} = sub { $Init->sighandler(); };
 
+
 # Setting the terminal
-my $prompt    = $output->get_prompt_out();
 my $term_name = "Nemesis";
 my $nemesis_t = new Term::ReadLine($term_name);
 
@@ -69,7 +68,7 @@ $attribs->{completion_function} = sub { return @PUBLIC_LIST; };
 my $list = join( " ", @PUBLIC_LIST );
 
 # Main loop. This is inspired from the POD page of Term::Readline.
-while ( defined( $_ = $nemesis_t->readline($prompt) ) ) {
+while ( defined( $_ = $nemesis_t->readline($output->get_prompt_out()) ) ) {
     my @cmd = split( / /, $_ );
     my $command = shift(@cmd);
     if ( $command eq "reload" ) {
@@ -81,9 +80,7 @@ while ( defined( $_ = $nemesis_t->readline($prompt) ) ) {
         @PUBLIC_LIST = $moduleloader->export_public_methods();
     }
     elsif ( $command =~ /exit/ ) {
-        $output->print_info("Clearing all before we go..");
-        $moduleloader->execute_on_all("clear");
-        exit;
+        $Init->on_exit();
 
     }
 
