@@ -1,8 +1,0 @@
-
-ettercap errors during daemonization are reported below:
-
-ERROR : 1, Operation not permitted
-[ec_capture.c:capture_init:146]
-
- pcap_open: eth0: You don't have permission to capture on that device (socket: Operation not permitted) 
-

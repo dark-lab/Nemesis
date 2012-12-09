@@ -1,7 +1,6 @@
 package Nemesis::Env;
 use warnings;
-use Storable;
-
+use FindBin '$Bin';
 sub new
 {
 	my $package = shift;
@@ -15,6 +14,8 @@ sub new
 	{
 		mkdir( $package->{'workspace'} . "/tmp" );
 	}
+	
+	$package->{"ProgramPath"}=$Bin;
 	return $package;
 }
 

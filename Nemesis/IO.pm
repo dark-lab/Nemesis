@@ -13,7 +13,7 @@ sub new
 
 	#open STDIN, '/dev/null'   or die "Can't read /dev/null: $!";
 	#open STDOUT, '>>/dev/null';
-	#open STDERR,'>>/dev/null';
+	open STDERR,'>>/dev/null';
 	umask 0;
 	return $package;
 }
@@ -43,7 +43,8 @@ sub print_ascii
 	my $self  = shift;
 	my $FILE  = $_[0];
 	my $COLOR = $_[1];
-	open( my $fh, "<" . $FILE ) or croak("Can't open $FILE");
+	my $REAL_FILE= $self->{'CONFIG'}->{'env'}->{'ProgramPath'}."/".$FILE;
+	open( my $fh, "<" . $REAL_FILE ) or croak("Can't open $REAL_FILE");
 	while ( my $line = <$fh> )
 	{
 		print colored( $line, $COLOR );

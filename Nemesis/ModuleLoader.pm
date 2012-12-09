@@ -17,6 +17,7 @@ sub new
 	die("IO and environment must be defined\n")
 		if (    !defined( $self->{'core'}->{'IO'} )
 			 || !defined( $self->{'core'}->{'env'} ) );
+	$self->{'Base'}->{'pwd'}= $self->{'core'}->{'env'}->{'ProgramPath'}."/";
 	return bless $self, $class;
 }
 sub execute
@@ -92,12 +93,13 @@ sub loadmodule()
 	my $self   = shift;
 	my $module = $_[0];
 	my $IO     = $self->{'core'}->{'IO'};
-	my $path   = $self->{'Base'}->{'pwd'} . $self->{'Base'}->{'path'};
+	my $plugin_path   = $self->{'Base'}->{'pwd'} . $self->{'Base'}->{'path'};
+	my $modules_path =   $self->{'Base'}->{'pwd'} . $self->{'Base'}->{'main_modules'};
 	my $base;
-	if ( -e $self->{'Base'}->{'path'} . "/" . $module . ".pm" )
+	if ( -e $plugin_path . "/" . $module . ".pm" )
 	{
 		$base = $self->{'Base'}->{'path'};
-	} elsif ( -e $self->{'Base'}->{'main_modules'} . "/" . $module . ".pm" )
+	} elsif ( -e $modules_path . "/" . $module . ".pm" )
 	{
 		$base = $self->{'Base'}->{'main_modules'};
 	} else
@@ -114,7 +116,7 @@ sub loadmodule()
 	if ($@)
 	{
 		$self->{'core'}->{'IO'}
-			->print_error("Something went wrong with $object: $@");
+			->print_error("Something went wrong: $@");
 		return ();
 	} else
 	{
@@ -139,13 +141,13 @@ sub loadmodules
 	my $mods = 0;
 	foreach my $f (@files)
 	{
-		my $base = $self->{'Base'}->{'path'} . "/" . $f;
+		my $base = $path . "/" . $f;
 		my ($name) = $f =~ m/([^\.]+)\.pm/;
 		my $result = do($base);
 		if ($@)
 		{
 			$IO->print_error($@);
-			delete $INC{ $self->{'Base'}->{'path'} . "/" . $name };
+			delete $INC{ $path. "/" . $name };
 			next;
 		}
 		$self->{'modules'}->{$name} = $self->loadmodule($name);

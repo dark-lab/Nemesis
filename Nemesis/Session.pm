@@ -28,6 +28,9 @@ package Nemesis::Session;
 			$CONF->{'VARS'}->{'SESSION_DIR'};
 		return $package;
 	}
+	sub getSessionPath{
+		return $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'};
+	}
 
 	sub serialize
 	{
@@ -160,6 +163,7 @@ package Nemesis::Session;
 		$session_dir =~ s/\s+/\\ /g;
 		$self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} = $session_dir;
 		$self->{'core'}->{'IO'}->set_session($session_name);
+		chdir($self->{'CONF'}->{'VARS'}->{'SESSION_PATH'});
 	}
 
 	sub wrap
@@ -213,10 +217,6 @@ package Nemesis::Session;
 		$self->restore("default_session");
 	}
 
-	sub save()
-	{
-		print "-->Legacy support\n";
-	}
 }
 1;
 __END__
