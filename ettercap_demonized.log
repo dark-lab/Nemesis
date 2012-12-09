@@ -1,8 +1,8 @@
 
 ettercap errors during daemonization are reported below:
 
-ERROR : 99, Cannot assign requested address
-[ec_capture.c:get_hw_info:409]
+ERROR : 1, Operation not permitted
+[ec_capture.c:capture_init:146]
 
- eth0: no IPv4 address assigned 
+ pcap_open: eth0: You don't have permission to capture on that device (socket: Operation not permitted) 
 

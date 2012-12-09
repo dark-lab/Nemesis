@@ -37,9 +37,12 @@ package Nemesis::Init;
             IO         => $package->{'Io'},
             interfaces => $package->{'Interfaces'},
             env        => $package->{'Env'},
-	    Session    => $package->{'Session'}
+	 	    Session    => $package->{'Session'}
             )
-            ; #Load all plugins in plugin directory and passes to the construtor of the modules those objs
+            ; 
+        $package->{'Session'}->{'core'}->{'ModuleLoader'}= $package->{'ModuleLoader'};
+            
+            #Load all plugins in plugin directory and passes to the construtor of the modules those objs
               #
         if ( !$package->{'Env'}->check_root() ) {
             $package->{'Io'}->print_alert(
