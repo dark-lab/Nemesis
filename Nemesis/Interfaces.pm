@@ -6,17 +6,18 @@ use Net::Ping;
 use vars qw($VERSION);
 $VERSION = '0.01';
 use Socket;
+	use Carp qw( croak );
+our $Init;
 
 sub new {
     my $package = shift;
     bless( {}, $package );
-    my (%config) = @_;
+    %{ $package }  =@_;
+    croak 'No init' if !exists($package->{'Init'});
+    $Init=$package->{'Init'};
     my %tmp;
-    %{ $package->{'CONFIG'} }  = %config;
     %{ $package->{'devices'} } = %tmp;
-    die("IO must be defined\n")
-        if ( !defined( $package->{'CONFIG'}->{'IO'} ) );
-    $package->{'CONFIG'}->{'IO'}->debug("Nemesis::Interfaces loaded");
+    $Init->getIO->debug("Nemesis::Interfaces loaded");
 
     $package->scan_avaible_devices();
     return $package;
@@ -34,7 +35,7 @@ sub scan_avaible_devices() {
     #my $wireless_file='/proc/net/wireless';
 
     my $self = shift;
-    my $IO   = $self->{'CONFIG'}->{'IO'};
+    my $IO   = $Init->getIO();
     my %tmp;
     my $counter;
     my @output;
@@ -114,7 +115,7 @@ sub scan_avaible_devices() {
 sub info_device() {
     my $self   = shift;
     my $device = $_[0];
-    my $IO     = $self->{'CONFIG'}->{'IO'};
+    my $IO     = $Init->getIO();
     if ( !$device ) {
         return;
     }
@@ -153,7 +154,7 @@ sub info_device() {
 sub print_devices() {
 
     my $self   = shift;
-    my $output = $self->{'CONFIG'}->{'IO'};
+    my $output = $Init->getIO();
     $output->print_verbose("Printing devices...");
     foreach my $dev ( keys %{ $self->{'devices'} } ) {
         $self->info_device($dev);
@@ -164,7 +165,7 @@ sub print_devices() {
 
 sub connected() {
     my $self     = shift;
-    my $output   = $self->{'CONFIG'}->{'IO'};
+    my $output   = $Init->getIO();
     my $conn     = 0;
     my $internet = 0;
     foreach my $dev ( keys %{ $self->{'devices'} } ) {
@@ -211,7 +212,7 @@ sub check_internet() {
         ;    # Specify source interface of pings
 
     $alive = 0 unless $ping->ping( "8.8.8.8", 5 );
-    $self->{'CONFIG'}->{'IO'}->debug( "ALIVE:" . $alive );
+    $Init->getIO->debug( "ALIVE:" . $alive );
 
     $ping->close();
 

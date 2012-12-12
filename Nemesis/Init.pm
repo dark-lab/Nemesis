@@ -4,6 +4,7 @@ package Nemesis::Init;
 	use Nemesis::Interfaces;
 	use Nemesis::IO;
 	use Nemesis::Process;
+	use Nemesis::Inject;
 	use Nemesis::ModuleLoader;
 	use Nemesis::Session;
 	use Carp qw( croak );
@@ -12,19 +13,14 @@ package Nemesis::Init;
 	{
 		my $package = shift;
 		bless( {}, $package );
-		$package->{'Env'} = new Nemesis::Env;
+		$package->{'Env'} = new Nemesis::Env( Init => $package );
 		$package->{'Io'} =
 			new Nemesis::IO( debug   => 1,
 							 verbose => 0,
-							 env     => $package->{'Env'}
+							 Init    => $package
 			);
-		$package->{'Interfaces'} =
-			new Nemesis::Interfaces( IO => $package->{'Io'} );
-		$package->{'Session'} =
-			Nemesis::Session->new( IO         => $package->{'Io'},
-								   interfaces => $package->{'Interfaces'},
-								   env        => $package->{'Env'}
-			);
+		$package->{'Interfaces'} = new Nemesis::Interfaces( Init => $package );
+		$package->{'Session'} = new Nemesis::Session( Init => $package );
 		if ( $package->{'Session'}->exists("default_session") )
 		{
 			$package->{'Session'}->restore("default_session");
@@ -32,29 +28,19 @@ package Nemesis::Init;
 		{
 			$package->{'Session'}->initialize("default_session");
 		}
-		$package->{'Io'}->set_session("default_session");
 		$package->{'ModuleLoader'} =
-			Nemesis::ModuleLoader->new( IO         => $package->{'Io'},
-										interfaces => $package->{'Interfaces'},
-										env        => $package->{'Env'},
-										Session    => $package->{'Session'}
-			);
-		$package->{'Session'}->{'core'}->{'ModuleLoader'} =
-			$package->{'ModuleLoader'};
-		$package->{'Io'}->{'core'}->{'Session'} =
-			$package->{'ModuleLoader'}->{'core'}->{'Session'};
+			Nemesis::ModuleLoader->new( Init => $package );
 
 #Load all plugins in plugin directory and passes to the construtor of the modules those objs
 #
 		if ( !$package->{'Env'}->check_root() )
 		{
 			$package->{'Io'}->print_alert(
-					  "Insufficient permission, something can go really wrong switching to debug mode");
+				"Insufficient permission, something can go really wrong switching to debug mode"
+			);
 			$package->{'Io'}->set_debug(1);    #If no root given, debug on
 		}
-		
 		$0 = "SpikeNemesis";
-		
 		return $package;
 	}
 
@@ -67,12 +53,42 @@ package Nemesis::Init;
 	sub on_exit()
 	{
 		my $self = shift;
-		if ( exists( $self->{'ModuleLoader'}->{'core'}->{'Session'} ) )
+		if ( exists( $self->{'Session'} ) )
 		{
-			$self->{'ModuleLoader'}->{'core'}->{'Session'}->save();
+			$self->{'Session'}->save();
 		}
 		$self->{'ModuleLoader'}->execute_on_all("clear");
 		exit;
+	}
+
+	sub getIO
+	{
+		my $package = shift;
+		return $package->{'Io'};
+	}
+
+	sub getEnv
+	{
+		my $package = shift;
+		return $package->{'Env'};
+	}
+
+	sub getInterfaces
+	{
+		my $package = shift;
+		return $package->{'Interfaces'};
+	}
+
+	sub getSession
+	{
+		my $package = shift;
+		return $package->{'Session'};
+	}
+
+	sub getModuleLoader
+	{
+		my $package = shift;
+		return $package->{'ModuleLoader'};
 	}
 }
 1;

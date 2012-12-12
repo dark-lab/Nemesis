@@ -1,10 +1,13 @@
 package Nemesis::Env;
 use warnings;
 use FindBin '$Bin';
+our $Init;
+
 sub new
 {
 	my $package = shift;
 	bless( {}, $package );
+	%{$package} = @_;
 	$package->scan_env();
 	if ( !-d $package->{'workspace'} )
 	{
@@ -14,8 +17,8 @@ sub new
 	{
 		mkdir( $package->{'workspace'} . "/tmp" );
 	}
-	
-	$package->{"ProgramPath"}=$Bin;
+	$Init = $package->{'Init'};
+	$package->{"ProgramPath"} = $Bin;
 	return $package;
 }
 
@@ -24,7 +27,7 @@ sub print_env()
 	my $self = shift;
 	foreach my $key ( keys %ENV )
 	{
-		print $key. " : " . $ENV{$key} . "\n";
+		$Init->getIO->print_info( $key . " : " . $ENV{$key} );
 	}
 }
 
@@ -154,21 +157,6 @@ sub time()
 		. $hour . "-"
 		. $minute;
 }
-
-sub save_state
-{
-	my $pack = shift;
-	Storable::nstore( $pack,
-					  File::Spec->catfile( $pack->{'workspace'} . "/env" ) );
-}
-
-sub restore_state
-{
-	my $pack = shift;
-	$pack = Storable::retrieve(
-						 File::Spec->catfile( $pack->{'workspace'} . "/env" ) );
-}
-
 sub time_seconds()
 {
 	my $self     = shift;

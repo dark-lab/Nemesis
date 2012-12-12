@@ -7,19 +7,19 @@ my $base = { 'path'         => 'Plugin',
 			 'pwd'          => './',
 			 'main_modules' => 'Nemesis'
 };
+our $Init;
 
 sub new
 {
 	my $class = shift;
-	my $self  = { 'Base' => $base };
-	my (%Obj) = @_;
-	%{ $self->{'core'} } = %Obj;
-	die("IO and environment must be defined\n")
-		if (    !defined( $self->{'core'}->{'IO'} )
-			 || !defined( $self->{'core'}->{'env'} ) );
-	$self->{'Base'}->{'pwd'}= $self->{'core'}->{'env'}->{'ProgramPath'}."/";
+	my $self = { 'Base' => $base };
+	%{$package} = @_;
+	croak 'No init' if !exists( $package->{'Init'} );
+	$Init = $package->{'Init'};
+	$self->{'Base'}->{'pwd'} = $Init->getEnv()->{'ProgramPath'} . "/";
 	return bless $self, $class;
 }
+
 sub execute
 {
 	my $self    = shift;
@@ -29,13 +29,13 @@ sub execute
 	# my $object  = "$self->{'Base'}->{'path'}::$module";
 	#eval( "$self->{'Base'}->{'path'}::$module"->$command(@_) );
 	$self->{'modules'}->{$module}->$command(@_);
-	$self->{'core'}->{'Session'}->execute_save( $module, $command, @_ ) if $module ne "session";
+	$Init->getSession()->execute_save( $module, $command, @_ )
+		if $module ne "session";
 
 # TODO: Questo è un modo per scavalcare il problema... salvo la history e la ripristino..
 	if ($@)
 	{
-		$self->{'core'}->{'IO'}
-			->print_error("Something went wrong with $command: $@");
+		$Init->getIO->print_error("Something went wrong with $command: $@");
 	}
 }
 
@@ -49,7 +49,7 @@ sub execute_on_all
 		eval("$self->{'modules'}->{$module}->$met(@command)");
 		if ($@)
 		{
-			$self->{'core'}->{'IO'}->print_error(
+			$Init->getIO->print_error(
 				"Something went wrong calling the method '$met' on '$module': $@"
 			);
 		}
@@ -78,7 +78,7 @@ sub export_public_methods()
 sub listmodules
 {
 	my $self = shift;
-	my $IO   = $self->{'core'}->{'IO'};
+	my $IO   = $Init->getIO();
 	$IO->print_title("List of modules");
 	foreach my $module ( sort( keys %{ $self->{'modules'} } ) )
 	{
@@ -90,11 +90,12 @@ sub listmodules
 
 sub loadmodule()
 {
-	my $self   = shift;
-	my $module = $_[0];
-	my $IO     = $self->{'core'}->{'IO'};
-	my $plugin_path   = $self->{'Base'}->{'pwd'} . $self->{'Base'}->{'path'};
-	my $modules_path =   $self->{'Base'}->{'pwd'} . $self->{'Base'}->{'main_modules'};
+	my $self        = shift;
+	my $module      = $_[0];
+	my $IO          = $Init->getIO();
+	my $plugin_path = $self->{'Base'}->{'pwd'} . $self->{'Base'}->{'path'};
+	my $modules_path =
+		$self->{'Base'}->{'pwd'} . $self->{'Base'}->{'main_modules'};
 	my $base;
 	if ( -e $plugin_path . "/" . $module . ".pm" )
 	{
@@ -111,15 +112,15 @@ sub loadmodule()
 	$object = eval {
 		my $o     = dclone( \$object );
 		my $realO = $$o;
-		return $realO->new( %{ $self->{'core'} }, ModuleLoader => $self );
+		return $realO->new( Init => $Init );
 	};
 	if ($@)
 	{
-		$self->{'core'}->{'IO'}
-			->print_error("Something went wrong: $@");
+		$Init->getIO()->print_error("Something went wrong: $@");
 		return ();
 	} else
 	{
+		$Init->getIO()->debug("Module $module correctly loaded");
 		return $object;
 	}
 }
@@ -128,7 +129,7 @@ sub loadmodules
 {
 	my $self = shift;
 	my @modules;
-	my $IO   = $self->{'core'}->{'IO'};
+	my $IO   = $Init->getIO();
 	my $path = $self->{'Base'}->{'pwd'} . $self->{'Base'}->{'path'};
 	local *DIR;
 	if ( !opendir( DIR, "$path" ) )
@@ -147,7 +148,7 @@ sub loadmodules
 		if ($@)
 		{
 			$IO->print_error($@);
-			delete $INC{ $path. "/" . $name };
+			delete $INC{ $path . "/" . $name };
 			next;
 		}
 		$self->{'modules'}->{$name} = $self->loadmodule($name);

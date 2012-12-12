@@ -2,14 +2,17 @@
 use warnings;
 use Nemesis::Init;
 
+# Guardare
+#http://search.cpan.org/~flora/Devel-Declare-0.006006/lib/Devel/Declare.pm
+#http://search.cpan.org/~flora/B-Hooks-Parser-0.09/lib/B/Hooks/Parser.pm
+#Guarda test.pl nella home
 #External
 use Getopt::Long;
 use Term::ReadLine::Gnu;
 ##General Settings
-my $Init = new Nemesis::Init();
-
-my $output       = $Init->{'Io'};
-my $moduleloader = $Init->{'ModuleLoader'};
+my $Init         = new Nemesis::Init();
+my $output       = $Init->getIO();
+my $moduleloader = $Init->getModuleLoader();
 $output->print_ascii( 'ascii/logo.txt', "red on_black bold" );
 $output->print_ascii( 'ascii/motd.txt', "red on_black bold" );
 $Init->{'Interfaces'}->print_devices();

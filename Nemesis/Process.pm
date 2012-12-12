@@ -3,24 +3,23 @@ package Nemesis::Process;
 	use Carp qw( croak );
 	use Unix::PID;
 	use Data::Dumper;
+	our $Init;
 
 	sub new
 	{
 		my $package = shift;
 		bless( {}, $package );
-		%{ $package->{'core'} } = @_;
+		%{$package} = @_;
 		my $pid;
 		my $output;
-		croak "IO and environment must be defined\n"
-			if (    !defined( $package->{'core'}->{'IO'} )
-				 || !defined( $package->{'core'}->{'env'} ) );
+		$Init = $package->{'Init'};
 		return $package;
 	}
 
 	sub info
 	{
 		my $self = shift;
-		$self->{'core'}->{'IO'}->print_info("Process: a main module.");
+		$Init->getIO()->print_info("Process: a main module.");
 	}
 
 	sub start
@@ -42,8 +41,7 @@ package Nemesis::Process;
 				$state = $self->fork();
 			}
 		}
-		$self->{'core'}->{'IO'}
-			->debug( "Running: " . $self->{'CONFIG'}->{'code'} );
+		$Init->getIO()->debug( "Running: " . $self->{'CONFIG'}->{'code'} );
 		return $state ? $self->get_id() : ();
 	}
 
@@ -61,13 +59,13 @@ package Nemesis::Process;
 	{
 		my $self = shift;
 		$self->stop();
-		unlink(   $self->{'core'}->{'env'}->tmp_dir() . "/"
+		unlink(   $Init->getEnv()->tmp_dir() . "/"
 				. $self->{'CONFIG'}->{'INDEX'}
 				. ".lock" );
-		unlink(   $self->{'core'}->{'env'}->tmp_dir() . "/"
+		unlink(   $Init->getEnv()->tmp_dir() . "/"
 				. $self->{'CONFIG'}->{'INDEX'}
 				. ".out" );
-		unlink(   $self->{'core'}->{'env'}->tmp_dir() . "/"
+		unlink(   $Init->getEnv()->tmp_dir() . "/"
 				. $self->{'CONFIG'}->{'INDEX'}
 				. ".pid" );
 	}
@@ -89,16 +87,13 @@ package Nemesis::Process;
 	{
 		my $self            = shift;
 		my $generated_index = int( rand(9000) );
-		while (   -e $self->{'core'}->{'env'}->tmp_dir() . "/"
-				. $generated_index
-				. ".lock" )
+		while (
+			  -e $Init->getEnv()->tmp_dir() . "/" . $generated_index . ".lock" )
 		{
 			$generated_index = int( rand() );
 		}
 		open FILE,
-			  ">"
-			. $self->{'core'}->{'env'}->tmp_dir() . "/"
-			. $generated_index . ".lock";
+			">" . $Init->getEnv()->tmp_dir() . "/" . $generated_index . ".lock";
 		foreach my $key ( sort( keys %{ $self->{'CONFIG'} } ) )
 		{
 			next if $key eq "ID";
@@ -106,7 +101,7 @@ package Nemesis::Process;
 			next if $key eq "env";
 			print FILE "$key:" . $self->{'CONFIG'}->{$key} . "\n";
 		}
-		print FILE "TIME:" . $self->{'core'}->{'env'}->time() . "\n";
+		print FILE "TIME:" . $Init->getEnv()->time() . "\n";
 		close FILE;
 		return $generated_index;
 	}
@@ -115,8 +110,7 @@ package Nemesis::Process;
 	{
 		my $self = shift;
 		my $id   = $_[0];
-		open FILE,
-			"<" . $self->{'core'}->{'env'}->tmp_dir() . "/" . $id . ".lock";
+		open FILE, "<" . $Init->getEnv()->tmp_dir() . "/" . $id . ".lock";
 		my @FILE = <FILE>;
 		close FILE;
 		chomp(@FILE);
@@ -141,12 +135,12 @@ package Nemesis::Process;
 		my $this_pid = Unix::PID->new();
 		my $p;
 		my $cmd =
-			$self->{'core'}->{'IO'}
-			->generate_command( $self->{'CONFIG'}->{'code'} );
-		#$self->{'core'}->{'IO'}->set_debug(1);
+			$Init->getIO()->generate_command( $self->{'CONFIG'}->{'code'} );
+
+		#$Init->getIO()->set_debug(1);
 		if ( system($cmd) == 0 )
 		{
-			$self->{'core'}->{'IO'}
+			$Init->getIO()
 				->debug("Daemon released me, now i try to search for $cmd");
 			if ( $p = $self->pidof($cmd) )
 			{
@@ -155,7 +149,8 @@ package Nemesis::Process;
 				return 1;
 			} else
 			{
-				$self->{'core'}->{'IO'}->print_error(
+				$Init->getIO()
+					->print_error(
 					"PID Cannnot be found destroying the process, look at your process activity and kill manually: "
 						. $self->{'CONFIG'}->{'code'} );
 				$self->destroy();
@@ -163,12 +158,13 @@ package Nemesis::Process;
 			}
 		} else
 		{
-			$self->{'core'}->{'IO'}
+			$Init->getIO()
 				->print_error("Something went wrong, i'm destroying myself");
 			$self->destroy();
 			return ();
 		}
-		#$self->{'core'}->{'IO'}->set_debug(0);
+
+		#$Init->getIO()->set_debug(0);
 	}
 
 	sub fork
@@ -189,7 +185,7 @@ package Nemesis::Process;
 			{
 				my $this_pid = Unix::PID->new();
 				my $cmd =
-					$self->{'core'}->{'IO'}
+					$Init->getIO()
 					->generate_command( $self->{'CONFIG'}->{'code'} );
 				open( $handle, "$cmd  2>&1 |" )
 					or croak "Failed to open pipeline $!";
@@ -203,7 +199,7 @@ package Nemesis::Process;
 					$self->remove_lock();
 				} else
 				{
-					$self->{'core'}->{'IO'}
+					$Init->getIO()
 						->print_alert("Can't get pid of the forked process");
 					$self->destroy();
 					close($handle);
@@ -220,7 +216,7 @@ package Nemesis::Process;
 		my $p;
 		my @PIECES = split( /\s+/, $_[0] );
 		my %matr;
-		$self->{'core'}->{'IO'}->debug( "getting the pid of: " . $PIECES[0] );
+		$Init->getIO()->debug( "getting the pid of: " . $PIECES[0] );
 		foreach my $piece (@PIECES)
 		{
 			my @FOUND_PIDS = $this_pid->get_pidof($piece);
@@ -234,7 +230,7 @@ package Nemesis::Process;
 			$p = $_;
 			last;
 		}    # end-foreach
-		$self->{'core'}->{'IO'}->debug( "MAX PID " . $p );
+		$Init->getIO()->debug( "MAX PID " . $p );
 		return ($p);
 	}
 
@@ -243,7 +239,7 @@ package Nemesis::Process;
 		my $self = shift;
 		open FILE,
 			  ">"
-			. $self->{'core'}->{'env'}->tmp_dir() . "/"
+			. $Init->getEnv()->tmp_dir() . "/"
 			. $self->{'CONFIG'}->{'INDEX'} . ".pid";
 		print FILE $_[0];
 		close FILE;
@@ -255,7 +251,7 @@ package Nemesis::Process;
 		my $self = shift;
 		open FILE,
 			  ">>"
-			. $self->{'core'}->{'env'}->tmp_dir() . "/"
+			. $Init->getEnv()->tmp_dir() . "/"
 			. $self->{'CONFIG'}->{'INDEX'} . ".out";
 		print FILE $_[0];
 		close FILE;
@@ -268,7 +264,7 @@ package Nemesis::Process;
 		{
 			open FILE,
 				  ">"
-				. $self->{'core'}->{'env'}->tmp_dir() . "/"
+				. $Init->getEnv()->tmp_dir() . "/"
 				. $self->{'CONFIG'}->{'INDEX'} . ".out";
 			print FILE @_;
 			close FILE;
@@ -276,7 +272,7 @@ package Nemesis::Process;
 		{
 			open FILE,
 				  ">"
-				. $self->{'core'}->{'env'}->tmp_dir() . "/"
+				. $Init->getEnv()->tmp_dir() . "/"
 				. $self->{'CONFIG'}->{'INDEX'} . ".out";
 			print FILE $_[0];
 			close FILE;
@@ -288,7 +284,7 @@ package Nemesis::Process;
 		my $self = shift;
 		open FILE,
 			  "<"
-			. $self->{'core'}->{'env'}->tmp_dir() . "/"
+			. $Init->getEnv()->tmp_dir() . "/"
 			. $self->{'CONFIG'}->{'INDEX'} . ".pid";
 		my @pid = <FILE>;
 		close FILE;
@@ -299,20 +295,20 @@ package Nemesis::Process;
 	{
 		my $self = shift;
 		return
-			  $self->{'core'}->{'env'}->tmp_dir() . "/"
+			  $Init->getEnv()->tmp_dir() . "/"
 			. $self->{'CONFIG'}->{'INDEX'} . ".out";
 	}
 
 	sub get_output()
 	{
 		my $self = shift;
-		if (   -e $self->{'core'}->{'env'}->tmp_dir() . "/"
+		if (   -e $Init->getEnv()->tmp_dir() . "/"
 			 . $self->{'CONFIG'}->{'INDEX'}
 			 . ".out" )
 		{
 			open FILE,
 				  "<"
-				. $self->{'core'}->{'env'}->tmp_dir() . "/"
+				. $Init->getEnv()->tmp_dir() . "/"
 				. $self->{'CONFIG'}->{'INDEX'} . ".out";
 			my @out = <FILE>;
 			close FILE;
@@ -332,13 +328,13 @@ package Nemesis::Process;
 	sub output()
 	{
 		my $self = shift;
-		if (   -e $self->{'core'}->{'env'}->tmp_dir() . "/"
+		if (   -e $Init->getEnv()->tmp_dir() . "/"
 			 . $self->{'CONFIG'}->{'INDEX'}
 			 . ".out" )
 		{
 			open FILE,
 				  "<"
-				. $self->{'core'}->{'env'}->tmp_dir() . "/"
+				. $Init->getEnv()->tmp_dir() . "/"
 				. $self->{'CONFIG'}->{'INDEX'} . ".out";
 			return FILE;
 		} else
@@ -350,7 +346,7 @@ package Nemesis::Process;
 	sub remove_lock()
 	{
 		my $self = shift;
-		unlink(   $self->{'core'}->{'env'}->tmp_dir() . "/"
+		unlink(   $Init->getEnv()->tmp_dir() . "/"
 				. $self->{'CONFIG'}->{'INDEX'}
 				. ".lock" );
 	}

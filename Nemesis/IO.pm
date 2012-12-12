@@ -3,17 +3,16 @@ use warnings;
 use Term::UI;    #VOGLIO PASSARE A IO LA FUNZIONE di term::readline
 use Term::ANSIColor;
 use Carp qw( croak );
-
+our $Init;
 sub new
 {
 	my $package = shift;
 	bless( {}, $package );
-	my (%config) = @_;
-	%{ $package->{'CONFIG'} } = %config;
-
+	%{ $package } = @_;
+	$Init=$package->{'Init'};
 	#open STDIN, '/dev/null'   or die "Can't read /dev/null: $!";
 	#open STDOUT, '>>/dev/null';
-	open STDERR,'>>/dev/null';
+	#open STDERR,'>>/dev/null';
 	umask 0;
 	return $package;
 }
@@ -23,17 +22,12 @@ sub get_completion_color
 	return colored( '->', 'cyan bold on_black' );
 }
 
-sub set_session()
-{
-	my $self = shift;
-	$self->{'CONFIG'}->{'SESSION'} = $_[0];
-}
 
 sub get_prompt_out
 {
 	my $self = shift;
 	return colored( "Nemesis", "green on_black" )
-		. colored( "<" . $self->{'CONFIG'}->{'SESSION'} . ">",
+		. colored( "<" . $Init->getSession()->getName() . ">",
 				   "white on_black" )
 		. colored( "# ", "blue on_black blink" );
 }
@@ -43,7 +37,7 @@ sub print_ascii
 	my $self  = shift;
 	my $FILE  = $_[0];
 	my $COLOR = $_[1];
-	my $REAL_FILE= $self->{'CONFIG'}->{'env'}->{'ProgramPath'}."/".$FILE;
+	my $REAL_FILE= $Init->getEnv()->{'ProgramPath'}."/".$FILE;
 	open( my $fh, "<" . $REAL_FILE ) or croak("Can't open $REAL_FILE");
 	while ( my $line = <$fh> )
 	{
@@ -71,7 +65,7 @@ sub print_verbose()
 {
 	my $self = shift;
 	my $text = $_[0];
-	if ( $self->{'CONFIG'}->{'verbose'} == 1 )
+	if ( $self->{'verbose'} == 1 )
 	{
 		print "[! Nemesis Verbose !]\t" . $text . "\n";
 	}
@@ -80,14 +74,14 @@ sub print_verbose()
 sub debug()
 {
 	my $self = shift;
-	if ( exists( $self->{'CONFIG'}->{'debug'} )
-		 and $self->{'CONFIG'}->{'debug'} == 1 )
+	if ( exists( $self->{'debug'} )
+		 and $self->{'debug'} == 1 )
 	{
 		print colored( "[",     "magenta on_black bold" )
 			. colored( "Debug", "white on_black bold" )
 			. colored( "]",     "magenta on_black bold" )
 			. colored( " (",    "magenta on_black bold" )
-			. colored( $self->{'CONFIG'}->{'env'}->time_seconds(),
+			. colored( $Init->getEnv()->time_seconds(),
 					   "bold on_black white" )
 			. colored( ") ",  "magenta on_black bold" )
 			. colored( $_[0], "white on_black bold" ) . "\n";
@@ -101,7 +95,7 @@ sub print_info()
 		. colored( "**", "green on_black bold" )
 		. colored( "]",  "magenta on_black bold" )
 		. colored( " (", "magenta on_black bold" )
-		. colored( $self->{'CONFIG'}->{'env'}->time_seconds(),
+			. colored( $Init->getEnv()->time_seconds(),
 				   "bold on_black cyan" )
 		. colored( ") ",  "magenta on_black bold" )
 		. colored( $_[0], "blue on_black bold" ) . "\n";
@@ -114,7 +108,7 @@ sub print_error()
 		. colored( "Err", "red on_black bold" )
 		. colored( "]",   "magenta on_black bold" )
 		. colored( " (",  "magenta on_black bold" )
-		. colored( $self->{'CONFIG'}->{'env'}->time_seconds(),
+			. colored( $Init->getEnv()->time_seconds(),
 				   "bold on_black red" )
 		. colored( ") ",  "magenta on_black bold" )
 		. colored( $_[0], "red on_black" ) . "\n";
@@ -182,7 +176,7 @@ sub exec()
 {
 	my $self    = shift;
 	my $command = $_[0];
-	my $env     = $self->{'CONFIG'}->{'env'};
+	my $env     = $Init->getEnv();
 	my @output;
 	my @path = $env->path();
 	my @commands;
@@ -209,14 +203,14 @@ sub verbose()
 {
 	my $self = shift;
 	$self->print_info( "Verbose mode " . $_[0] );
-	$self->{'CONFIG'}->{'verbose'} = $_[0];
+	$self->{'verbose'} = $_[0];
 }
 
 sub set_debug()
 {
 	my $self = shift;
 	$self->print_info( "Debug mode " . $_[0] );
-	$self->{'CONFIG'}->{'debug'} = $_[0];
+	$self->{'debug'} = $_[0];
 }
 
 sub unici
@@ -236,7 +230,7 @@ sub generate_command()
 {
 	my $self    = shift;
 	my $command = $_[0];
-	my $env     = $self->{'CONFIG'}->{'env'};
+	my $env     = $Init->getEnv();
 	my @path    = $env->path();
 	if ( $command =~ / / )
 	{

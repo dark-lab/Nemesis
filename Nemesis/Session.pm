@@ -9,26 +9,28 @@ package Nemesis::Session;
 	my $CONF =
 		{ VARS => { SESSION_DIR => "Sessions", FLOWFILE => ".execution_flow" }
 		};
+	our $Init;
 
 	sub new
 	{
 		my $package = shift;
 		bless( {}, $package );
-		%{ $package->{'core'} } = @_;
-		if ( exists( $package->{'core'}->{'env'} ) )
-		{
-			if ( !-d $package->{'core'}->{'env'}->workspace() . "/"
+		%{ $package } = @_;
+		$Init= $package->{'Init'};
+
+			if ( !-d $Init->getEnv()->workspace() . "/"
 				 . $CONF->{'VARS'}->{'SESSION_DIR'} )
 			{
-				mkdir(   $package->{'core'}->{'env'}->workspace() . "/"
+				mkdir(   $Init->getEnv()->workspace() . "/"
 					   . $CONF->{'VARS'}->{'SESSION_DIR'} );
 			}
-		}
+		
 		$package->{'CONF'}->{'VARS'}->{'SESSION_DIR'} =
 			$CONF->{'VARS'}->{'SESSION_DIR'};
 		return $package;
 	}
 	sub getSessionPath{
+		my $self=shift;
 		return $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'};
 	}
 
@@ -61,7 +63,7 @@ package Nemesis::Session;
 		my $session_dir;
 		my $id;
 		$session_dir =
-			  $self->{'core'}->{'env'}->workspace() . "/"
+			  $Init->getEnv()->workspace() . "/"
 			. $self->{'CONF'}->{'VARS'}->{'SESSION_DIR'} . "/"
 			. $session_name;
 		if ( !-d $session_dir )
@@ -72,14 +74,14 @@ package Nemesis::Session;
 		{
 			$id = $session_name . time;
 			$session_dir =
-				  $self->{'core'}->{'env'}->workspace() . "/"
+				  $Init->getEnv()->workspace() . "/"
 				. $self->{'CONF'}->{'VARS'}->{'SESSION_DIR'} . "/"
 				. $id;
 			while ( -d $session_dir )
 			{
 				$id = $session_name . time;
 				$session_dir =
-					  $self->{'core'}->{'env'}->workspace() . "/"
+					  $Init->getEnv()->workspace() . "/"
 					. $self->{'CONF'}->{'VARS'}->{'SESSION_DIR'} . "/"
 					. $id;
 			}
@@ -107,7 +109,7 @@ package Nemesis::Session;
 		my $self = shift;
 		if ( $_[0] )
 		{
-			if (   -d $self->{'core'}->{'env'}->workspace() . "/"
+			if (   -d $Init->getEnv()->workspace() . "/"
 				 . $CONF->{'VARS'}->{'SESSION_DIR'} . "/"
 				 . $_[0] )
 			{
@@ -126,6 +128,10 @@ package Nemesis::Session;
 				return 0;
 			}
 		}
+	}
+	sub getName{
+		my $self=shift;
+		return $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'};
 	}
 
 	sub execute_save
@@ -151,18 +157,17 @@ package Nemesis::Session;
 		my $session_dir;
 		my $id;
 		$session_dir =
-			  $self->{'core'}->{'env'}->workspace() . "/"
+			  $Init->getEnv()->workspace() . "/"
 			. $self->{'CONF'}->{'VARS'}->{'SESSION_DIR'} . "/"
 			. $session_name;
 		if ( !-d $session_dir )
 		{
 			croak "No Session found with that name!";
 		}
-		$self->{'CONF'}->{'VARS'}->{'SESSION_NAME'}          = $$session_name;
+		$self->{'CONF'}->{'VARS'}->{'SESSION_NAME'}          = $session_name;
 		$self->{'CONF'}->{'VARS'}->{'SESSION_PATH_STRIPPED'} = $session_dir;
 		$session_dir =~ s/\s+/\\ /g;
 		$self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} = $session_dir;
-		$self->{'core'}->{'IO'}->set_session($session_name);
 		chdir($self->{'CONF'}->{'VARS'}->{'SESSION_PATH'});
 	}
 
@@ -171,8 +176,8 @@ package Nemesis::Session;
 
 		#Method to wrap all!
 		my $self         = shift;
-		my $ModuleLoader = $self->{'core'}->{'ModuleLoader'};
-		my $IO           = $self->{'core'}->{'IO'};
+		my $ModuleLoader = $Init->getModuleLoader();
+		my $IO           =$Init->getIO();
 		open my $COMMAND_LOG, "<",
 			$self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/"
 			. $CONF->{'VARS'}->{'FLOWFILE'};
