@@ -16,6 +16,7 @@ my $moduleloader = $Init->getModuleLoader();
 $output->print_ascii( 'ascii/logo.txt', "red on_black bold" );
 $output->print_ascii( 'ascii/motd.txt', "red on_black bold" );
 $Init->{'Interfaces'}->print_devices();
+$Init->checkroot();
 $SIG{'INT'} = sub { $Init->sighandler(); };
 
 # Setting the terminal
@@ -68,13 +69,16 @@ my $list = join( " ", @PUBLIC_LIST );
 # Main loop. This is inspired from the POD page of Term::Readline.
 while ( defined( $_ = $nemesis_t->readline( $output->get_prompt_out() ) ) )
 {
-	my @cmd = split( / /, $_ );
+	my @cmd = split( /\s*("[^"]+"|[^\s"]+)/, $_ );
+	@cmd = $output->sanitize(@cmd);    #Depure from evil!
+	shift(@cmd);
 	my $command = shift(@cmd);
+	next if !$command;
 	if ( $command eq "reload" )
 	{
 		$output->print_title("Reloading modules..");
 		if ( $moduleloader->loadmodules() != 1 )
-		{    # loadmodules error
+		{                              # loadmodules error
 			$output->print_error($_);
 			exit;
 		}
@@ -98,7 +102,7 @@ while ( defined( $_ = $nemesis_t->readline( $output->get_prompt_out() ) ) )
 		}
 	} else
 	{
-		$moduleloader->execute("shell","run",$command,@cmd);
+		$moduleloader->execute( "shell", "run", $command, @cmd );
 	}
 	warn $@ if $@;
 	print "\n";

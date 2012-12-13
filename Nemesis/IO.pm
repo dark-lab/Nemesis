@@ -4,12 +4,14 @@ use Term::UI;    #VOGLIO PASSARE A IO LA FUNZIONE di term::readline
 use Term::ANSIColor;
 use Carp qw( croak );
 our $Init;
+
 sub new
 {
 	my $package = shift;
 	bless( {}, $package );
-	%{ $package } = @_;
-	$Init=$package->{'Init'};
+	%{$package} = @_;
+	$Init = $package->{'Init'};
+
 	#open STDIN, '/dev/null'   or die "Can't read /dev/null: $!";
 	#open STDOUT, '>>/dev/null';
 	#open STDERR,'>>/dev/null';
@@ -22,22 +24,23 @@ sub get_completion_color
 	return colored( '->', 'cyan bold on_black' );
 }
 
-
 sub get_prompt_out
 {
 	my $self = shift;
-	return colored( "Nemesis", "green on_black" )
-		. colored( "\@" ,"white on_black") . colored ($Init->getSession()->getName(),"cyan on_black" ) .colored( ">",
-				   "white on_black" )
-		. colored( "# ", "blue on_black blink" );
+	return
+		  colored( "Nemesis", "green on_black" )
+		. colored( "\@",                           "white on_black" )
+		. colored( $Init->getSession()->getName(), "cyan on_black" )
+		. colored( ">",                            "white on_black" )
+		. colored( "# ",                           "blue on_black blink" );
 }
 
 sub print_ascii
 {
-	my $self  = shift;
-	my $FILE  = $_[0];
-	my $COLOR = $_[1];
-	my $REAL_FILE= $Init->getEnv()->{'ProgramPath'}."/".$FILE;
+	my $self      = shift;
+	my $FILE      = $_[0];
+	my $COLOR     = $_[1];
+	my $REAL_FILE = $Init->getEnv()->{'ProgramPath'} . "/" . $FILE;
 	open( my $fh, "<" . $REAL_FILE ) or croak("Can't open $REAL_FILE");
 	while ( my $line = <$fh> )
 	{
@@ -81,8 +84,7 @@ sub debug()
 			. colored( "Debug", "white on_black bold" )
 			. colored( "]",     "magenta on_black bold" )
 			. colored( " (",    "magenta on_black bold" )
-			. colored( $Init->getEnv()->time_seconds(),
-					   "bold on_black white" )
+			. colored( $Init->getEnv()->time_seconds(), "bold on_black white" )
 			. colored( ") ",  "magenta on_black bold" )
 			. colored( $_[0], "white on_black bold" ) . "\n";
 	}
@@ -91,27 +93,25 @@ sub debug()
 sub print_info()
 {
 	my $self = shift;
-	print colored( "[",  "magenta on_black bold" )
-		. colored( "**", "green on_black bold" )
-		. colored( "]",  "magenta on_black bold" )
-		. colored( " (", "magenta on_black bold" )
-			. colored( $Init->getEnv()->time_seconds(),
-				   "bold on_black cyan" )
-		. colored( ") ",  "magenta on_black bold" )
+	print colored( "[",                             "magenta on_black bold" )
+		. colored( "**",                            "green on_black bold" )
+		. colored( "]",                             "magenta on_black bold" )
+		. colored( " (",                            "magenta on_black bold" )
+		. colored( $Init->getEnv()->time_seconds(), "bold on_black cyan" )
+		. colored( ") ",                            "magenta on_black bold" )
 		. colored( $_[0], "blue on_black bold" ) . "\n";
 }
 
 sub print_error()
 {
 	my $self = shift;
-	print colored( "[",   "magenta on_black bold" )
-		. colored( "Err", "red on_black bold" )
-		. colored( "]",   "magenta on_black bold" )
-		. colored( " (",  "magenta on_black bold" )
-			. colored( $Init->getEnv()->time_seconds(),
-				   "bold on_black red" )
-		. colored( ") ",  "magenta on_black bold" )
-		. colored( $_[0], "red on_black" ) . "\n";
+	print colored( "[",                             "magenta on_black bold" )
+		. colored( "Err",                           "red on_black bold" )
+		. colored( "]",                             "magenta on_black bold" )
+		. colored( " (",                            "magenta on_black bold" )
+		. colored( $Init->getEnv()->time_seconds(), "bold on_black red" )
+		. colored( ") ",                            "magenta on_black bold" )
+		. colored( $_[0],                           "red on_black" ) . "\n";
 }
 
 sub print_tabbed
@@ -185,8 +185,16 @@ sub exec()
 	{
 		$final = $self->generate_command($command);
 	}
-	my $cwd = $Init->getSession()->{'CONF'}->{'VARS'}->{'SESSION_PATH'} ;
-	@output = `cd $cwd;$final`;
+	my $cwd = $Init->getSession()->{'CONF'}->{'VARS'}->{'SESSION_PATH'};
+	open( my $handle, "cd $cwd;$final  2>&1 |" )
+		or croak "Failed to open pipeline $!";
+	while (<$handle>)
+	{
+		push( @output, $_ );
+	}
+	close($handle);
+
+	#@output = `cd $cwd;$final`;
 	chomp(@output);
 	return @output;
 }
@@ -213,6 +221,17 @@ sub unici
 	{
 		$elemento =~ s/\/+/\//g;
 		next if $visti{$elemento}++;
+		push @unici, $elemento;
+	}
+	return @unici;
+}
+
+sub sanitize
+{
+	my @unici = ();
+	foreach my $elemento (@_)
+	{
+		next if $elemento eq "";
 		push @unici, $elemento;
 	}
 	return @unici;

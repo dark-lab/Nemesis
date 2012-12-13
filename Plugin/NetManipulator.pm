@@ -1,6 +1,7 @@
 package Plugin::NetManipulator;
 use warnings;
 use Nemesis::Process;
+use Nemesis::Inject;
 my $VERSION = '0.1a';
 my $AUTHOR  = "mudler";
 my $MODULE  = "NetManipulator Module";
@@ -10,28 +11,7 @@ my $INFO    = "<www.dark-lab.net>";
 
 my @PUBLIC_FUNCTIONS =
     qw(video_redirect restart start stop cud_regex);    #NECESSARY
-
-sub new {                                               #NECESSARY
-     #Usually new(), export_public_methods() and help() can be copyed from other plugins
-    my $package = shift;
-    bless( {}, $package );
-    my (%Obj) = @_;
-    %{ $package->{'core'} } = %Obj;
-
-    #Here goes the required parameters to be passed
-
-    die("IO and environment must be defined\n")
-        if ( !defined( $package->{'core'}->{'IO'} )
-        || !defined( $package->{'core'}->{'env'} ) );
-
-    return $package;
-}
-
-sub export_public_methods() {    #NECESSARY
-    my $self = shift;
-
-    return @PUBLIC_FUNCTIONS;
-}
+nemesis_module;
 
 sub help() {                     #NECESSARY
     my $self    = shift;

@@ -1,10 +1,11 @@
 package Nemesis::Process;
 {
-	
+
 	#TODO: Add support to threads
 	use Carp qw( croak );
 	use Unix::PID;
 	use Data::Dumper;
+	use Coro;
 	our $Init;
 
 	sub new
@@ -38,6 +39,9 @@ package Nemesis::Process;
 			if ( $self->{'CONFIG'}->{'type'} eq 'daemon' )
 			{
 				$state = $self->daemon();
+			} elsif ( $self->{'CONFIG'}->{'type'} eq 'thread' )
+			{
+				$self->thread();
 			} else
 			{
 				$state = $self->fork();
@@ -47,9 +51,31 @@ package Nemesis::Process;
 		return $state ? $self->get_id() : ();
 	}
 
+	sub getInstance()
+	{
+		my $self = shift;
+		if ( $self->{'CONFIG'}->{'type'} eq 'thread' )
+		{
+			return $self->{'INSTANCE'};
+		}
+	}
+
+	sub thread()
+	{
+		my $self = shift;
+		$self->{'INSTANCE'} = async
+		{
+			eval( $self->{'CONFIG'}->{'code'} );
+		};
+	}
+
 	sub stop()
 	{
 		my $self = shift;
+		if ( exists( $self->{'INSTANCE'} ) )
+		{
+			$self->{'INSTANCE'}->cancel();
+		}
 		if ( $self->get_pid() )
 		{
 			kill 9 => $self->get_pid();
