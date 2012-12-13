@@ -13,14 +13,16 @@ package Nemesis::Init;
 	{
 		my $package = shift;
 		bless( {}, $package );
+		
 		$package->{'Env'} = new Nemesis::Env( Init => $package );
+				$package->{'Session'} = new Nemesis::Session( Init => $package );
+		
 		$package->{'Io'} =
 			new Nemesis::IO( debug   => 1,
 							 verbose => 0,
 							 Init    => $package
 			);
 		$package->{'Interfaces'} = new Nemesis::Interfaces( Init => $package );
-		$package->{'Session'} = new Nemesis::Session( Init => $package );
 		if ( $package->{'Session'}->exists("default_session") )
 		{
 			$package->{'Session'}->restore("default_session");
@@ -55,7 +57,7 @@ package Nemesis::Init;
 		my $self = shift;
 		if ( exists( $self->{'Session'} ) )
 		{
-			$self->{'Session'}->save();
+		#	$self->{'Session'}->save();
 		}
 		$self->{'ModuleLoader'}->execute_on_all("clear");
 		exit;

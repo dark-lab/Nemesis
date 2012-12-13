@@ -1,5 +1,7 @@
 package Nemesis::Process;
 {
+	
+	#TODO: Add support to threads
 	use Carp qw( croak );
 	use Unix::PID;
 	use Data::Dumper;

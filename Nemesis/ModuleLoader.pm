@@ -1,6 +1,7 @@
 package Nemesis::ModuleLoader;
 use Carp qw( croak );
 use Storable qw(dclone freeze thaw);
+use TryCatch;
 
 #external modules
 my $base = { 'path'         => 'Plugin',
@@ -25,18 +26,19 @@ sub execute
 	my $self    = shift;
 	my $module  = shift @_;
 	my $command = shift @_;
+	my @ARGS=@_;
 
 	# my $object  = "$self->{'Base'}->{'path'}::$module";
 	#eval( "$self->{'Base'}->{'path'}::$module"->$command(@_) );
-	$self->{'modules'}->{$module}->$command(@_);
-	$Init->getSession()->execute_save( $module, $command, @_ )
-		if $module ne "session";
-
-# TODO: Questo è un modo per scavalcare il problema... salvo la history e la ripristino..
-	if ($@)
+	try
 	{
-		$Init->getIO->print_error("Something went wrong with $command: $@");
+		$self->{'modules'}->{$module}->$command(@ARGS);
+		$Init->getSession()->execute_save( $module, $command, @ARGS )
+			if $module ne "session";
 	}
+	catch($error) {
+		$Init->getIO->print_error("Something went wrong with $command: $error");
+	};
 }
 
 sub execute_on_all
@@ -46,13 +48,15 @@ sub execute_on_all
 	my @command = @_;
 	foreach my $module ( sort( keys %{ $self->{'modules'} } ) )
 	{
-		eval("$self->{'modules'}->{$module}->$met(@command)");
-		if ($@)
+		try
 		{
-			$Init->getIO->print_error(
-				"Something went wrong calling the method '$met' on '$module': $@"
-			);
+			$self->{'modules'}->{$module}->$met(@command);
 		}
+		catch($error) {
+			$Init->getIO->print_error(
+				"Something went wrong calling the method '$met' on '$module': $error (Maybe your clear sub is missing?)"
+			);
+		};
 	}
 }
 
@@ -64,13 +68,20 @@ sub export_public_methods()
 	foreach my $module ( sort( keys %{ $self->{'modules'} } ) )
 	{
 		@PUBLIC_FUNC = ();
-		@PUBLIC_FUNC =
-			eval { $self->{'modules'}->{$module}->export_public_methods() };
-		foreach my $method (@PUBLIC_FUNC)
+		try
 		{
-			$method = $module . "." . $method;
+			@PUBLIC_FUNC =
+				eval { $self->{'modules'}->{$module}->export_public_methods() };
+			foreach my $method (@PUBLIC_FUNC)
+			{
+				$method = $module . "." . $method;
+			}
+			push( @OUT, @PUBLIC_FUNC );
 		}
-		push( @OUT, @PUBLIC_FUNC );
+		catch($error) {
+			$Init->getIO()->print_error(
+						  "Error $error raised when populating public methods");
+		};
 	}
 	return @OUT;
 }
@@ -107,22 +118,27 @@ sub loadmodule()
 	{
 		return ();
 	}
-	$IO->debug("Module $module found in $base");
+
+	#$IO->debug("Module $module found in $base");
 	my $object = "$base" . "::" . "$module";
-	$object = eval {
+	try
+	{
+		my $o     = dclone( \$object );
+		my $realO = $$o;
+		$object = $realO->new( Init => $Init );
+	}
+	catch($error) {
+		$Init->getIO()
+			->print_error("Something went wrong loading $object: $error");
+			return ();
+		} $object = eval
+	{
 		my $o     = dclone( \$object );
 		my $realO = $$o;
 		return $realO->new( Init => $Init );
 	};
-	if ($@)
-	{
-		$Init->getIO()->print_error("Something went wrong: $@");
-		return ();
-	} else
-	{
-		$Init->getIO()->debug("Module $module correctly loaded");
-		return $object;
-	}
+	$Init->getIO()->debug("Module $module correctly loaded");
+	return $object;
 }
 
 sub loadmodules
@@ -134,7 +150,9 @@ sub loadmodules
 	local *DIR;
 	if ( !opendir( DIR, "$path" ) )
 	{
-		return "[LOADMODULES] - (*) No such file or directory ($path)";
+		$IO->print_error(
+					   "[LOADMODULES] - (*) No such file or directory ($path)");
+		croak "No such file or directory ($path)";
 	}
 	my @files = grep( !/^\.\.?$/, readdir(DIR) );
 	closedir(DIR);
@@ -144,15 +162,17 @@ sub loadmodules
 	{
 		my $base = $path . "/" . $f;
 		my ($name) = $f =~ m/([^\.]+)\.pm/;
-		my $result = do($base);
-		if ($@)
+		try
 		{
-			$IO->print_error($@);
-			delete $INC{ $path . "/" . $name };
-			next;
+			my $result = do($base);
+			$self->{'modules'}->{$name} = $self->loadmodule($name);
+			$mods++;
 		}
-		$self->{'modules'}->{$name} = $self->loadmodule($name);
-		$mods++;
+		catch($error) {
+			$IO->print_error($error);
+				delete $INC{ $path . "/" . $name };
+				next;
+		};
 	}
 	$IO->print_info("> $mods modules available. Double tab to see them\n");
 

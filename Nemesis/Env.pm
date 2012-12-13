@@ -157,6 +157,7 @@ sub time()
 		. $hour . "-"
 		. $minute;
 }
+
 sub time_seconds()
 {
 	my $self     = shift;
@@ -169,6 +170,7 @@ sub time_seconds()
 	my $year = 1900 + $yearOffset;
 	if ( length($hour) == 1 )   { $hour   = "0" . $hour; }
 	if ( length($minute) == 1 ) { $minute = "0" . $minute; }
+	if ( length($second) == 1 ) { $second = "0" . $second; }
 	return "$hour:$minute:$second";
 }
 1;

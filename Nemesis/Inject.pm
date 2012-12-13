@@ -16,7 +16,11 @@ package Nemesis::Inject;
 $Init=$package->{\'Init\'};
 	return $package;
          }
-         
+         sub export_public_methods() {   
+    my $self = shift;
+
+    return @PUBLIC_FUNCTIONS;
+}
          
          ';  # inject 'if' at beginning of parse buffer
      };

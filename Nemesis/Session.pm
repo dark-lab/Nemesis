@@ -1,11 +1,7 @@
 package Nemesis::Session;
+use File::Path;
 {
 	use Carp qw( croak );
-	use Clone qw(clone);
-	use Storable qw( nstore store_fd nstore_fd freeze thaw dclone retrieve);
-	use Data::Dumper;
-	use Scalar::Util 'reftype';
-	use DBM::Deep;
 	my $CONF =
 		{ VARS => { SESSION_DIR => "Sessions", FLOWFILE => ".execution_flow" }
 		};
@@ -195,6 +191,8 @@ package Nemesis::Session;
 			my $method = shift(@FLOW_PIECES);
 			next if !$method;
 			my $ARGS = shift(@FLOW_PIECES);
+			next if !$ARGS;
+		
 			my @REAL_ARGS = split( '#', $ARGS );
 			$ModuleLoader->execute( $module, $method, @REAL_ARGS );
 		}
@@ -217,7 +215,8 @@ package Nemesis::Session;
 			}
 		} else
 		{
-			unlink( $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} );
+			chdir("..");
+			rmtree( $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} );
 		}
 		$self->restore("default_session");
 	}

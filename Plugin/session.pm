@@ -5,7 +5,7 @@ use Nemesis::Inject;
 use Data::Dumper;
 my $VERSION = '0.1a';
 my $AUTHOR  = "mudler";
-my $MODULE  = "SessionHandler Module";
+my $MODULE  = __PACKAGE__;
 my $INFO    = "<www.dark-lab.net>";
 my @PUBLIC_FUNCTIONS =
 	qw(list wrap spawn stash);    #Public exported functions NECESSARY
@@ -40,7 +40,7 @@ sub spawn()
 {
 	my $self         = shift;
 	my $Session_Name = $_[0];
-	my $Session      = $Init->getSession->{'Session'};
+	my $Session      = $Init->getSession();
 	my $RealId;
 	if ( $Session->exists($Session_Name) )
 	{
@@ -83,14 +83,14 @@ sub list()
 sub wrap
 {
 	my $self = shift;
+	$Init->getIO->print_info("Rolling back to your work session!");
 	$Init->getSession()->wrap();
 }
 
 sub stash
 {
-
-	#Give your session to the dogs
 	my $self = shift;
+	$Init->getIO()->print_info("Giving your session to the dogs");
 	$Init->getSession()->stash();
 }
 

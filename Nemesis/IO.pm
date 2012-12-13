@@ -27,7 +27,7 @@ sub get_prompt_out
 {
 	my $self = shift;
 	return colored( "Nemesis", "green on_black" )
-		. colored( "<" . $Init->getSession()->getName() . ">",
+		. colored( "\@" ,"white on_black") . colored ($Init->getSession()->getName(),"cyan on_black" ) .colored( ">",
 				   "white on_black" )
 		. colored( "# ", "blue on_black blink" );
 }
@@ -166,19 +166,11 @@ sub process_status
 	}
 }
 
-sub shell()
-{
-
-	#qui invece aprirà una shell
-}
-
 sub exec()
 {
 	my $self    = shift;
 	my $command = $_[0];
-	my $env     = $Init->getEnv();
 	my @output;
-	my @path = $env->path();
 	my @commands;
 	my $final;
 	if ( $command =~ /;/ )
@@ -193,7 +185,7 @@ sub exec()
 	{
 		$final = $self->generate_command($command);
 	}
-	my $cwd = $env->workspace();
+	my $cwd = $Init->getSession()->{'CONF'}->{'VARS'}->{'SESSION_PATH'} ;
 	@output = `cd $cwd;$final`;
 	chomp(@output);
 	return @output;

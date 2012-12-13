@@ -98,8 +98,7 @@ while ( defined( $_ = $nemesis_t->readline( $output->get_prompt_out() ) ) )
 		}
 	} else
 	{
-		$output->print_alert("Command not implemented, executing code");
-		eval $_;
+		$moduleloader->execute("shell","run",$command,@cmd);
 	}
 	warn $@ if $@;
 	print "\n";

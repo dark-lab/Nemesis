@@ -1,17 +1,16 @@
-package Plugin::Sniffer;
+package Plugin::sniffer;
 use warnings;
 use Carp qw( croak );
 use Nemesis::Process;
 use Nemesis::Session;
-use Nemesis::Injection;
+use Nemesis::Inject;
 my $VERSION = '0.1a';
 my $AUTHOR  = "mudler";
 my $MODULE  = "Sniffer Module";
 my $INFO    = "<www.dark-lab.net>";
-our $Init;
 #Public exported functions
 my @PUBLIC_FUNCTIONS =
-	qw(configure check_installation status where stop sniff spoof strip mitm)
+	qw(status stop sniff spoof strip mitm)
 	;    #NECESSARY
 
 nemesis_module;
