@@ -1,42 +1,72 @@
 package Plugin::metasploit;
 use warnings;
 use Carp qw( croak );
+use Nemesis::Inject;
 use Nemesis::Process;
+require Data::MessagePack;
+require LWP;
+require HTTP::Request;
 my $VERSION = '0.1a';
 my $AUTHOR  = "mudler";
 my $MODULE  = "Metasploit Module";
 my $INFO    = "<www.dark-lab.net>";
 
 #Public exported functions
+#TODO: for my insanity.... i Have to use THAT: https://github.com/SpiderLabs/msfrpc/tree/master/Net-MSFRPC
+# a look at https://github.com/SpiderLabs/msfrpc/blob/master/Net-MSFRPC/lib/Net/MSFRPC.pm
 my @PUBLIC_FUNCTIONS =
 	qw(configure msfrpcd check_installation status where stop status_pids)
 	;    #NECESSARY
 my $CONF = { VARS => { MSFRPCD_USER => 'spike',
 					   MSFRCPD_PASS => 'spiketest',
-					   MSFRCPD_PORT => 5553
+					   MSFRCPD_PORT => 5553,
+					   CLIENT       => LWP::UserAgent->new,
+					   HOST			=> '127.0.0.1',
+					   MSFRPCD_API => '/api/',
+					   MESSAGEPACK => Data::MessagePack->new()
 			 }
 };
+nemesis_module;
 
-sub new
-{        #NECESSARY
-	 #Usually new(), export_public_methods() and help() can be copyed from other plugins
-	my $package = shift;
-	bless( {}, $package );
-	my (%Obj) = @_;
-	%{ $package->{'core'} } = %Obj;
-
-	#Here goes the required parameters to be passed
-	croak("IO and environment must be defined\n")
-		if (    !defined( $package->{'core'}->{'IO'} )
-			 || !defined( $package->{'core'}->{'env'} )
-			 || !defined( $package->{'core'}->{'interfaces'} ) );
-	return $package;
+sub msfrpc_call()
+{
+	my $self = shift;
+	my $meth = shift;
+	my @opts = @_;
+	my $URL= 'http://'.$CONF{'VARS'}{'HOST'}.":".$CONF{'VARS'}{'MSFRPCD_PORT'}.$CONF{'VARS'}{'MSFRPCD_API'};
+	if ( $meth ne 'auth.login' and !$self->{_authenticated} )
+	{
+		croak("MSFRPC: Not Authenticated");
+		$self->msfrpc_login();
+	} elsif ( $meth ne 'auth.login' )
+	{
+		unshift @opts, $self->{_token};
+	}
+	unshift @opts, $meth;
+	my $req = new HTTP::Request( 'POST', $URL );
+	$req->content_type('binary/message-pack');
+	$req->content( $CONF{'VARS'}{'MESSAGEPACK'}->pack( \@opts ) );
+	my $res = $CONF{'VARS'}{'CLIENT'}->request($req);
+	croak( "MSFRPC: Could not connect to " . $URL )
+		if $res->code == 500;
+	croak("MSFRPC: Request failed ($meth)") if $res->code != 200;
+	return $CONF{'VARS'}{'MESSAGEPACK'}->unpack( $res->content );
 }
 
-sub export_public_methods()
-{    #NECESSARY
+sub msfrpc_login()
+{
 	my $self = shift;
-	return @PUBLIC_FUNCTIONS;
+	my $user = $CONF{'VARS'}{'MSFRPCD_USER'};
+	my $pass = $CONF{'VARS'}{'MSFRPCD_PASS'};
+	my $ret  = $self->call( 'auth.login', $user, $pass );
+	if ( $ret->{'result'} eq 'success' )
+	{
+		$self->{_token}         = $ret->{'token'};
+		$self->{_authenticated} = 1;
+	} else
+	{
+		croak("MSFRPC: Authentication Failure");
+	}
 }
 
 sub help()
@@ -56,7 +86,7 @@ sub clear()
 	1;
 }
 
-sub msfrpcd
+sub msfrpcd_start
 {
 	my $self  = shift;
 	my $which = $_[0];
@@ -80,7 +110,7 @@ sub msfrpcd
 			. $CONF{'VARS'}{'MSFRPCD_PORT'} . ' -S';
 		$Io->print_info("Starting msfrpcd service.");
 		my $Process = $self->{'core'}->{'ModuleLoader'}->loadmodule('Process');
-		$Process->set( type => 'daemon',                   # forked pipeline
+		$Process->set( type => 'daemon',                       # forked pipeline
 					   code => $IO->generate_command($code),
 					   env  => $self->{'core'}->{'env'},
 					   IO   => $IO
@@ -149,15 +179,6 @@ sub stop
 	}
 }
 
-sub where
-{
-	my $self   = shift;
-	my $output = $self->{'core'}->{'IO'};
-	my $env    = $self->{'core'}->{'env'};
-	my $path   = $env->whereis( $_[0] );
-	$output->print_info( $_[0] . " bin is at $path" );
-}
-
 sub info
 {
 	my $self = shift;
@@ -173,15 +194,6 @@ sub configure
 	my $self = shift;
 
 	#postgre pc_hba.conf
-}
-
-sub check_installation
-{
-	my $self      = shift;
-	my $env       = $self->{'core'}->{'env'};
-	my $IO        = $self->{'core'}->{'IO'};
-	my $workspace = $env->workspace();
-	$IO->print_info( "Workspace: " . $workspace );
 }
 1;
 __END__
