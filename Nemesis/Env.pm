@@ -173,5 +173,21 @@ sub time_seconds()
 	if ( length($second) == 1 ) { $second = "0" . $second; }
 	return "$hour:$minute:$second";
 }
+
+sub time_pid{
+		my $self     = shift;
+	my @months   = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
+	my @weekDays = qw(Sun Mon Tue Wed Thu Fri Sat Sun);
+	my ( $second,     $minute,    $hour,
+		 $dayOfMonth, $month,     $yearOffset,
+		 $dayOfWeek,  $dayOfYear, $daylightSavings
+	) = localtime(CORE::time);
+	my $year = 1900 + $yearOffset;
+	if ( length($hour) == 1 )   { $hour   = "0" . $hour; }
+	if ( length($minute) == 1 ) { $minute = "0" . $minute; }
+	return "$hour:$minute";
+	
+	
+}
 1;
 __END__

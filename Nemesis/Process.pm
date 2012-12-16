@@ -170,7 +170,7 @@ package Nemesis::Process;
 		{
 			$Init->getIO()
 				->debug("Daemon released me, now i try to search for $cmd");
-			if ( $p = $self->pidof($cmd) )
+			if ( $p = $self->pidof( $self->{'CONFIG'}->{'code'} ) )
 			{
 				$self->save_pid($p);
 				$self->save("Daemon mode\n");
@@ -240,41 +240,61 @@ package Nemesis::Process;
 	sub pidof($)
 	{
 		my $self     = shift;
+		my @PIECES   = split( /\s+/, shift );
 		my $this_pid = Unix::PID->new();
 		my $p;
-		my @PIECES = split( /\s+/, $_[0] );
 		my %matr;
+		my $current_time=$Init->getEnv()->time_pid();
 		$Init->getIO()->debug( "getting the pid of: " . $PIECES[0] );
+		my $I = 0
+			; #We set a variable to 0, to be the index for the array we are visiting
 		foreach my $piece (@PIECES)
 		{
 			my @FOUND_PIDS = $this_pid->get_pidof($piece);
+			my $first = 0;    #another index for the PIDS FOUND FOR THE PIECE
 			foreach my $found_pid (@FOUND_PIDS)
 			{
-				$matr{$found_pid}++;
+				my @PID_INFO = $this_pid->pid_info($found_pid);
+				$matr{$found_pid}++ if($PID_INFO[8] eq $current_time);
+				$matr{$found_pid}++ if($PID_INFO[9] =~ /0\:/);
+				
+	   #So, every pid it's important, but the first is the most among the others
+	   #Maybe i have to check the time of creation, will be better instead!
+#				$Init->getIO()->debug("$piece found $found_pid");
+#				if ( $matr{$found_pid} )
+#				{
+#					$matr{$found_pid} -= $first;
+#				} else
+#				{
+#					$matr{$found_pid} = $first;
+#				}
+				$first++;
 			}
+			$I++;
 		}
-		foreach ( sort { $matr{$b} <=> $matr{$a} } ( keys(%matr) ) )
+		my @SORTED_PIDS = sort { $matr{$b} <=> $matr{$a} } ( keys(%matr) );
 		{
-			$p = $_;
-			last;
+			$p = shift(@SORTED_PIDS);
+
+			#$Init->getIO()->debug("popped $last_pid, shifted $first_pid");
 		}    # end-foreach
 		$Init->getIO()->debug( "MAX PID " . $p );
 		return ($p);
 	}
-
-	sub save_pid()
+	sub save_pid
 	{
 		my $self = shift;
-		open FILE,
+		my $FH;
+		open $FH,
 			  ">"
 			. $Init->getEnv()->tmp_dir() . "/"
 			. $self->{'CONFIG'}->{'INDEX'} . ".pid";
-		print FILE $_[0];
-		close FILE;
+		print $FH $_[0];
+		close $FH;
 		$self->{'CONFIG'}->{'PID'} = $_[0];
 	}
 
-	sub save()
+	sub save
 	{
 		my $self = shift;
 		open FILE,

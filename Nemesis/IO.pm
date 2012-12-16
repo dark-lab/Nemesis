@@ -2,6 +2,7 @@ package Nemesis::IO;
 use warnings;
 use Term::UI;    #VOGLIO PASSARE A IO LA FUNZIONE di term::readline
 use Term::ANSIColor;
+	use Data::Dumper;
 use Carp qw( croak );
 our $Init;
 
@@ -211,6 +212,12 @@ sub set_debug()
 	my $self = shift;
 	$self->print_info( "Debug mode " . $_[0] );
 	$self->{'debug'} = $_[0];
+}
+
+sub debug_dumper(){
+	my $self=shift;
+	
+	$self->debug(Dumper(shift));
 }
 
 sub unici

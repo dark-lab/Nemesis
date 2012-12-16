@@ -17,7 +17,7 @@ sub run(){
 	try{
 		my @RESULT=$IO->exec($command);
 		$Init->getSession()->execute_save( "shell", "run", $command );
-		$IO->print_info(join("\n",@RESULT));
+		$IO->print_info("\n".join("\n",@RESULT));
 	} catch($error){
 		$IO->print_error("Error executing command $command! $error");
 	}

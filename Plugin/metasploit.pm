@@ -15,11 +15,11 @@ my $INFO    = "<www.dark-lab.net>";
 #TODO: for my insanity.... i Have to use THAT: https://github.com/SpiderLabs/msfrpc/tree/master/Net-MSFRPC
 # a look at https://github.com/SpiderLabs/msfrpc/blob/master/Net-MSFRPC/lib/Net/MSFRPC.pm
 my @PUBLIC_FUNCTIONS =
-	qw(configure msfrpcd check_installation status where stop status_pids)
+	qw(configure msfrpcd_start msfrpc_call check_installation status where stop status_pids)
 	;    #NECESSARY
 my $CONF = { VARS => { MSFRPCD_USER => 'spike',
-					   MSFRCPD_PASS => 'spiketest',
-					   MSFRCPD_PORT => 5553,
+					   MSFRPCD_PASS => 'spiketest',
+					   MSFRPCD_PORT => 5553,
 					   CLIENT       => LWP::UserAgent->new,
 					   HOST			=> '127.0.0.1',
 					   MSFRPCD_API => '/api/',
@@ -33,10 +33,9 @@ sub msfrpc_call()
 	my $self = shift;
 	my $meth = shift;
 	my @opts = @_;
-	my $URL= 'http://'.$CONF{'VARS'}{'HOST'}.":".$CONF{'VARS'}{'MSFRPCD_PORT'}.$CONF{'VARS'}{'MSFRPCD_API'};
+	my $URL= 'http://'.$CONF->{'VARS'}->{'HOST'}.":".$CONF->{'VARS'}->{'MSFRPCD_PORT'}.$CONF->{'VARS'}->{'MSFRPCD_API'};
 	if ( $meth ne 'auth.login' and !$self->{_authenticated} )
 	{
-		croak("MSFRPC: Not Authenticated");
 		$self->msfrpc_login();
 	} elsif ( $meth ne 'auth.login' )
 	{
@@ -45,20 +44,23 @@ sub msfrpc_call()
 	unshift @opts, $meth;
 	my $req = new HTTP::Request( 'POST', $URL );
 	$req->content_type('binary/message-pack');
-	$req->content( $CONF{'VARS'}{'MESSAGEPACK'}->pack( \@opts ) );
-	my $res = $CONF{'VARS'}{'CLIENT'}->request($req);
+	$req->content( $CONF->{'VARS'}->{'MESSAGEPACK'}->pack( \@opts ) );
+	my $res = $CONF->{'VARS'}->{'CLIENT'}->request($req);
 	croak( "MSFRPC: Could not connect to " . $URL )
 		if $res->code == 500;
 	croak("MSFRPC: Request failed ($meth)") if $res->code != 200;
-	return $CONF{'VARS'}{'MESSAGEPACK'}->unpack( $res->content );
+	$Init->getIO()->debug_dumper($CONF->{'VARS'}->{'MESSAGEPACK'}->unpack( $res->content ));
+	return $CONF->{'VARS'}->{'MESSAGEPACK'}->unpack( $res->content );
 }
 
 sub msfrpc_login()
 {
 	my $self = shift;
-	my $user = $CONF{'VARS'}{'MSFRPCD_USER'};
-	my $pass = $CONF{'VARS'}{'MSFRPCD_PASS'};
-	my $ret  = $self->call( 'auth.login', $user, $pass );
+	my $user = $CONF->{'VARS'}->{'MSFRPCD_USER'};
+	my $pass = $CONF->{'VARS'}->{'MSFRPCD_PASS'};
+	my $ret  = $self->msfrpc_call( 'auth.login', $user, $pass );
+
+	$Init->getIO()->debug_dumper($ret);
 	if ( $ret->{'result'} eq 'success' )
 	{
 		$self->{_token}         = $ret->{'token'};
@@ -90,7 +92,7 @@ sub msfrpcd_start
 {
 	my $self  = shift;
 	my $which = $_[0];
-	my $Io    = $self->{'core'}->{'IO'};
+	my $Io    = $Init->getIO();
 	if ( $which eq "stop" )
 	{
 		if ( exists( $self->{'process'}->{'msfrpcd'} ) )
@@ -105,20 +107,22 @@ sub msfrpcd_start
 	{
 		my $code =
 			  'msfrpcd -U '
-			. $CONF{'VARS'}{'MSFRPCD_USER'} . ' -P '
-			. $CONF{'VARS'}{'MSFRPCD_PASS'} . ' -p '
-			. $CONF{'VARS'}{'MSFRPCD_PORT'} . ' -S';
+			. $CONF->{'VARS'}->{'MSFRPCD_USER'} . ' -P '
+			. $CONF->{'VARS'}->{'MSFRPCD_PASS'} . ' -p '
+			. $CONF->{'VARS'}->{'MSFRPCD_PORT'} . ' -S';
 		$Io->print_info("Starting msfrpcd service.");
-		my $Process = $self->{'core'}->{'ModuleLoader'}->loadmodule('Process');
+		my $Process = $Init->getModuleLoader->loadmodule('Process');
 		$Process->set( type => 'daemon',                       # forked pipeline
-					   code => $IO->generate_command($code),
-					   env  => $self->{'core'}->{'env'},
-					   IO   => $IO
-		);
+					   code => $code,
+					   Init =>$Init,
+					   	);
+					   	$Process->start();
+		$Io->debug($Io->generate_command($code));
 		$self->{'process'}->{'msfrpcd'} = $Process;
 		if ( $Process->is_running )
 		{
 			$Io->print_info("Service msfrcpd started");
+			$Io->process_status($Process);
 		}
 	}
 }
