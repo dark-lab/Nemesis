@@ -10,18 +10,20 @@ package Nemesis::Inject;
          substr($$ref, 0, 0) = '
          our $Init;
          sub new(){
-	my $package = shift;
-	bless( {}, $package );
-	%{ $package } = @_;
-$Init=$package->{\'Init\'};
-	return $package;
+			my $package = shift;
+			bless( {}, $package );
+			%{ $package } = @_;
+			$Init=$package->{\'Init\'};
+			return $package;
          }
          sub export_public_methods() {   
-    my $self = shift;
-
-    return @PUBLIC_FUNCTIONS;
-}
-         
+		    my $self = shift;
+		
+		    return @PUBLIC_FUNCTIONS;
+		}
+		sub info(){
+		$Init->getIO()->print_tabbed("$MODULE v$VERSION ~ $AUTHOR ~ $INFO",2);
+		}
          ';  # inject 'if' at beginning of parse buffer
      };
  }

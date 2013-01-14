@@ -2,6 +2,7 @@ package Nemesis::Process;
 {
 
 	#TODO: Add support to threads
+	#TODO: Add tags to processes!  For analyzer.
 	use Carp qw( croak );
 	use Unix::PID;
 	use Data::Dumper;

