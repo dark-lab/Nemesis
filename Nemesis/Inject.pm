@@ -22,7 +22,7 @@ package Nemesis::Inject;
 		    return @PUBLIC_FUNCTIONS;
 		}
 		sub info(){
-		$Init->getIO()->print_tabbed("$MODULE v$VERSION ~ $AUTHOR ~ $INFO",2);
+		$Init->getIO()->print_tabbed("__PACKAGE__ $MODULE v$VERSION ~ $AUTHOR ~ $INFO",2);
 		}
          ';  # inject 'if' at beginning of parse buffer
      };

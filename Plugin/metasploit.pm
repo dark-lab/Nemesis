@@ -12,23 +12,35 @@ my $MODULE  = "Metasploit Module";
 my $INFO    = "<www.dark-lab.net>";
 
 #Public exported functions
-#TODO: for my insanity.... i Have to use THAT: https://github.com/SpiderLabs/msfrpc/tree/master/Net-MSFRPC
-# a look at https://github.com/SpiderLabs/msfrpc/blob/master/Net-MSFRPC/lib/Net/MSFRPC.pm
 my @PUBLIC_FUNCTIONS =
-	qw(configure msfrpcd_start msfrpc_call check_installation status where stop status_pids browser_autopwn)
+	qw(configure start call check_installation status where stop status_pids browser_autopwn)
 	;    #NECESSARY
-my $CONF = { VARS => { MSFRPCD_USER => 'spike',
-					   MSFRPCD_PASS => 'spiketest',
-					   MSFRPCD_PORT => 5553,
-					   CLIENT       => LWP::UserAgent->new,
-					   HOST         => '127.0.0.1',
-					   MSFRPCD_API  => '/api/',
-					   MESSAGEPACK  => Data::MessagePack->new()
-			 }
+my $CONF = {
+	VARS => { MSFRPCD_USER => 'spike',
+			  MSFRPCD_PASS => 'spiketest',
+			  MSFRPCD_PORT => 5553,
+			  CLIENT       => LWP::UserAgent->new,
+			  HOST         => '127.0.0.1',
+			  MSFRPCD_API  => '/api/',
+			  MESSAGEPACK  => Data::MessagePack->new()
+	}
 };
-nemesis_module;
+#nemesis_module;
 
-sub msfrpc_call()
+nemesis_module {
+	##This is run before the initialization of module.
+#	$Init->getIO()->print_info("Testing ".__PACKAGE__." contructor"); #This won't work, $Init, it's not defined yet.
+	print "Testing ".__PACKAGE__." Constructor\n"; #This will
+	
+	
+}
+
+sub prepare
+{
+	$Init->getIO()->print_info("Testing ".__PACKAGE__." prepare() function"); ##This is called after initialization of Init
+}
+
+sub call()
 {
 	my $self = shift;
 	my $meth = shift;
@@ -51,6 +63,7 @@ sub msfrpc_call()
 	$req->content_type('binary/message-pack');
 	$req->content( $CONF->{'VARS'}->{'MESSAGEPACK'}->pack( \@opts ) );
 	my $res = $CONF->{'VARS'}->{'CLIENT'}->request($req);
+	$self->parse_result($res);
 	croak( "MSFRPC: Could not connect to " . $URL )
 		if $res->code == 500;
 	croak("MSFRPC: Request failed ($meth)") if $res->code != 200;
@@ -63,21 +76,25 @@ sub msfrpc_call()
 sub browser_autopwn()
 {
 	my $self = shift;
-	@OPTIONS = ( "auxiliary", "server/browser_autopwn",{ LHOST   => "0.0.0.0",
-			  SRVPORT => "8080",
-			  URIPATH => "/"
-	} );
-	$response=$self->msfrpc_call( "module.execute", @OPTIONS );
-	if(exists($response->{'uuid'})){
-	$Init->getIO()->print_info("Now you have to wait until browser_autopwn finishes loading exploits.");
-	$Init->getIO()->print_tabbed("Your Job ID : ".$response->{'job_id'},2);
-	$Init->getIO()->print_tabbed("Your UUID : ".$response->{'uuid'},2);
-	$Init->getIO()->print_tabbed("Your URL : http://0.0.0.0:8080",2);
-	
-	}
-	else {
-			$Init->getIO()->print_error("Something went wrong");
-		
+	@OPTIONS = ( "auxiliary",
+				 "server/browser_autopwn",
+				 {  LHOST   => "0.0.0.0",
+					SRVPORT => "8080",
+					URIPATH => "/"
+				 }
+	);
+	$response = $self->call( "module.execute", @OPTIONS );
+	if ( exists( $response->{'uuid'} ) )
+	{
+		$Init->getIO()
+			->print_info(
+			"Now you have to wait until browser_autopwn finishes loading exploits."
+			);
+		$self->parse_result($response);
+		$Init->getIO()->print_tabbed( "Your URL : http://0.0.0.0:8080", 2 );
+	} else
+	{
+		$Init->getIO()->print_error("Something went wrong");
 	}
 }
 
@@ -86,14 +103,14 @@ sub msfrpc_login()
 	my $self = shift;
 	my $user = $CONF->{'VARS'}->{'MSFRPCD_USER'};
 	my $pass = $CONF->{'VARS'}->{'MSFRPCD_PASS'};
-	my $ret  = $self->msfrpc_call( 'auth.login', $user, $pass );
-	$Init->getIO()->debug_dumper($ret);
+	my $ret  = $self->call( 'auth.login', $user, $pass );
 	if ( $ret->{'result'} eq 'success' )
 	{
 		$self->{_token}         = $ret->{'token'};
 		$self->{_authenticated} = 1;
 	} else
 	{
+		$Init->getIO()->debug_dumper($ret);
 		croak("MSFRPC: Authentication Failure");
 	}
 }
@@ -110,12 +127,7 @@ sub help()
 	}
 }
 
-sub clear()
-{    #NECESSARY - CALLED ON EXIT
-	1;
-}
-
-sub msfrpcd_start
+sub start
 {
 	my $self  = shift;
 	my $which = $_[0];
@@ -207,6 +219,29 @@ sub stop
 			}
 		}
 		$output->exec("iptables -t nat -F");
+	}
+}
+
+sub parse_result()
+{
+	my $self = shift;
+	my $pack = $_[0];
+	if ( exists( $pack->{'error'} ) )
+	{
+		$Init->getIO()
+			->print_error("Something went wrong with your MSFRPC call");
+		$Init->getIO()->print_error( "Code error: " . $pack->{'error_code'} );
+		$Init->getIO()->print_error( "Message: " . $pack->{'error_message'} );
+		foreach my $trace ( $pack->{'error_backtrace'} )
+		{
+			$Init->getIO()->print_tabbed( "Backtrace: " . $trace, 2 );
+		}
+	} else
+	{
+		if ( exists( $pack->{'job_id'} ) )
+		{
+			$Init->getIO()->print_info( "Job ID: " . $pack->{'job_id'} );
+		}
 	}
 }
 1;

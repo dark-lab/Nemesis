@@ -26,9 +26,9 @@ sub help() {                     #NECESSARY
 
 sub clear() {
     my $self      = shift;
-    my $env       = $self->{'core'}->{'env'};
-    my $IO        = $self->{'core'}->{'IO'};
-    my $workspace = $env->workspace();
+    my $env       = $Init->getEnv();
+    my $IO        = $Init->getIO();
+    my $workspace = $Init->getEnv()->workspace();
     $IO->print_info("Restoring ip forward");
     $env->ipv4_forward("off");
     $IO->print_info("Flushing iptables");

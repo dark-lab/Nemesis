@@ -26,15 +26,18 @@ sub execute
 	my $self    = shift;
 	my $module  = shift @_;
 	my $command = shift @_;
-	my @ARGS=@_;
-
-	# my $object  = "$self->{'Base'}->{'path'}::$module";
-	#eval( "$self->{'Base'}->{'path'}::$module"->$command(@_) );
+	my @ARGS    = @_;
 	try
 	{
-		$self->{'modules'}->{$module}->$command(@ARGS);
-		$Init->getSession()->execute_save( $module, $command, @ARGS )
-			if $module ne "session";
+		if ( UNIVERSAL::can( $self->{'modules'}->{$module}, $command ) )
+		{
+			$self->{'modules'}->{$module}->$command(@ARGS);
+			$Init->getSession()->execute_save( $module, $command, @ARGS )
+				if $module ne "session";
+		} else
+		{
+			$Init->getIO->debug("$module doesn't provide $command");
+		}
 	}
 	catch($error) {
 		$Init->getIO->print_error("Something went wrong with $command: $error");
@@ -50,11 +53,18 @@ sub execute_on_all
 	{
 		try
 		{
-			$self->{'modules'}->{$module}->$met(@command);
+			if ( UNIVERSAL::can( $self->{'modules'}->{$module}, $met ) )
+			{
+				$self->{'modules'}->{$module}->$met(@command);
+			} else
+			{
+				$Init->getIO->debug("$module doesn't provide $met")
+					;    #Can the object handle the method?!
+			}
 		}
 		catch($error) {
 			$Init->getIO->print_error(
-				"Something went wrong calling the method '$met' on '$module': $error (Maybe your clear sub is missing?)"
+				"Something went wrong calling the method '$met' on '$module': $error (Maybe the implementation is missing?)"
 			);
 		};
 	}
@@ -131,12 +141,16 @@ sub loadmodule()
 		$Init->getIO()
 			->print_error("Something went wrong loading $object: $error");
 			return ();
-		} $object = eval
+		}
+
+		#NOTE: prepare sub invoked after initialization
+		if ( UNIVERSAL::can( $object, "prepare" ) )
 	{
-		my $o     = dclone( \$object );
-		my $realO = $$o;
-		return $realO->new( Init => $Init );
-	};
+		$object->prepare();
+	} else
+	{
+		$Init->getIO()->debug("No prepare for $object");
+	}
 	$Init->getIO()->debug("Module $module correctly loaded");
 	return $object;
 }
@@ -164,9 +178,20 @@ sub loadmodules
 		my ($name) = $f =~ m/([^\.]+)\.pm/;
 		try
 		{
+			if ( exists( $self->{'modules'}->{$name} ) )
+			{
+				delete $INC{ $path . "/" . $name };
+				delete $self->{'modules'}->{$name};
+			}
 			my $result = do($base);
-			$self->{'modules'}->{$name} = $self->loadmodule($name);
-			$mods++;
+			if ( $self->isModule($base) )
+			{
+				$self->{'modules'}->{$name} = $self->loadmodule($name);
+				$mods++;
+			} else
+			{
+				$Init->getIO()->print_alert("$base it's not a Nemesis module");
+			}
 		}
 		catch($error) {
 			$IO->print_error($error);
@@ -176,7 +201,25 @@ sub loadmodules
 	}
 	$IO->print_info("> $mods modules available. Double tab to see them\n");
 
-	# delete $self->{'modules'};
+	#delete $self->{'modules'};
 	return 1;
+}
+
+sub isModule()
+{
+	my $self   = shift;
+	my $module = $_[0];
+	open my $MODULE, "<" . $module
+		or $Init->getIO()->print_alert("$module can't be opened");
+	my @MOD = <$MODULE>;
+	close $MODULE;
+	foreach my $rigo (@MOD)
+	{
+		if ( $rigo =~ /(?<![#|#.*|.*#])nemesis_module/ )
+		{
+			return 1;
+		}
+	}
+	return 0;
 }
 1;
