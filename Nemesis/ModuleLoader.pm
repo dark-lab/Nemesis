@@ -2,6 +2,7 @@ package Nemesis::ModuleLoader;
 use Carp qw( croak );
 use Storable qw(dclone freeze thaw);
 use TryCatch;
+use Scalar::Util qw(blessed);
 
 #external modules
 my $base = { 'path'         => 'Plugin',
@@ -27,11 +28,12 @@ sub execute
 	my $module  = shift @_;
 	my $command = shift @_;
 	my @ARGS    = @_;
+	my $currentModule=$self->{'modules'}->{$module};
 	try
 	{
-		if ( UNIVERSAL::can( $self->{'modules'}->{$module}, $command ) )
+		if ( UNIVERSAL::can( $currentModule, $command ) )
 		{
-			$self->{'modules'}->{$module}->$command(@ARGS);
+			$currentModule->$command(@ARGS);
 			$Init->getSession()->execute_save( $module, $command, @ARGS )
 				if $module ne "session";
 		} else
@@ -133,20 +135,23 @@ sub loadmodule()
 	my $object = "$base" . "::" . "$module";
 	try
 	{
-		my $o     = dclone( \$object );
-		my $realO = $$o;
-		$object = $realO->new( Init => $Init );
+		$object=$object->new( Init => $Init );
 	}
 	catch($error) {
 		$Init->getIO()
 			->print_error("Something went wrong loading $object: $error");
 			return ();
-		}
+	}
+
+	# if($object eq ""){
+	# 	$Init->getIO()->print_alert("Module $module NOT loaded");
+	# 	return();
+	# }
 
 		#NOTE: prepare sub invoked after initialization
-		if ( UNIVERSAL::can( $object, "prepare" ) )
+	if ( eval{ $object->can("prepare") })
 	{
-		$object->prepare();
+		$object->prepare;
 	} else
 	{
 		$Init->getIO()->debug("No prepare for $object");
@@ -215,7 +220,7 @@ sub isModule()
 	close $MODULE;
 	foreach my $rigo (@MOD)
 	{
-		if ( $rigo =~ /(?<![#|#.*|.*#])nemesis_module/ )
+		if ( $rigo =~ /(?<![#|#.*|.*#])[nemesis_module|nemesis_moose_module]/ )
 		{
 			return 1;
 		}

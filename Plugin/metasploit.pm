@@ -13,38 +13,41 @@ my $INFO    = "<www.dark-lab.net>";
 
 #Public exported functions
 my @PUBLIC_FUNCTIONS =
-	qw(configure start call check_installation status where stop status_pids browser_autopwn)
-	;    #NECESSARY
-my $CONF = {
-	VARS => { MSFRPCD_USER => 'spike',
-			  MSFRPCD_PASS => 'spiketest',
-			  MSFRPCD_PORT => 5553,
-			  CLIENT       => LWP::UserAgent->new,
-			  HOST         => '127.0.0.1',
-			  MSFRPCD_API  => '/api/',
-			  MESSAGEPACK  => Data::MessagePack->new()
-	}
+	qw(configure call check_installation status where stop status_pids browser_autopwn)
+	;                                 #NECESSARY
+my $CONF = { VARS => { MSFRPCD_USER => 'spike',
+					   MSFRPCD_PASS => 'spiketest',
+					   MSFRPCD_PORT => 5553,
+					   HOST         => '127.0.0.1',
+					   MSFRPCD_API  => '/api/',
+			 }
 };
-#nemesis_module;
 
-nemesis_module {
+#nemesis_module;
+#TODO: Rendere il modulo esterno, creando un'altro oggetto Moose per l'interazione con msfrpcd
+nemesis_module
+{
 	##This is run before the initialization of module.
 #	$Init->getIO()->print_info("Testing ".__PACKAGE__." contructor"); #This won't work, $Init, it's not defined yet.
-	print "Testing ".__PACKAGE__." Constructor\n"; #This will
-	
-	
+	print "Testing " . __PACKAGE__ . " Constructor\n";    #This will
 }
 
 sub prepare
 {
-	$Init->getIO()->print_info("Testing ".__PACKAGE__." prepare() function"); ##This is called after initialization of Init
+	$Init->getIO()
+		->print_info( "Testing " . __PACKAGE__ . " prepare() function" )
+		;    #This is called after initialization of Init
 }
 
 sub call()
 {
-	my $self = shift;
-	my $meth = shift;
-	my @opts = @_;
+	my $self        = shift;
+	my $meth        = shift;
+	my @opts        = @_;
+	my $UserAgent   = LWP::UserAgent->new;
+	my $MessagePack = Data::MessagePack->new();
+	$self->start()
+		if ( !exists( $self->{'process'}->{'msfrpcd'} ) );
 	my $URL =
 		  'http://'
 		. $CONF->{'VARS'}->{'HOST'} . ":"
@@ -53,41 +56,36 @@ sub call()
 	if ( $meth ne 'auth.login' and !$self->{_authenticated} )
 	{
 		$self->msfrpc_login();
-		unshift @opts, $self->{_token};
-	} elsif ( $meth ne 'auth.login' )
-	{
-		unshift @opts, $self->{_token};
 	}
+	unshift @opts, $self->{_token} if ( exists( $self->{_token} ) );
 	unshift @opts, $meth;
-	my $req = new HTTP::Request( 'POST', $URL );
-	$req->content_type('binary/message-pack');
-	$req->content( $CONF->{'VARS'}->{'MESSAGEPACK'}->pack( \@opts ) );
-	my $res = $CONF->{'VARS'}->{'CLIENT'}->request($req);
+	my $HttpRequest = new HTTP::Request( 'POST', $URL );
+	$HttpRequest->content_type('binary/message-pack');
+	$HttpRequest->content( $MessagePack->pack( \@opts ) );
+	my $res = $UserAgent->request($HttpRequest);
 	$self->parse_result($res);
 	croak( "MSFRPC: Could not connect to " . $URL )
 		if $res->code == 500;
 	croak("MSFRPC: Request failed ($meth)") if $res->code != 200;
-	$Init->getIO()
-		->debug_dumper(
-					$CONF->{'VARS'}->{'MESSAGEPACK'}->unpack( $res->content ) );
-	return $CONF->{'VARS'}->{'MESSAGEPACK'}->unpack( $res->content );
+	$Init->getIO()->debug_dumper( $MessagePack->unpack( $res->content ) );
+	return $MessagePack->unpack( $res->content );
 }
 
 sub browser_autopwn()
 {
 	my $self = shift;
-	@OPTIONS = ( "auxiliary",
-				 "server/browser_autopwn",
-				 {  LHOST   => "0.0.0.0",
-					SRVPORT => "8080",
-					URIPATH => "/"
-				 }
+	my @OPTIONS = ( "auxiliary",
+					"server/browser_autopwn",
+					{  LHOST   => "0.0.0.0",
+					   SRVPORT => "8080",
+					   URIPATH => "/"
+					}
 	);
 	$response = $self->call( "module.execute", @OPTIONS );
 	if ( exists( $response->{'uuid'} ) )
 	{
 		$Init->getIO()
-			->print_info(
+			->print_alert(
 			"Now you have to wait until browser_autopwn finishes loading exploits."
 			);
 		$self->parse_result($response);
@@ -111,7 +109,7 @@ sub msfrpc_login()
 	} else
 	{
 		$Init->getIO()->debug_dumper($ret);
-		croak("MSFRPC: Authentication Failure");
+		$Init->getIO()->print_error("Failed auth with MSFRPC");
 	}
 }
 
@@ -132,93 +130,50 @@ sub start
 	my $self  = shift;
 	my $which = $_[0];
 	my $Io    = $Init->getIO();
-	if ( $which eq "stop" )
+	my $code =
+		  'msfrpcd -U '
+		. $CONF->{'VARS'}->{'MSFRPCD_USER'} . ' -P '
+		. $CONF->{'VARS'}->{'MSFRPCD_PASS'} . ' -p '
+		. $CONF->{'VARS'}->{'MSFRPCD_PORT'} . ' -S';
+	$Io->print_info("Starting msfrpcd service.");
+	my $Process = $Init->getModuleLoader->loadmodule('Process');
+	$Process->set( type => 'daemon',    # forked pipeline
+				   code => $code,
+				   Init => $Init,
+	);
+	$Process->start();
+	$Io->debug( $Io->generate_command($code) );
+	$self->{'process'}->{'msfrpcd'} = $Process;
+	if ( $Process->is_running )
 	{
-		if ( exists( $self->{'process'}->{'msfrpcd'} ) )
-		{
-			$self->{'process'}->{'msfrpcd'}->destroy();
-			delete $self->{'process'}->{'msfrpcd'};
-		} else
-		{
-			$Io->print_alert("Process already stopped");
-		}
+		$Io->print_info("Service msfrcpd started");
+		$Io->process_status($Process);
+		$Io->print_alert(
+			"Now you have to give some time to metasploit to be up and running.."
+		);
+	}
+}
+
+sub clear()
+{
+	my $self = shift;
+	if ( exists( $self->{'process'}->{'msfrpcd'} ) )
+	{
+		$self->{'process'}->{'msfrpcd'}->destroy();
+		delete $self->{'process'}->{'msfrpcd'};
 	} else
 	{
-		my $code =
-			  'msfrpcd -U '
-			. $CONF->{'VARS'}->{'MSFRPCD_USER'} . ' -P '
-			. $CONF->{'VARS'}->{'MSFRPCD_PASS'} . ' -p '
-			. $CONF->{'VARS'}->{'MSFRPCD_PORT'} . ' -S';
-		$Io->print_info("Starting msfrpcd service.");
-		my $Process = $Init->getModuleLoader->loadmodule('Process');
-		$Process->set( type => 'daemon',    # forked pipeline
-					   code => $code,
-					   Init => $Init,
-		);
-		$Process->start();
-		$Io->debug( $Io->generate_command($code) );
-		$self->{'process'}->{'msfrpcd'} = $Process;
-		if ( $Process->is_running )
-		{
-			$Io->print_info("Service msfrcpd started");
-			$Io->process_status($Process);
-		}
+		$Init->getIO()->print_alert("Process already stopped");
 	}
 }
 
 sub status
 {
-	my $self   = shift;
-	my $output = $self->{'core'}->{'IO'};
-	my $env    = $self->{'core'}->{'env'};
+	my $self = shift;
 	my $process;
-	foreach my $dev ( keys %{ $self->{'process'} } )
-	{
-		$self->service_status($service);
-	}
-}
-
-sub service_status()
-{
-	my $self   = shift;
-	my $dev    = $_[0];
-	my $output = $self->{'core'}->{'IO'};
-	my $env    = $self->{'core'}->{'env'};
 	foreach my $service ( keys %{ $self->{'process'} } )
 	{
-		$output->process_status( $self->{'process'}->{$service} );
-	}
-}
-
-sub stop
-{
-	my $self   = shift;
-	my $output = $self->{'core'}->{'IO'};
-	my $env    = $self->{'core'}->{'env'};
-	my $dev    = $_[0];
-	my $group  = $_[1];
-	if ( !defined($dev) )
-	{
-		$output->print_alert("You must provide at least a device");
-	} else
-	{
-		if ( defined($group) )
-		{
-			$output->print_info(
-						 "Stopping all activities on " . $dev . " for $group" );
-			my $process = $self->{'process'}->{$dev}->{$group};
-			$process->destroy();
-			delete $self->{'process'}->{$dev}->{$group};
-		} else
-		{
-			foreach my $process ( keys %{ $self->{'process'}->{$dev} } )
-			{
-				$output->print_title( "Stopping $process on " . $dev . "" );
-				$self->{'process'}->{$dev}->{$process}->destroy();
-				delete $self->{'process'}->{$dev}->{$process};
-			}
-		}
-		$output->exec("iptables -t nat -F");
+		$self->process_status($service);
 	}
 }
 

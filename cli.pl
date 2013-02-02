@@ -2,11 +2,22 @@
 use warnings;
 use Nemesis::Init;
 
-# Guardare
+#NOTE:
 #http://search.cpan.org/~flora/Devel-Declare-0.006006/lib/Devel/Declare.pm
 #http://search.cpan.org/~flora/B-Hooks-Parser-0.09/lib/B/Hooks/Parser.pm
 #Guarda test.pl nella home
 #External
+
+#TODO: Valutare Net:Interface ?
+#use strict;
+#TODO: TheNet
+#TODO: Valutare l'inclusione di http://search.cpan.org/~reedfish/Net-FullAuto-0.999944/lib/Net/FullAuto.pm
+#Net:Route
+
+#TODO: Abilitare il supporto Moose per i moduli (Ovvero che i moduli come ad esempio metasploit.pm possono essere formato moose)
+#Dunque KiokuDB per i moduli moose.
+
+
 use Getopt::Long;
 use Term::ReadLine::Gnu;
 ##General Settings
@@ -102,7 +113,8 @@ while ( defined( $_ = $nemesis_t->readline( $output->get_prompt_out() ) ) )
 		}
 	} else
 	{
-		$moduleloader->execute( "shell", "run", $command, @cmd );
+		#$moduleloader->execute( "shell", "run", $command, @cmd );
+		eval($command." ".join(" ",@cmd));
 	}
 	warn $@ if $@;
 	print "\n";

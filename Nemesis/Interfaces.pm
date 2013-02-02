@@ -1,11 +1,7 @@
 package Nemesis::Interfaces;
 use warnings;
 use Net::Ping;
-#TODO: Valutare Net:Interface ?
-#use strict;
-#TODO: TheNet
-#TODO: Valutare l'inclusione di http://search.cpan.org/~reedfish/Net-FullAuto-0.999944/lib/Net/FullAuto.pm
-#Net:Route
+
 use vars qw($VERSION);
 $VERSION = '0.01';
 use Socket;

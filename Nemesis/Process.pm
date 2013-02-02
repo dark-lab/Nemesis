@@ -1,7 +1,6 @@
 package Nemesis::Process;
 {
 
-	#TODO: Add support to threads
 	#TODO: Add tags to processes!  For analyzer.
 	use Carp qw( croak );
 	use Unix::PID;
@@ -245,10 +244,11 @@ package Nemesis::Process;
 		my $this_pid = Unix::PID->new();
 		my $p;
 		my %matr;
-		my $current_time=$Init->getEnv()->time_pid();
+		my $current_time = $Init->getEnv()->time_pid();
 		$Init->getIO()->debug( "getting the pid of: " . $PIECES[0] );
 		my $I = 0
 			; #We set a variable to 0, to be the index for the array we are visiting
+
 		foreach my $piece (@PIECES)
 		{
 			my @FOUND_PIDS = $this_pid->get_pidof($piece);
@@ -256,19 +256,19 @@ package Nemesis::Process;
 			foreach my $found_pid (@FOUND_PIDS)
 			{
 				my @PID_INFO = $this_pid->pid_info($found_pid);
-				$matr{$found_pid}++ if($PID_INFO[8] eq $current_time);
-				$matr{$found_pid}++ if($PID_INFO[9] =~ /0\:/);
-				
+				$matr{$found_pid}++ if ( $PID_INFO[8] eq $current_time );
+				$matr{$found_pid}++ if ( $PID_INFO[9] =~ /0\:/ );
+
 	   #So, every pid it's important, but the first is the most among the others
 	   #Maybe i have to check the time of creation, will be better instead!
-#				$Init->getIO()->debug("$piece found $found_pid");
-#				if ( $matr{$found_pid} )
-#				{
-#					$matr{$found_pid} -= $first;
-#				} else
-#				{
-#					$matr{$found_pid} = $first;
-#				}
+	   #				$Init->getIO()->debug("$piece found $found_pid");
+	   #				if ( $matr{$found_pid} )
+	   #				{
+	   #					$matr{$found_pid} -= $first;
+	   #				} else
+	   #				{
+	   #					$matr{$found_pid} = $first;
+	   #				}
 				$first++;
 			}
 			$I++;
@@ -282,6 +282,7 @@ package Nemesis::Process;
 		$Init->getIO()->debug( "MAX PID " . $p );
 		return ($p);
 	}
+
 	sub save_pid
 	{
 		my $self = shift;
