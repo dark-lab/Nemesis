@@ -43,6 +43,24 @@ package Nemesis::Inject;
 		}
          ';  # inject 'if' at beginning of parse buffer
      };
+
+     Keyword::Simple::define 'nemesis_moosex_module', sub {
+         my ($ref) = @_;
+         substr($$ref, 0, 0) = '
+		has Init => (
+			is=> read_write,
+			required=> true
+			);
+		method export_public_methods() {   
+		    return @PUBLIC_FUNCTIONS;
+			}
+		method info(){
+			$self->Init->getIO()->print_tabbed(__PACKAGE__ ."$MODULE v$VERSION ~ $AUTHOR ~ $INFO",2);
+		}
+         ';  # inject 'if' at beginning of parse buffer
+     };
+
+
  }
  
  sub unimport {

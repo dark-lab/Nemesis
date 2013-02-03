@@ -33,8 +33,8 @@ sub execute
 	{
 		if ( UNIVERSAL::can( $currentModule, $command ) )
 		{
-			$currentModule->$command(@ARGS);
-			$Init->getSession()->execute_save( $module, $command, @ARGS )
+				$currentModule->$command(@ARGS);
+				$Init->getSession()->execute_save( $module, $command, @ARGS )
 				if $module ne "session";
 		} else
 		{
@@ -42,7 +42,7 @@ sub execute
 		}
 	}
 	catch($error) {
-		$Init->getIO->print_error("Something went wrong with $command: $error");
+		$Init->getIO->print_error("Something went wrong calling the method '$command' on '$module': $error");
 	};
 }
 
@@ -53,22 +53,7 @@ sub execute_on_all
 	my @command = @_;
 	foreach my $module ( sort( keys %{ $self->{'modules'} } ) )
 	{
-		try
-		{
-			if ( UNIVERSAL::can( $self->{'modules'}->{$module}, $met ) )
-			{
-				$self->{'modules'}->{$module}->$met(@command);
-			} else
-			{
-				$Init->getIO->debug("$module doesn't provide $met")
-					;    #Can the object handle the method?!
-			}
-		}
-		catch($error) {
-			$Init->getIO->print_error(
-				"Something went wrong calling the method '$met' on '$module': $error (Maybe the implementation is missing?)"
-			);
-		};
+		$self->execute($module,$met,@command);
 	}
 }
 
@@ -135,6 +120,7 @@ sub loadmodule()
 	my $object = "$base" . "::" . "$module";
 	try
 	{
+		do($object);
 		$object=$object->new( Init => $Init );
 	}
 	catch($error) {

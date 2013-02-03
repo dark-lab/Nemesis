@@ -11,12 +11,14 @@ use Nemesis::Inject;
 
 	nemesis_moose_module;
 
+
 	sub test
 	{
 		my $self=shift;
 		$self->Init->getIO()->print_info("Ciao");
 		$self->Init->getIO()->debug_dumper($self->Init);
 	}
+
 
 
 1;
