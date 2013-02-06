@@ -1,8 +1,8 @@
 package Plugin::WebUI;
 use Moose;
- use MooseX::DeclareX
-    keywords => [qw(class)],
-    plugins  => [qw(guard build preprocess std_constants)],
+use MooseX::DeclareX
+    keywords => [qw(class)]
+    ,    plugins  => [qw(guard build preprocess std_constants)],
     types    => [ -Moose ];
 use Nemesis::Inject;
 

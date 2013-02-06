@@ -167,6 +167,11 @@ use File::Path;
 		chdir($self->{'CONF'}->{'VARS'}->{'SESSION_PATH'});
 	}
 
+	sub safechdir(){
+		my $self=shift;
+		chdir($self->{'CONF'}->{'VARS'}->{'SESSION_PATH'});
+	}
+
 	sub wrap
 	{
 

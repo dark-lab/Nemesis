@@ -119,6 +119,35 @@ sub whereis
 	return;
 }
 
+sub wherepath
+{
+	my $self       = shift;
+	my $dependency = $_[0];
+	if ( exists( $self->{'ENV'}->{$dependency} ) )
+	{
+		return $self->{'ENV'}->{$dependency};
+	} else
+	{
+		foreach my $path ( @{ $self->{'path'} } )
+		{
+			@FILES = <$path/*>;
+			foreach my $p (@FILES)
+			{
+				return $path if $p eq "$path\/$dependency";
+			}
+		}
+		foreach my $path ( @{ $self->{'path'} } )
+		{
+			@FILES = <$path/*>;
+			foreach my $p (@FILES)
+			{
+				return $parh if $p =~ /$dependency/i;
+			}
+		}
+	}
+	return;
+}
+
 sub path_for()
 {
 	my $self = shift;

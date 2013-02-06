@@ -1,5 +1,7 @@
 #!/usr/bin/perl -w
 use warnings;
+use lib "./"; # Temorary fix until the module in nemesis are not fully installed on pc
+
 use Nemesis::Init;
 
 #NOTE:
@@ -17,6 +19,7 @@ use Nemesis::Init;
 #TODO: Abilitare il supporto Moose per i moduli (Ovvero che i moduli come ad esempio metasploit.pm possono essere formato moose)
 #Dunque KiokuDB per i moduli moose.
 
+# TODO: IstanceExporter: comprimere i moduli con App::qualcosa, usare acme, esportare ed eseguire con un modulo di reverse shell sulla cli
 
 use Getopt::Long;
 use Term::ReadLine::Gnu;

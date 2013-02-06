@@ -7,6 +7,7 @@ package Nemesis::Init;
 	use Nemesis::Inject;
 	use Nemesis::ModuleLoader;
 	use Nemesis::Session;
+	use Nemesis::Packer;
 	use Carp qw( croak );
 
 	sub new
@@ -15,6 +16,7 @@ package Nemesis::Init;
 		bless( {}, $package );
 		$package->{'Env'} = new Nemesis::Env( Init => $package );
 		$package->{'Session'} = new Nemesis::Session( Init => $package );
+		$package->{'Packer'} = new Nemesis::Packer( Init => $package );
 		if ( $package->{'Session'}->exists("default_session") )
 		{
 			$package->{'Session'}->restore("default_session");
@@ -65,6 +67,12 @@ package Nemesis::Init;
 	{
 		my $package = shift;
 		return $package->{'Env'};
+	}
+
+	sub getPacker
+	{
+		my $package = shift;
+		return $package->{'Packer'};
 	}
 
 	sub getInterfaces
