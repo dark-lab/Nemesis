@@ -22,6 +22,11 @@ sub new
 	return $package;
 }
 
+sub getPathBin(){
+	my $self=shift;
+	return $self->{"ProgramPath"};
+}
+
 sub print_env()
 {
 	my $self = shift;

@@ -27,12 +27,28 @@ use Module::ScanDeps ();;
 		my $self=shift;
 		my ($What,$FileName)=@_;
 		my $parpath=$Init->getEnv()->wherepath("par.pl");
-		chdir($parpath);
-		@OPTS=($What);
 		$Init->getIO()->debug("Chdir to $parpath");
+
+		chdir($parpath);
+
+		my @OPTS=($What);
+		my @LOADED_PLUGINS=();
+
+		foreach my $module ( sort( keys %{ $Init->getModuleLoader()->{'modules'} } ) )
+		{
+			push(@LOADED_PLUGINS,$Init->getModuleLoader()->{'Base'}->{'path'}."/".$module.".pm");
+		}
+
+		my %opt;
+		$opt{P}= 1;
+		$opt{o}= $FileName;
+		#$opt{x} =1; #with this it still works!
+		$opt{M} = \@LOADED_PLUGINS;
+
+		#Bundle.export /home/mudler/_git/nemesis/cli.pl /home/mudler/nemesis_packed.pl
 		App::Packer::PAR->new( frontend=> Module::ScanDeps, 
 			backend=> PAR::Packer,
-			backopts => {P=>1 , o=>$FileName},
+			backopts => \%opt,
 			args	=> \@OPTS
 		)->go;
 		$Init->getSession()->safechdir;

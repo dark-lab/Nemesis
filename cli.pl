@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 use warnings;
-use lib "./"; # Temorary fix until the module in nemesis are not fully installed on pc
+use lib "/home/mudler/_git/nemesis/"; # Temorary fix until the module in nemesis are not fully installed on pc
 
 use Nemesis::Init;
 
@@ -27,8 +27,8 @@ use Term::ReadLine::Gnu;
 my $Init         = new Nemesis::Init();
 my $output       = $Init->getIO();
 my $moduleloader = $Init->getModuleLoader();
-$output->print_ascii( 'ascii/logo.txt', "red on_black bold" );
-$output->print_ascii( 'ascii/motd.txt', "red on_black bold" );
+#$output->print_ascii( 'ascii/logo.txt', "red on_black bold" );
+#$output->print_ascii( 'ascii/motd.txt', "red on_black bold" );
 $Init->{'Interfaces'}->print_devices();
 $Init->checkroot();
 $SIG{'INT'} = sub { $Init->sighandler(); };

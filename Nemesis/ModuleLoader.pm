@@ -96,6 +96,8 @@ sub listmodules
 	}
 }
 
+
+
 sub loadmodule()
 {
 	my $self        = shift;
@@ -111,16 +113,17 @@ sub loadmodule()
 	} elsif ( -e $modules_path . "/" . $module . ".pm" )
 	{
 		$base = $self->{'Base'}->{'main_modules'};
-	} else
-	{
-		return ();
+	} else {
+		#return ();
+			$base = $self->{'Base'}->{'path'};
 	}
 
 	#$IO->debug("Module $module found in $base");
 	my $object = "$base" . "::" . "$module";
 	try
 	{
-		do($object);
+	#	eval 'require '.$object;
+	#	do($object);
 		$object=$object->new( Init => $Init );
 	}
 	catch($error) {
@@ -146,6 +149,15 @@ sub loadmodule()
 	return $object;
 }
 
+sub pluginPath(){
+
+	my $self=shift;
+	return $self->{'Base'}->{'pwd'} . $self->{'Base'}->{'path'};
+
+}
+
+
+
 sub loadmodules
 {
 	my $self = shift;
@@ -153,20 +165,46 @@ sub loadmodules
 	my $IO   = $Init->getIO();
 	my $path = $self->{'Base'}->{'pwd'} . $self->{'Base'}->{'path'};
 	local *DIR;
-	if ( !opendir( DIR, "$path" ) )
-	{
-		$IO->print_error(
-					   "[LOADMODULES] - (*) No such file or directory ($path)");
-		croak "No such file or directory ($path)";
-	}
-	my @files = grep( !/^\.\.?$/, readdir(DIR) );
-	closedir(DIR);
+	my @files = ();
 	my $modules;
 	my $mods = 0;
+	my $on_inc = 0;
+	my $inc_dir;
+	if ( !opendir( DIR, "$path" ) )
+	{
+			##Se non riesco a vedere in locale, forse sono nell'INC?
+		$IO->print_alert(
+					   "No $path detected to find modules");
+		foreach my $dir ( @INC )
+		{
+			if(-d $dir."/".$self->{'Base'}->{'path'}){
+				#Oh, eccoli!
+				$inc_dir=$dir;
+				opendir( DIR, $dir."/".$self->{'Base'}->{'path'} );
+				@files = grep( !/^\.\.?$/, readdir(DIR) );
+				closedir(DIR);
+				$mods = 0;
+			}
+		}
+		$on_inc=1;
+	} else {
+		@files = grep( !/^\.\.?$/, readdir(DIR) );
+		closedir(DIR);
+		$mods = 0;
+	}
+
 	foreach my $f (@files)
 	{
-		my $base = $path . "/" . $f;
-		my ($name) = $f =~ m/([^\.]+)\.pm/;
+		my $base;
+		my $name;
+		if($on_inc==1){
+			#Sono nell'inc......
+			$base = $inc_dir."/".$self->{'Base'}->{'path'} . "/" . $f;
+			($name) = $f =~ m/([^\.]+)\.pm/;
+		} else {
+			$base = $path . "/" . $f;
+			($name) = $f =~ m/([^\.]+)\.pm/;	
+		}
 		try
 		{
 			if ( exists( $self->{'modules'}->{$name} ) )
@@ -177,8 +215,10 @@ sub loadmodules
 			my $result = do($base);
 			if ( $self->isModule($base) )
 			{
-				$self->{'modules'}->{$name} = $self->loadmodule($name);
-				$mods++;
+					$self->{'modules'}->{$name} = $self->loadmodule($name);
+					if(exists($self->{'modules'}->{$name})){
+						$mods++;
+					}
 			} else
 			{
 				$Init->getIO()->print_alert("$base it's not a Nemesis module");

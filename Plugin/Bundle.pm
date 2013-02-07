@@ -14,7 +14,7 @@ class Plugin::Bundle {
 	our $MODULE  = "This is an interface to the Packer library";
 	our $INFO    = "<www.dark-lab.net>";
 
-	our @PUBLIC_FUNCTIONS=qw(info export);
+	our @PUBLIC_FUNCTIONS=qw(info export exportCli);
 
 	nemesis_moosex_module;
 
@@ -22,7 +22,10 @@ class Plugin::Bundle {
 		$self->Init->getIO()->print_info("Packing $What in $FileName");
 		$self->Init->getPacker()->pack($What,$FileName);
 	}
-
+	method exportCli($Where){
+		my $path=$self->Init->getEnv()->getPathBin();
+		$self->export($path."/cli.pl",$Where);
+	}
 
 }
 
