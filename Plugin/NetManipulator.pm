@@ -13,7 +13,7 @@ my @PUBLIC_FUNCTIONS =
     qw(video_redirect restart start stop cud_regex);    #NECESSARY
 nemesis_module;
 
-sub help() {                     #NECESSARY
+sub help() {                                            #NECESSARY
     my $self    = shift;
     my $IO      = $self->{'core'}->{'IO'};
     my $section = $_[0];

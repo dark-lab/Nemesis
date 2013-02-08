@@ -1,4 +1,4 @@
-package Plugin::Bundle;
+package Plugin::Talk;
 
 #use Moose;
 use MooseX::DeclareX
@@ -7,7 +7,7 @@ use MooseX::DeclareX
     types    => [ -Moose ];
 use Nemesis::Inject;
 
-class Plugin::Bundle {
+class Plugin::Talk {
 
     our $VERSION = '0.1a';
     our $AUTHOR  = "mudler";

@@ -1,92 +1,86 @@
 package Nemesis::Session;
 use File::Path;
 {
-	use Carp qw( croak );
-	my $CONF =
-		{ VARS => { SESSION_DIR => "Sessions", FLOWFILE => ".execution_flow" }
-		};
-	our $Init;
+    use Carp qw( croak );
+    my $CONF =
+        { VARS => { SESSION_DIR => "Sessions", FLOWFILE => ".execution_flow" }
+        };
+    our $Init;
 
-	sub new
-	{
-		my $package = shift;
-		bless( {}, $package );
-		%{ $package } = @_;
-		$Init= $package->{'Init'};
+    sub new {
+        my $package = shift;
+        bless( {}, $package );
+        %{$package} = @_;
+        $Init = $package->{'Init'};
 
-			if ( !-d $Init->getEnv()->workspace() . "/"
-				 . $CONF->{'VARS'}->{'SESSION_DIR'} )
-			{
-				mkdir(   $Init->getEnv()->workspace() . "/"
-					   . $CONF->{'VARS'}->{'SESSION_DIR'} );
-			}
-		
-		$package->{'CONF'}->{'VARS'}->{'SESSION_DIR'} =
-			$CONF->{'VARS'}->{'SESSION_DIR'};
-		return $package;
-	}
-	sub getSessionPath{
-		my $self=shift;
-		return $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'};
-	}
+        if ( !-d $Init->getEnv()->workspace() . "/"
+            . $CONF->{'VARS'}->{'SESSION_DIR'} )
+        {
+            mkdir(    $Init->getEnv()->workspace() . "/"
+                    . $CONF->{'VARS'}->{'SESSION_DIR'} );
+        }
 
-	sub serialize
-	{
-		my $self = shift;
-		my $var  = $_[0];
-		$var =~ s/\s+/_/g;
-		return $var;
-	}
+        $package->{'CONF'}->{'VARS'}->{'SESSION_DIR'} =
+            $CONF->{'VARS'}->{'SESSION_DIR'};
+        return $package;
+    }
 
-	sub info
-	{
-		print "Session module\n";
-	}
+    sub getSessionPath {
+        my $self = shift;
+        return $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'};
+    }
 
-	sub new_file
-	{
-		my $self = shift;
-		my $name = $_[0];
-		croak 'No name defined'
-			if ( !exists( $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'} ) );
-		return $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/" . $name;
-	}
+    sub serialize {
+        my $self = shift;
+        my $var  = $_[0];
+        $var =~ s/\s+/_/g;
+        return $var;
+    }
 
-	sub initialize
-	{
-		my $self         = shift;
-		my $session_name = $self->serialize( $_[0] );
-		my $session_dir;
-		my $id;
-		$session_dir =
-			  $Init->getEnv()->workspace() . "/"
-			. $self->{'CONF'}->{'VARS'}->{'SESSION_DIR'} . "/"
-			. $session_name;
-		if ( !-d $session_dir )
-		{
-			mkdir($session_dir);
-			$id = $session_name;
-		} else
-		{
-			$id = $session_name . time;
-			$session_dir =
-				  $Init->getEnv()->workspace() . "/"
-				. $self->{'CONF'}->{'VARS'}->{'SESSION_DIR'} . "/"
-				. $id;
-			while ( -d $session_dir )
-			{
-				$id = $session_name . time;
-				$session_dir =
-					  $Init->getEnv()->workspace() . "/"
-					. $self->{'CONF'}->{'VARS'}->{'SESSION_DIR'} . "/"
-					. $id;
-			}
-			mkdir($session_dir);
-		}
-		$self->{'CONF'}->{'VARS'}->{'SESSION_NAME'}          = $id;
-		$self->{'CONF'}->{'VARS'}->{'SESSION_PATH_STRIPPED'} = $session_dir;
-		$session_dir =~ s/\s+/\\ /g;
-		$self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} = $session_dir;
+    sub info {
+        print "Session module\n";
+    }
+
+    sub new_file {
+        my $self = shift;
+        my $name = $_[0];
+        croak 'No name defined'
+            if ( !exists( $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'} ) );
+        return $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/" . $name;
+    }
+
+    sub initialize {
+        my $self         = shift;
+        my $session_name = $self->serialize( $_[0] );
+        my $session_dir;
+        my $id;
+        $session_dir =
+              $Init->getEnv()->workspace() . "/"
+            . $self->{'CONF'}->{'VARS'}->{'SESSION_DIR'} . "/"
+            . $session_name;
+        if ( !-d $session_dir ) {
+            mkdir($session_dir);
+            $id = $session_name;
+        }
+        else {
+            $id = $session_name . time;
+            $session_dir =
+                  $Init->getEnv()->workspace() . "/"
+                . $self->{'CONF'}->{'VARS'}->{'SESSION_DIR'} . "/"
+                . $id;
+            while ( -d $session_dir ) {
+                $id = $session_name . time;
+                $session_dir =
+                      $Init->getEnv()->workspace() . "/"
+                    . $self->{'CONF'}->{'VARS'}->{'SESSION_DIR'} . "/"
+                    . $id;
+            }
+            mkdir($session_dir);
+        }
+        $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'}          = $id;
+        $self->{'CONF'}->{'VARS'}->{'SESSION_PATH_STRIPPED'} = $session_dir;
+        $session_dir =~ s/\s+/\\ /g;
+        $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} = $session_dir;
 
 # A session can be used as a db, as a variable storage, and so on!
 #Creates a session with a given name (id), so you can retrieve later your session
@@ -97,134 +91,155 @@ use File::Path;
 #A sessionhandler plugin is required
 #Il sessionhandler, per salvare lo "stato " dei plugin in una giornata, salverà il tutto in una
 #Session, e inserendoci dentro il moduleloader stesso ( e per il restore basta caricare la session corrispondente e sovrascrivere la referenza del loader).
-		return $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'};
-	}
+        return $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'};
+    }
 
-	sub exists()
-	{
-		my $self = shift;
-		if ( $_[0] )
-		{
-			if (   -d $Init->getEnv()->workspace() . "/"
-				 . $CONF->{'VARS'}->{'SESSION_DIR'} . "/"
-				 . $_[0] )
-			{
-				return 1;
-			} else
-			{
-				return 0;
-			}
-		} else
-		{
-			if ( exists( $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'} ) )
-			{
-				return 1;
-			} else
-			{
-				return 0;
-			}
-		}
-	}
-	sub getName{
-		my $self=shift;
-		return $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'};
-	}
+    sub exists() {
+        my $self = shift;
+        if ( $_[0] ) {
+            if (  -d $Init->getEnv()->workspace() . "/"
+                . $CONF->{'VARS'}->{'SESSION_DIR'} . "/"
+                . $_[0] )
+            {
+                return 1;
+            }
+            else {
+                return 0;
+            }
+        }
+        else {
+            if ( exists( $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'} ) ) {
+                return 1;
+            }
+            else {
+                return 0;
+            }
+        }
+    }
 
-	sub execute_save
-	{
-		my $self    = shift;
-		my $module  = shift @_;
-		my $command = shift @_;
-		my @ARGS    = @_;
-		open my $COMMAND_LOG, ">>",
-			$self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/"
-			. $CONF->{'VARS'}->{'FLOWFILE'};
-		print $COMMAND_LOG $module . "\@" 
-			. $command . "\@"
-			. join( '#', @ARGS ) . "\n";
-		close $COMMAND_LOG;
-		# Meglio un buffer?
-	}
+    sub getName {
+        my $self = shift;
+        return $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'};
+    }
 
-	sub restore()
-	{
-		my $self         = shift;
-		my $session_name = $self->serialize( $_[0] );
-		my $session_dir;
-		my $id;
-		$session_dir =
-			  $Init->getEnv()->workspace() . "/"
-			. $self->{'CONF'}->{'VARS'}->{'SESSION_DIR'} . "/"
-			. $session_name;
-		if ( !-d $session_dir )
-		{
-			croak "No Session found with that name!";
-		}
-		$self->{'CONF'}->{'VARS'}->{'SESSION_NAME'}          = $session_name;
-		$self->{'CONF'}->{'VARS'}->{'SESSION_PATH_STRIPPED'} = $session_dir;
-		$session_dir =~ s/\s+/\\ /g;
-		$self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} = $session_dir;
-		chdir($self->{'CONF'}->{'VARS'}->{'SESSION_PATH'});
-	}
+    sub execute_save {
+        my $self    = shift;
+        my $module  = shift @_;
+        my $command = shift @_;
+        my @ARGS    = @_;
+        open my $COMMAND_LOG, ">>",
+            $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/"
+            . $CONF->{'VARS'}->{'FLOWFILE'};
+        print $COMMAND_LOG $module . "\@" 
+            . $command . "\@"
+            . join( '#', @ARGS ) . "\n";
+        close $COMMAND_LOG;
 
-	sub safechdir(){
-		my $self=shift;
-		chdir($self->{'CONF'}->{'VARS'}->{'SESSION_PATH'});
-	}
+        # Meglio un buffer?
+    }
 
-	sub wrap
-	{
+    sub restore() {
+        my $self         = shift;
+        my $session_name = $self->serialize( $_[0] );
+        my $session_dir;
+        my $id;
+        $session_dir =
+              $Init->getEnv()->workspace() . "/"
+            . $self->{'CONF'}->{'VARS'}->{'SESSION_DIR'} . "/"
+            . $session_name;
+        if ( !-d $session_dir ) {
+            croak "No Session found with that name!";
+        }
+        $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'}          = $session_name;
+        $self->{'CONF'}->{'VARS'}->{'SESSION_PATH_STRIPPED'} = $session_dir;
+        $session_dir =~ s/\s+/\\ /g;
+        $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} = $session_dir;
+        chdir( $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} );
+    }
 
-		#Method to wrap all!
-		my $self         = shift;
-		my $ModuleLoader = $Init->getModuleLoader();
-		my $IO           =$Init->getIO();
-		open my $COMMAND_LOG, "<",
-			$self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/"
-			. $CONF->{'VARS'}->{'FLOWFILE'};
-		my @FLOW = <$COMMAND_LOG>;
-		close $COMMAND_LOG;
-		@FLOW = $IO->unici(@FLOW);
-		shift(@FLOW);
+    sub safechdir() {
+        my $self = shift;
+        chdir( $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} );
+    }
 
-		foreach my $FLOW_LINE (@FLOW)
-		{
-			chomp($FLOW_LINE);
-			my @FLOW_PIECES = split( '@', $FLOW_LINE );
-			my $module = shift(@FLOW_PIECES);
-			next if !$module;
-			my $method = shift(@FLOW_PIECES);
-			next if !$method;
-			my $ARGS = shift(@FLOW_PIECES);
-			next if !$ARGS;
-		
-			my @REAL_ARGS = split( '#', $ARGS );
-			$ModuleLoader->execute( $module, $method, @REAL_ARGS );
-		}
-	}
+    sub wrap {
+    	my $self=shift;
+    	my @FLOW;
+        #Method to wrap all!
+      	@FLOW=$self->_get_flow();
 
-	sub stash
-	{
+        foreach my $FLOW_LINE (@FLOW) {
+            chomp($FLOW_LINE);
+            my @FLOW_PIECES = split( '@', $FLOW_LINE );
+            my $module = shift(@FLOW_PIECES);
+            next if !$module;
+            my $method = shift(@FLOW_PIECES);
+            next if !$method;
+            my $ARGS = shift(@FLOW_PIECES);
+            next if !$ARGS;
 
-		#Destroy!
-		my $self = shift;
-		if ( $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'} eq "default_session" )
-		{
-			opendir( DIR, $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} );
-			my @ANY = readdir(DIR);
-			close DIR;
-			foreach my $resource (@ANY)
-			{
-				unlink(   $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/"
-						. $resource );
-			}
-		} else
-		{
-			chdir("..");
-			rmtree( $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} );
-		}
-		$self->restore("default_session");
-	}
+            my @REAL_ARGS = split( '#', $ARGS );
+            $ModuleLoader->execute( $module, $method, @REAL_ARGS );
+        }
+    }
+
+    sub wrap_history(){##Only for cli. add history from a given term
+    	   my $self=shift;
+    	   my $term=$_[0];
+    	my @FLOW;
+        #Method to wrap all!
+      	@FLOW=$self->_get_flow();
+      	foreach my $FLOW_LINE (@FLOW) {
+            chomp($FLOW_LINE);
+            my @FLOW_PIECES = split( '@', $FLOW_LINE );
+            my $module = shift(@FLOW_PIECES);
+            next if !$module;
+            my $method = shift(@FLOW_PIECES);
+            next if !$method;
+            my $ARGS = shift(@FLOW_PIECES);
+            next if !$ARGS;
+
+            my @REAL_ARGS = split( '#', $ARGS );
+            $term->addhistory("$module\.$method ".join(" ",@REAL_ARGS));
+        }
+
+    }
+
+    sub _get_flow(){
+	  my $self         = shift;
+	        my $ModuleLoader = $Init->getModuleLoader();
+	        my $IO           = $Init->getIO();
+	        open my $COMMAND_LOG, "<",
+	            $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/"
+	            . $CONF->{'VARS'}->{'FLOWFILE'};
+	        my @FLOW = <$COMMAND_LOG>;
+	        close $COMMAND_LOG;
+	        @FLOW = $IO->unici(@FLOW);
+	        shift(@FLOW);
+	        return @FLOW;
+
+    }
+
+    sub stash {
+
+        #Destroy!
+        my $self = shift;
+        if ($self->{'CONF'}->{'VARS'}->{'SESSION_NAME'} eq "default_session" )
+        {
+            opendir( DIR, $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} );
+            my @ANY = readdir(DIR);
+            close DIR;
+            foreach my $resource (@ANY) {
+                unlink(   $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/"
+                        . $resource );
+            }
+        }
+        else {
+            chdir("..");
+            rmtree( $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} );
+        }
+        $self->restore("default_session");
+    }
 
 }
 1;
