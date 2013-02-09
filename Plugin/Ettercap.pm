@@ -27,9 +27,6 @@ sub export_public_methods() {
 
 }
 
-sub info() {
-
-}
 
 sub clear() {
     return 1;
@@ -107,7 +104,6 @@ sub start {
     );
     $tr_ettercap->start();
     $session->{'urlsnarf'} = $tr_ettercap;
-
     bless( {}, $self->{'sessions'}->{$session_id} );
     $self->{'sessions'}->{$session_id} = $session;
     $tr_ettercap->status();

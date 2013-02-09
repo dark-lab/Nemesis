@@ -2,7 +2,6 @@ package Nemesis::ModuleLoader;
 use Carp qw( croak );
 use Storable qw(dclone freeze thaw);
 use TryCatch;
-use Scalar::Util qw(blessed);
 
 #external modules
 my $base = {
@@ -10,6 +9,8 @@ my $base = {
     'pwd'          => './',
     'main_modules' => 'Nemesis'
 };
+my @MODULES_PATH=('Plugin','Resuources'); #TODO: Handle libraries in other directories
+
 our $Init;
 
 sub new {
