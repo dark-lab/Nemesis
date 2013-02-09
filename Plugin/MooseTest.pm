@@ -1,7 +1,7 @@
 package Plugin::MooseTest;
 use Moose;
 use Nemesis::Inject;
-
+use Resources::Test;
 our $VERSION = '0.1a';
 our $AUTHOR  = "skullbocks & mudler";
 our $MODULE  = "Moose test module";
@@ -15,6 +15,8 @@ sub test {
     my $self = shift;
     $self->Init->getIO()->print_info("Ciao");
     $self->Init->getIO()->debug_dumper( $self->Init );
+    my $test = Resources::Test->new();
+    $test->test;
 }
 
 1;

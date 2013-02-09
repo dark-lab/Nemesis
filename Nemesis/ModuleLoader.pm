@@ -5,11 +5,9 @@ use TryCatch;
 
 #external modules
 my $base = {
-    'path'         => 'Plugin',
     'pwd'          => './',
-    'main_modules' => 'Nemesis'
 };
-my @MODULES_PATH=('Plugin','Resuources'); #TODO: Handle libraries in other directories
+my @MODULES_PATH=('Plugin','Resources'); 
 
 our $Init;
 
@@ -93,113 +91,85 @@ sub loadmodule() {
     my $self        = shift;
     my $module      = $_[0];
     my $IO          = $Init->getIO();
-    my $plugin_path = $self->{'Base'}->{'pwd'} . $self->{'Base'}->{'path'};
-    my $modules_path =
-        $self->{'Base'}->{'pwd'} . $self->{'Base'}->{'main_modules'};
-    my $base;
-    if ( -e $plugin_path . "/" . $module . ".pm" ) {
-        $base = $self->{'Base'}->{'path'};
+    my $object;
+    if(my $LibraryAbsPath=$self->_findLib($module)){
+        $object = $LibraryAbsPath . "::" . $module;
+    } else {
+        $object= "Nemesis::".$module;
     }
-    elsif ( -e $modules_path . "/" . $module . ".pm" ) {
-        $base = $self->{'Base'}->{'main_modules'};
-    }
-    else {
-
-        #return ();
-        $base = $self->{'Base'}->{'path'};
-    }
-
-    #$IO->debug("Module $module found in $base");
-    my $object = "$base" . "::" . "$module";
+    $Init->getIO()->debug("[" .__PACKAGE__."] : loading plugin $object");
     try {
-
-        #	eval 'require '.$object;
-        #	do($object);
         $object = $object->new( Init => $Init );
     }
     catch($error) {
         $Init->getIO()
             ->print_error("Something went wrong loading $object: $error");
             return ();
-        }
-
-        # if($object eq ""){
-        # 	$Init->getIO()->print_alert("Module $module NOT loaded");
-        # 	return();
-        # }
-
-        #NOTE: prepare sub invoked after initialization
-        if ( eval { $object->can("prepare") } ) {
-        $object->prepare;
     }
-    else {
-        $Init->getIO()->debug("No prepare for $object");
-    }
+    $object->prepare if ( eval { $object->can("prepare") } );
     $Init->getIO()->debug("Module $module correctly loaded");
     return $object;
 }
 
-sub pluginPath() {
-
-    my $self = shift;
-    return $self->{'Base'}->{'pwd'} . $self->{'Base'}->{'path'};
-
+sub _findLib(){
+    my $self=shift;
+    my $LibName=$_[0];
+    foreach my $Library(@MODULES_PATH){
+        foreach my $INCLib (@INC) {
+            if ( -e $INCLib . "/" . $Library."/" .$LibName . ".pm" ) {
+                return $Library;
+            }
+        }
+        if ( -e $Init->getEnv()->getPathBin ."/". $Library . "/" . $LibName . ".pm" ) {
+            return $Library;
+        }
+    }
 }
+
+
+sub getLoadedLib(){
+    my $self=shift;
+    return @{$self->{'LibraryList'}};
+}
+
 
 sub loadmodules {
     my $self = shift;
     my @modules;
     my $IO   = $Init->getIO();
-    my $path = $self->{'Base'}->{'pwd'} . $self->{'Base'}->{'path'};
-    local *DIR;
-    my @files = ();
+    my @Libs = ();
     my $modules;
     my $mods   = 0;
-    my $on_inc = 0;
-    my $inc_dir;
-
-    if ( !opendir( DIR, "$path" ) ) {
-        ##Se non riesco a vedere in locale, forse sono nell'INC?
-        $IO->print_alert("No $path detected to find modules");
-        foreach my $dir (@INC) {
-            if ( -d $dir . "/" . $self->{'Base'}->{'path'} ) {
-
-                #Oh, eccoli!
-                $inc_dir = $dir;
-                opendir( DIR, $dir . "/" . $self->{'Base'}->{'path'} );
-                @files = grep( !/^\.\.?$/, readdir(DIR) );
-                closedir(DIR);
-                $mods = 0;
+    foreach my $Library (@MODULES_PATH){
+    local *DIR;
+        if ( !opendir( DIR, $Init->getEnv()->getPathBin ."/". $Library ) ) {
+            ##Se non riesco a vedere in locale, forse sono nell'INC?
+            $IO->print_alert("No ".$Init->getEnv()->getPathBin."/" . $Library." detected to find modules");
+            foreach my $INCLib (@INC) {
+                if ( -d $INCLib . "/" . $Library ) {
+                    #Oh, eccoli!
+                    opendir( DIR, $INCLib . "/" . $Library);
+                    push(@Libs,map { $_ = $INCLib."/".$Library."/".$_ } grep( !/^\.\.?$/, readdir(DIR) ));
+                    closedir(DIR);
+                }
             }
-        }
-        $on_inc = 1;
-    }
-    else {
-        @files = grep( !/^\.\.?$/, readdir(DIR) );
-        closedir(DIR);
-        $mods = 0;
-    }
-
-    foreach my $f (@files) {
-        my $base;
-        my $name;
-        if ( $on_inc == 1 ) {
-
-            #Sono nell'inc......
-            $base = $inc_dir . "/" . $self->{'Base'}->{'path'} . "/" . $f;
-            ($name) = $f =~ m/([^\.]+)\.pm/;
         }
         else {
-            $base = $path . "/" . $f;
-            ($name) = $f =~ m/([^\.]+)\.pm/;
+            push(@Libs,map { $_ = $self->{'Base'}->{'pwd'}.$Library."/".$_ } grep( !/^\.\.?$/, readdir(DIR) ));
+            closedir(DIR);
         }
+
+    }
+
+ foreach my $Library (@Libs) {
+        my ($name) = $Library =~ m/([^\.|^\/]+)\.pm/;
+            $Init->getIO()->debug("[" .__PACKAGE__."] : detected Plugin/Resource $name in $Library");
         try {
             if ( exists( $self->{'modules'}->{$name} ) ) {
-                delete $INC{ $path . "/" . $name };
                 delete $self->{'modules'}->{$name};
             }
-            my $result = do($base);
-            if ( $self->isModule($base) ) {
+            my $result = do($Library);
+            if ( $self->isModule($Library) ) {
                 $self->{'modules'}->{$name} = $self->loadmodule($name);
                 if ( exists( $self->{'modules'}->{$name} ) ) {
                     $mods++;
@@ -215,12 +185,12 @@ sub loadmodules {
         }
         catch($error) {
             $IO->print_error($error);
-                delete $INC{ $path . "/" . $name };
+                delete $self->{'modules'}->{$name};
                 next;
         };
     }
     $IO->print_info("> $mods modules available. Double tab to see them\n");
-
+    @{$self->{'LibraryList'}}=@Libs;
     #delete $self->{'modules'};
     return 1;
 }

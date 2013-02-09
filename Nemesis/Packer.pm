@@ -30,19 +30,13 @@ sub pack() {
     chdir($parpath);
 
     my @OPTS           = ($What);
-    my @LOADED_PLUGINS = ();
-
-    foreach
-        my $module ( sort( keys %{ $Init->getModuleLoader()->{'modules'} } ) )
-    {
-        push( @LOADED_PLUGINS,
-                  $Init->getModuleLoader()->{'Base'}->{'path'} . "/" 
-                . $module
-                . ".pm" );
+    my @LOADED_PLUGINS = map { my ($Name) = $_ =~m/([^\.|^\/]+)\.pm$/ ; $_= $Init->getModuleLoader()->_findLib($_) ."/". $Name .".pm";  } $Init->getModuleLoader()->getLoadedLib();
+    foreach $m(@LOADED_PLUGINS){
+        $Init->getIO()->debug("Plugin/Resource to compress $m");
     }
-
     my %opt;
     $opt{P} = 1;
+    $opt{vvv}=1;
     $opt{o} = $FileName;
     #$opt{x} =1; #with this it still works!
     $opt{M} = \@LOADED_PLUGINS;
