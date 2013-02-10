@@ -56,9 +56,18 @@ package Nemesis::Process;
 
     sub thread() {
         my $self = shift;
-        $self->{'INSTANCE'} = async {
-            eval( $self->{'CONFIG'}->{'code'} );
-        };
+        if(exists($self->{'CONFIG'}->{'code'})){
+            $self->{'INSTANCE'} = async {
+                eval( $self->{'CONFIG'}->{'code'} );
+            };
+        } elsif (exists($self->{'CONFIG'}->{'module'})){
+            #TODO: Will even start?
+            $self->{'CONFIG'}->{'module'} =~ s/\:\:/\//g;
+            my @LOADED_LIBS = $Init->getModuleLoader()->getLoadedLib();
+            foreach my $Lib (@LOADED_LIBS){
+               $self->{'INSTANCE'} =  async { open HANDLE, "<".$Lib; @CODE=<HANDLE>; close HANDLE; eval (@CODE); } if($Lib=~$self->{'CONFIG'}->{'module'})
+            }
+        }
     }
 
     sub stop() {

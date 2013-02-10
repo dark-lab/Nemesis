@@ -126,6 +126,39 @@ sub _findLib(){
     }
 }
 
+sub _findLibsByCategory(){
+    my $self=shift;
+    my $LibName=$_[0];
+    my @Result;
+    foreach my $INCLib (@INC) {
+        if ( -d $INCLib . "/" . $LibName) {
+            local *DIR;
+            if(opendir(DIR,$INCLib."/".$LibName)){
+              @Result =map{ $_=$LibName."/".$_; } grep( !/^\.\.?$/, readdir(DIR)) ;
+                         close DIR;
+                last;
+
+            }
+   
+
+            
+        } elsif
+     ( -d $Init->getEnv()->getPathBin ."/". $LibName  ) {
+              local *DIR;
+            if(opendir(DIR,$Init->getEnv()->getPathBin ."/". $LibName)){
+               @Result = map{ $_=$LibName."/".$_; } grep( !/^\.\.?$/, readdir(DIR));
+                         close DIR;
+                last;
+
+            }
+        }
+    }
+                    $Init->getIO()->debug("FOUND ".join(" ",@Result));
+
+       return @Result;
+    
+}
+
 
 sub getLoadedLib(){
     my $self=shift;

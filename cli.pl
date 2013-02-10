@@ -15,7 +15,7 @@ use Nemesis::Init;
 #TODO: TheNet
 #TODO: Valutare l'inclusione di http://search.cpan.org/~reedfish/Net-FullAuto-0.999944/lib/Net/FullAuto.pm
 #Net:Route
-
+#ANN, SVM, DecisionTree?
 #Dunque KiokuDB per i moduli moose.
 
 
