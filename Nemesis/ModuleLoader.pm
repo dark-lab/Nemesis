@@ -1,13 +1,10 @@
 package Nemesis::ModuleLoader;
-use Carp qw( croak );
-use Storable qw(dclone freeze thaw);
+
 use TryCatch;
 
 #external modules
-my $base = {
-    'pwd'          => './',
-};
-my @MODULES_PATH=('Plugin','Resources'); 
+my $base = { 'pwd' => './', };
+my @MODULES_PATH = ( 'Plugin', 'Resources' );
 
 our $Init;
 
@@ -15,7 +12,7 @@ sub new {
     my $class = shift;
     my $self = { 'Base' => $base };
     %{$package} = @_;
-    croak 'No init' if !exists( $package->{'Init'} );
+   # croak 'No init' if !exists( $package->{'Init'} );
     $Init = $package->{'Init'};
     $self->{'Base'}->{'pwd'} = $Init->getEnv()->{'ProgramPath'} . "/";
     return bless $self, $class;
@@ -88,16 +85,17 @@ sub listmodules {
 }
 
 sub loadmodule() {
-    my $self        = shift;
-    my $module      = $_[0];
-    my $IO          = $Init->getIO();
+    my $self   = shift;
+    my $module = $_[0];
+    my $IO     = $Init->getIO();
     my $object;
-    if(my $LibraryAbsPath=$self->_findLib($module)){
+    if ( my $LibraryAbsPath = $self->_findLib($module) ) {
         $object = $LibraryAbsPath . "::" . $module;
-    } else {
-        $object= "Nemesis::".$module;
     }
-    $Init->getIO()->debug("[" .__PACKAGE__."] : loading plugin $object");
+    else {
+        $object = "Nemesis::" . $module;
+    }
+    $Init->getIO()->debug( "[" . __PACKAGE__ . "] : loading plugin $object" );
     try {
         $object = $object->new( Init => $Init );
     }
@@ -105,66 +103,71 @@ sub loadmodule() {
         $Init->getIO()
             ->print_error("Something went wrong loading $object: $error");
             return ();
-    }
+    } 
     $object->prepare if ( eval { $object->can("prepare") } );
     $Init->getIO()->debug("Module $module correctly loaded");
     return $object;
 }
 
-sub _findLib(){
-    my $self=shift;
-    my $LibName=$_[0];
-    foreach my $Library(@MODULES_PATH){
+sub _findLib() {
+    my $self    = shift;
+    my $LibName = $_[0];
+    foreach my $Library (@MODULES_PATH) {
         foreach my $INCLib (@INC) {
-            if ( -e $INCLib . "/" . $Library."/" .$LibName . ".pm" ) {
+            if ( -e $INCLib . "/" . $Library . "/" . $LibName . ".pm" ) {
                 return $Library;
             }
         }
-        if ( -e $Init->getEnv()->getPathBin ."/". $Library . "/" . $LibName . ".pm" ) {
+        if (  -e $Init->getEnv()->getPathBin . "/" 
+            . $Library . "/" 
+            . $LibName
+            . ".pm" )
+        {
             return $Library;
         }
     }
 }
 
-sub _findLibsByCategory(){
-    my $self=shift;
-    my $LibName=$_[0];
+sub _findLibsByCategory() {
+    my $self    = shift;
+    my $LibName = $_[0];
     my @Result;
     foreach my $INCLib (@INC) {
-        if ( -d $INCLib . "/" . $LibName) {
+        if ( -d $INCLib . "/" . $LibName ) {
             local *DIR;
-            if(opendir(DIR,$INCLib."/".$LibName)){
-              @Result =map{ $_=$LibName."/".$_; } grep( !/^\.\.?$/, readdir(DIR)) ;
-                         close DIR;
+            if ( opendir( DIR, $INCLib . "/" . $LibName ) ) {
+                @Result =
+                    map { $_ = $LibName . "/" . $_; }
+                    grep( !/^\.\.?$/, readdir(DIR) );
+                close DIR;
                 last;
 
             }
-   
 
-            
-        } elsif
-     ( -d $Init->getEnv()->getPathBin ."/". $LibName  ) {
-              local *DIR;
-            if(opendir(DIR,$Init->getEnv()->getPathBin ."/". $LibName)){
-               @Result = map{ $_=$LibName."/".$_; } grep( !/^\.\.?$/, readdir(DIR));
-                         close DIR;
+        }
+        elsif ( -d $Init->getEnv()->getPathBin . "/" . $LibName ) {
+            local *DIR;
+            if (opendir( DIR, $Init->getEnv()->getPathBin . "/" . $LibName ) )
+            {
+                @Result =
+                    map { $_ = $LibName . "/" . $_; }
+                    grep( !/^\.\.?$/, readdir(DIR) );
+                close DIR;
                 last;
 
             }
         }
     }
-                    $Init->getIO()->debug("FOUND ".join(" ",@Result));
+    $Init->getIO()->debug( "FOUND " . join( " ", @Result ) );
 
-       return @Result;
-    
+    return @Result;
+
 }
 
-
-sub getLoadedLib(){
-    my $self=shift;
-    return @{$self->{'LibraryList'}};
+sub getLoadedLib() {
+    my $self = shift;
+    return @{ $self->{'LibraryList'} };
 }
-
 
 sub loadmodules {
     my $self = shift;
@@ -172,49 +175,64 @@ sub loadmodules {
     my $IO   = $Init->getIO();
     my @Libs = ();
     my $modules;
-    my $mods   = 0;
-    foreach my $Library (@MODULES_PATH){
-    local *DIR;
-        if ( !opendir( DIR, $Init->getEnv()->getPathBin ."/". $Library ) ) {
+    my $mods = 0;
+    foreach my $Library (@MODULES_PATH) {
+        local *DIR;
+        if ( !opendir( DIR, $Init->getEnv()->getPathBin . "/" . $Library ) ) {
             ##Se non riesco a vedere in locale, forse sono nell'INC?
-            $IO->print_alert("No ".$Init->getEnv()->getPathBin."/" . $Library." detected to find modules");
+            $IO->print_alert( "No "
+                    . $Init->getEnv()->getPathBin . "/"
+                    . $Library
+                    . " detected to find modules" );
             foreach my $INCLib (@INC) {
                 if ( -d $INCLib . "/" . $Library ) {
+
                     #Oh, eccoli!
-                    opendir( DIR, $INCLib . "/" . $Library);
-                    push(@Libs,map { $_ = $INCLib."/".$Library."/".$_ } grep( !/^\.\.?$/, readdir(DIR) ));
+                    opendir( DIR, $INCLib . "/" . $Library );
+                    push( @Libs,
+                        map { $_ = $INCLib . "/" . $Library . "/" . $_ }
+                        grep( !/^\.\.?$/, readdir(DIR) ) );
                     closedir(DIR);
                 }
             }
         }
         else {
-            push(@Libs,map { $_ = $self->{'Base'}->{'pwd'}.$Library."/".$_ } grep( !/^\.\.?$/, readdir(DIR) ));
+            push( @Libs,
+                map { $_ = $self->{'Base'}->{'pwd'} . $Library . "/" . $_ }
+                grep( !/^\.\.?$/, readdir(DIR) ) );
             closedir(DIR);
         }
 
     }
 
- foreach my $Library (@Libs) {
+    foreach my $Library (@Libs) {
         my ($name) = $Library =~ m/([^\.|^\/]+)\.pm/;
-            $Init->getIO()->debug("[" .__PACKAGE__."] : detected Plugin/Resource $name in $Library");
+        $Init->getIO()
+            ->debug( "["
+                . __PACKAGE__
+                . "] : detected Plugin/Resource $name in $Library" );
         try {
             if ( exists( $self->{'modules'}->{$name} ) ) {
                 delete $self->{'modules'}->{$name};
             }
-            my $result = do($Library);
+             my $result = do($Library);
             if ( $self->isModule($Library) ) {
+               
+
+                $Init->getIO()->debug( $Library . " is a module!" );
                 $self->{'modules'}->{$name} = $self->loadmodule($name);
                 if ( exists( $self->{'modules'}->{$name} ) ) {
                     $mods++;
                 }
+                if ( !$result ) {
+                    $Init->getIO()->print_error("$name didn't returned true");
+                }
             }
             else {
                 $Init->getIO()
-                    ->print_alert("$base it's not a Nemesis module");
+                    ->print_alert("$name it's not a Nemesis module");
             }
-            if ( !$result ) {
-                $Init->getIO()->print_error("$base didn't returned true");
-            }
+
         }
         catch($error) {
             $IO->print_error($error);
@@ -223,7 +241,8 @@ sub loadmodules {
         };
     }
     $IO->print_info("> $mods modules available. Double tab to see them\n");
-    @{$self->{'LibraryList'}}=@Libs;
+    @{ $self->{'LibraryList'} } = @Libs;
+
     #delete $self->{'modules'};
     return 1;
 }
@@ -231,12 +250,14 @@ sub loadmodules {
 sub isModule() {
     my $self   = shift;
     my $module = $_[0];
-    open my $MODULE, "<" . $module
+    open MODULE, "<" . $module
         or $Init->getIO()->print_alert("$module can't be opened");
-    my @MOD = <$MODULE>;
-    close $MODULE;
+    my @MOD = <MODULE>;
+    close MODULE;
     foreach my $rigo (@MOD) {
-        if ($rigo =~ /(?<![#|#.*|.*#])[nemesis_module|nemesis_moose_module]/ )
+        if ( $rigo
+            =~ /(?<![#|#.*|.?#])(nemesis_module|nemesis_moose_module|nemesis_moosex_module)/
+            )
         {
             return 1;
         }

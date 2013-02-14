@@ -1,22 +1,43 @@
 package Plugin::MooseTest;
-use Moose;
+
+
+#use Moose;
+use MooseX::DeclareX
+    keywords => [qw(class)],
+    plugins  => [qw(guard build preprocess std_constants)],
+    types    => [ -Moose ];
 use Nemesis::Inject;
-use Resources::Test;
-our $VERSION = '0.1a';
-our $AUTHOR  = "skullbocks & mudler";
-our $MODULE  = "Moose test module";
-our $INFO    = "<www.dark-lab.net>";
 
-our @PUBLIC_FUNCTIONS = qw(info test);
+class Plugin::MooseTest {
 
-nemesis_moose_module;
+    our $VERSION = '0.f1a';
+    our $AUTHOR  = "f";
+    our $MODULE  = "Tf";
+    our $INFO    = "<www.dark-lab.net>";
 
-sub test {
-    my $self = shift;
-    $self->Init->getIO()->print_info("Ciao");
-    $self->Init->getIO()->debug_dumper( $self->Init );
-    my $test = Resources::Test->new();
-    $test->test;
+    our @PUBLIC_FUNCTIONS = qw(info test );
+
+    nemesis_moosex_module;
+
+        has 'Process' => (
+            is => 'rw',
+        );
+    method test() {
+            my $Process=$self->Init->getModuleLoader->loadmodule("Process");
+            $Process->set(
+                type=> "thread",
+                module=>"Run"
+                );
+            $Process->start();
+            $self->Process($Process);
+    }
+
+    method clear(){
+        $self->Process()->destroy();
+    }
+
 }
 
 1;
+
+

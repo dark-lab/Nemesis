@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 use warnings;
-
-
+use Getopt::Long;
+use Term::ReadLine;
 use Nemesis::Init;
 
 #NOTE:
@@ -19,8 +19,6 @@ use Nemesis::Init;
 #Dunque KiokuDB per i moduli moose.
 
 
-use Getopt::Long;
-use Term::ReadLine::Gnu;
 ##General Settings
 my $Init         = new Nemesis::Init();
 my $output       = $Init->getIO();
@@ -82,8 +80,8 @@ while ( defined( $_ = $nemesis_t->readline( $output->get_prompt_out() ) ) )
 		}
 	} else
 	{
-		#$moduleloader->execute( "shell", "run", $command, @cmd );
-		eval($command." ".join(" ",@cmd));
+		$moduleloader->execute( "shell", "run", $command, @cmd );
+		#eval($command." ".join(" ",@cmd));
 	}
 	warn $@ if $@;
 	print "\n";

@@ -44,8 +44,16 @@ use File::Path;
     sub new_file {
         my $self = shift;
         my $name = $_[0];
+        my $Package=$_[1];
         croak 'No name defined'
-            if ( !exists( $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'} ) );
+          if ( !exists( $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'} ) );
+
+        if($Package){
+            mkdir( $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'}."/".$Package) if(!-d $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'}."/".$Package);
+            return  $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'}."/".$Package."/".$name;
+        }
+
+
         return $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/" . $name;
     }
 
@@ -81,16 +89,6 @@ use File::Path;
         $self->{'CONF'}->{'VARS'}->{'SESSION_PATH_STRIPPED'} = $session_dir;
         $session_dir =~ s/\s+/\\ /g;
         $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} = $session_dir;
-
-# A session can be used as a db, as a variable storage, and so on!
-#Creates a session with a given name (id), so you can retrieve later your session
-#Creates a dir for the session in the work directory.
-#So you can list retrieve everything.
-#Restore the state of the plugins and so on.
-#
-#A sessionhandler plugin is required
-#Il sessionhandler, per salvare lo "stato " dei plugin in una giornata, salverà il tutto in una
-#Session, e inserendoci dentro il moduleloader stesso ( e per il restore basta caricare la session corrispondente e sovrascrivere la referenza del loader).
         return $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'};
     }
 
@@ -162,12 +160,27 @@ use File::Path;
         chdir( $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} );
     }
 
-    sub wrap {
-    	my $self=shift;
-    	my @FLOW;
-        #Method to wrap all!
-      	@FLOW=$self->_get_flow();
+    sub safedir() {
+        my $self = shift;
+        my $dir  = shift;
+        my $code = shift;
 
+        chdir($dir);
+        &$code;
+        chdir( $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} );
+
+    }
+
+    sub wrap {
+        my $self = shift;
+        my $File=shift;
+        my @FLOW;
+        #Method to wrap all!
+        if($File){
+            @FLOW = $self->_get_flow($File);
+        }else {
+            @FLOW = $self->_get_flow();
+        }
         foreach my $FLOW_LINE (@FLOW) {
             chomp($FLOW_LINE);
             my @FLOW_PIECES = split( '@', $FLOW_LINE );
@@ -183,13 +196,14 @@ use File::Path;
         }
     }
 
-    sub wrap_history(){##Only for cli. add history from a given term
-    	   my $self=shift;
-    	   my $term=$_[0];
-    	my @FLOW;
+    sub wrap_history() {    ##Only for cli. add history from a given term
+        my $self = shift;
+        my $term = $_[0];
+        my @FLOW;
+
         #Method to wrap all!
-      	@FLOW=$self->_get_flow();
-      	foreach my $FLOW_LINE (@FLOW) {
+        @FLOW = $self->_get_flow();
+        foreach my $FLOW_LINE (@FLOW) {
             chomp($FLOW_LINE);
             my @FLOW_PIECES = split( '@', $FLOW_LINE );
             my $module = shift(@FLOW_PIECES);
@@ -200,23 +214,30 @@ use File::Path;
             next if !$ARGS;
 
             my @REAL_ARGS = split( '#', $ARGS );
-            $term->addhistory("$module\.$method ".join(" ",@REAL_ARGS));
+            $term->addhistory(
+                "$module\.$method " . join( " ", @REAL_ARGS ) );
         }
 
     }
 
-    sub _get_flow(){
-	  my $self         = shift;
-	        my $ModuleLoader = $Init->getModuleLoader();
-	        my $IO           = $Init->getIO();
-	        open my $COMMAND_LOG, "<",
-	            $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/"
-	            . $CONF->{'VARS'}->{'FLOWFILE'};
-	        my @FLOW = <$COMMAND_LOG>;
-	        close $COMMAND_LOG;
-	        @FLOW = $IO->unici(@FLOW);
-	        shift(@FLOW);
-	        return @FLOW;
+    sub _get_flow() {
+        my $self         = shift;
+        my $File         = shift;
+        my $ModuleLoader = $Init->getModuleLoader();
+        my $IO           = $Init->getIO();
+        my $COMMAND_LOG;
+        if($File) {
+            open $COMMAND_LOG, "<",$File;
+        } else {
+            open $COMMAND_LOG, "<",
+                 $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/"
+                  . $CONF->{'VARS'}->{'FLOWFILE'};
+        }
+        my @FLOW = <$COMMAND_LOG>;
+        close $COMMAND_LOG;
+        @FLOW = $IO->unici(@FLOW);
+        shift(@FLOW);
+        return @FLOW;
 
     }
 

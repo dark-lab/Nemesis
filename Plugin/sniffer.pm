@@ -91,8 +91,8 @@ sub sniff {
     my $code;
     my $dev = $_[0];
     my $pcap_file =
-        $Session->new_file( $dev . "-ettercap-" . $env->time() . ".pcap" );
-    my $log_file = $Session->new_file( $dev . "-etterlog-" . $env->time() );
+        $Session->new_file( $dev . "-ettercap-" . $env->time() . ".pcap" ,__PACKAGE__);
+    my $log_file = $Session->new_file( $dev . "-etterlog-" . $env->time(),__PACKAGE__ );
     $code =
           'ettercap -Du -i ' 
         . $dev . ' -L '
@@ -102,8 +102,7 @@ sub sniff {
     my $Process = $Init->getModuleLoader()->loadmodule("Process");
     $Process->set(
         type => 'daemon',
-        code => $code,
-        Init => $Init
+        code => $code
     );
 
     if ( $Process->start() ) {
@@ -136,8 +135,7 @@ sub spoof {
     my $Process = $Init->getModuleLoader()->loadmodule("Process");
     $Process->set(
         type => 'system',    # forked pipeline
-        code => $code,
-        Init => $Init
+        code => $code
     );
     $Process->start() or croak("Can't start the process");
     $self->{'process'}->{$dev}->{'spoofer'} = $Process;
@@ -155,13 +153,12 @@ sub strip {
         "iptables -t nat -A PREROUTING -p tcp -i $dev --destination-port 80 -j REDIRECT --to-port 8080"
     );
     my $strip_file =
-        $Session->new_file( $dev . "-sslstrip-" . $env->time() . ".log" );
+        $Session->new_file( $dev . "-sslstrip-" . $env->time() . ".log" ,__PACKAGE__);
     my $code    = 'sslstrip -l 8080 -a -k -f -w ' . $strip_file;
     my $Process = $Init->getModuleLoader()->loadmodule("Process");
     $Process->set(
         type => 'system',     # forked pipeline
-        code => $code,
-        Init => $Init,
+        code => $code
         file => $strip_file
     );
     $Process->start() or croak("Can't start the process");

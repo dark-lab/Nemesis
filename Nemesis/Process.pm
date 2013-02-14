@@ -1,12 +1,12 @@
 package Nemesis::Process;
 {
-
+    use forks;
     #TODO: Add tags to processes!  For analyzer.
     #TODO: Have a look to IPC::Run and IPC::Open3
     use Carp qw( croak );
     use Unix::PID;
     use Data::Dumper;
-    use Coro;
+
     our $Init;
 
     sub new {
@@ -43,7 +43,7 @@ package Nemesis::Process;
                 $state = $self->fork();
             }
         }
-        $Init->getIO()->debug( "Running: " . $self->{'CONFIG'}->{'code'} );
+        $Init->getIO()->debug("Job started");
         return $state ? $self->get_id() : ();
     }
 
@@ -56,16 +56,40 @@ package Nemesis::Process;
 
     sub thread() {
         my $self = shift;
-        if(exists($self->{'CONFIG'}->{'code'})){
+        if ( exists( $self->{'CONFIG'}->{'code'} ) ) {
             $self->{'INSTANCE'} = async {
                 eval( $self->{'CONFIG'}->{'code'} );
             };
-        } elsif (exists($self->{'CONFIG'}->{'module'})){
+        }
+        elsif ( exists( $self->{'CONFIG'}->{'module'} ) ) {
+            $Init->getIO()->debug("I'm here... i hope.");
+
             #TODO: Will even start?
             $self->{'CONFIG'}->{'module'} =~ s/\:\:/\//g;
             my @LOADED_LIBS = $Init->getModuleLoader()->getLoadedLib();
-            foreach my $Lib (@LOADED_LIBS){
-               $self->{'INSTANCE'} =  async { open HANDLE, "<".$Lib; @CODE=<HANDLE>; close HANDLE; eval (@CODE); } if($Lib=~$self->{'CONFIG'}->{'module'})
+            foreach my $Lib (@LOADED_LIBS) {
+
+                $self->{'CONFIG'}->{'module'} =~ s/\:\:/\//g;
+
+                #$self->{'CONFIG'}->{'module'}=~s/\//\:\:/g;
+
+                if ( $Lib =~ $self->{'CONFIG'}->{'module'} ) {
+                    my $Module = $self->{'CONFIG'}->{'module'};
+                    $Init->getIO()->debug("i handle that");
+                    open HANDLE, "<" . $Lib;
+                    @CODE = <HANDLE>;
+                    close HANDLE;
+
+                    $Init->getIO()->debug("@CODE");
+                   # $Module =~ s/\//\:\:/g;
+                    $self->{'INSTANCE'} = threads->new(
+                        sub {
+                            my $istance = $Init->getModuleLoader()->loadmodule($Module);
+                            $istance->run();
+                        }
+                    );
+
+                }
             }
         }
     }
@@ -73,7 +97,10 @@ package Nemesis::Process;
     sub stop() {
         my $self = shift;
         if ( exists( $self->{'INSTANCE'} ) ) {
-            $self->{'INSTANCE'}->cancel();
+            #$self->{'INSTANCE'}->cancel();
+            $self->{'INSTANCE'}->kill("TERM");
+            $self->{'INSTANCE'}->detach();
+            delete($self->{'INSTANCE'});
         }
         if ( $self->get_pid() ) {
             kill 9 => $self->get_pid();

@@ -1,7 +1,5 @@
 package Plugin::NetManipulator;
 use warnings;
-use Nemesis::Process;
-use Nemesis::Inject;
 my $VERSION = '0.1a';
 my $AUTHOR  = "mudler";
 my $MODULE  = "NetManipulator Module";
@@ -21,7 +19,6 @@ sub help() {                                            #NECESSARY
     if ( $section eq "configure" ) {
         $IO->print_title("nothing to configure here");
     }
-
 }
 
 sub clear() {

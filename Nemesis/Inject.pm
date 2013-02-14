@@ -60,6 +60,43 @@ sub import {
          ';    # inject 'if' at beginning of parse buffer
     };
 
+    Keyword::Simple::define 'nemesis_moosex_resource', sub {
+        my ($ref) = @_;
+        substr( $$ref, 0, 0 ) = '
+		has Init => (
+			is=> read_write,
+			required=> true
+			);
+
+         ';    # inject 'if' at beginning of parse buffer
+    };
+
+    Keyword::Simple::define 'nemesis_moose_resource', sub {
+        my ($ref) = @_;
+        substr( $$ref, 0, 0 ) = '
+		has \'Init\' => (
+			is=> read_write,
+			required=> true
+			);
+
+         ';    # inject 'if' at beginning of parse buffer
+    };
+    Keyword::Simple::define 'nemesis_resource', sub {
+        my ($ref) = @_;
+        substr( $$ref, 0, 0 ) = '
+  our $Init;
+         sub new(){
+			my $package = shift;
+			bless( {}, $package );
+			%{ $package } = @_;
+			$Init=$package->{\'Init\'};
+			return $package;
+         }
+       
+         ';    # inject 'if' at beginning of parse buffer
+    };
+
+
 }
 
 sub unimport {

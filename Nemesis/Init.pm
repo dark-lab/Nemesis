@@ -1,15 +1,15 @@
 package Nemesis::Init;
 {
+use TryCatch;
+    use Carp qw( croak );
+
     use Nemesis::Env;
     use Nemesis::Interfaces;
     use Nemesis::IO;
     use Nemesis::Process;
-    use Nemesis::Inject;
     use Nemesis::ModuleLoader;
     use Nemesis::Session;
     use Nemesis::Packer;
-    use Carp qw( croak );
-
     sub new {
         my $package = shift;
         bless( {}, $package );

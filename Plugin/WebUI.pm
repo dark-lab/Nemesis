@@ -19,7 +19,7 @@ class Plugin::WebUI {
 
     method test() {
         $self->Init->getIO()->print_info("test");
-        }
+    }
 
 }
 

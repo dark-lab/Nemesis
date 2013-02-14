@@ -46,14 +46,13 @@ sub print_ascii {
 }
 
 sub print_ascii_fh {
-    my $self      = shift;
-    my $FH     = $_[0];
-    my $COLOR     = $_[1];
+    my $self  = shift;
+    my $FH    = $_[0];
+    my $COLOR = $_[1];
     while ( my $line = <$FH> ) {
         print colored( $line, $COLOR );
     }
 }
-
 
 sub set_public_methods() {
     my $self = shift;
