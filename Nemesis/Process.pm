@@ -1,6 +1,6 @@
 package Nemesis::Process;
 {
-    use forks;
+
     #TODO: Add tags to processes!  For analyzer.
     #TODO: Have a look to IPC::Run and IPC::Open3
     use Carp qw( croak );
@@ -81,10 +81,12 @@ package Nemesis::Process;
                     close HANDLE;
 
                     $Init->getIO()->debug("@CODE");
-                   # $Module =~ s/\//\:\:/g;
+
+                    # $Module =~ s/\//\:\:/g;
                     $self->{'INSTANCE'} = threads->new(
                         sub {
-                            my $istance = $Init->getModuleLoader()->loadmodule($Module);
+                            my $istance =
+                                $Init->getModuleLoader()->loadmodule($Module);
                             $istance->run();
                         }
                     );
@@ -97,10 +99,11 @@ package Nemesis::Process;
     sub stop() {
         my $self = shift;
         if ( exists( $self->{'INSTANCE'} ) ) {
+
             #$self->{'INSTANCE'}->cancel();
             $self->{'INSTANCE'}->kill("TERM");
             $self->{'INSTANCE'}->detach();
-            delete($self->{'INSTANCE'});
+            delete( $self->{'INSTANCE'} );
         }
         if ( $self->get_pid() ) {
             kill 9 => $self->get_pid();

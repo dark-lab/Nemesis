@@ -42,17 +42,22 @@ use File::Path;
     }
 
     sub new_file {
-        my $self = shift;
-        my $name = $_[0];
-        my $Package=$_[1];
+        my $self    = shift;
+        my $name    = $_[0];
+        my $Package = $_[1];
         croak 'No name defined'
-          if ( !exists( $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'} ) );
+            if ( !exists( $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'} ) );
 
-        if($Package){
-            mkdir( $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'}."/".$Package) if(!-d $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'}."/".$Package);
-            return  $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'}."/".$Package."/".$name;
+        if ($Package) {
+            mkdir(
+                $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/" . $Package )
+                if ( !-d $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/"
+                . $Package );
+            return
+                  $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/"
+                . $Package . "/"
+                . $name;
         }
-
 
         return $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/" . $name;
     }
@@ -173,12 +178,14 @@ use File::Path;
 
     sub wrap {
         my $self = shift;
-        my $File=shift;
+        my $File = shift;
         my @FLOW;
+
         #Method to wrap all!
-        if($File){
+        if ($File) {
             @FLOW = $self->_get_flow($File);
-        }else {
+        }
+        else {
             @FLOW = $self->_get_flow();
         }
         foreach my $FLOW_LINE (@FLOW) {
@@ -192,7 +199,7 @@ use File::Path;
             next if !$ARGS;
 
             my @REAL_ARGS = split( '#', $ARGS );
-            $ModuleLoader->execute( $module, $method, @REAL_ARGS );
+            $Init->getModuleLoader()->execute( $module, $method, @REAL_ARGS );
         }
     }
 
@@ -226,16 +233,18 @@ use File::Path;
         my $ModuleLoader = $Init->getModuleLoader();
         my $IO           = $Init->getIO();
         my $COMMAND_LOG;
-        if($File) {
-            open $COMMAND_LOG, "<",$File;
-        } else {
+        if ($File) {
+            open $COMMAND_LOG, "<", $File;
+        }
+        else {
             open $COMMAND_LOG, "<",
-                 $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/"
-                  . $CONF->{'VARS'}->{'FLOWFILE'};
+                $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/"
+                . $CONF->{'VARS'}->{'FLOWFILE'};
         }
         my @FLOW = <$COMMAND_LOG>;
         close $COMMAND_LOG;
-        @FLOW = $IO->unici(@FLOW);
+
+        # @FLOW = $IO->unici(@FLOW);
         shift(@FLOW);
         return @FLOW;
 

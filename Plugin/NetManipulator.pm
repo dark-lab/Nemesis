@@ -1,5 +1,6 @@
 package Plugin::NetManipulator;
 use warnings;
+use Nemesis::Inject;
 my $VERSION = '0.1a';
 my $AUTHOR  = "mudler";
 my $MODULE  = "NetManipulator Module";

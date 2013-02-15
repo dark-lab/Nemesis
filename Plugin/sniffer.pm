@@ -1,7 +1,6 @@
 package Plugin::sniffer;
 use warnings;
 use Carp qw( croak );
-use Nemesis::Process;
 use Nemesis::Inject;
 my $VERSION = '0.1a';
 my $AUTHOR  = "mudler";
@@ -158,7 +157,7 @@ sub strip {
     my $Process = $Init->getModuleLoader()->loadmodule("Process");
     $Process->set(
         type => 'system',     # forked pipeline
-        code => $code
+        code => $code,
         file => $strip_file
     );
     $Process->start() or croak("Can't start the process");

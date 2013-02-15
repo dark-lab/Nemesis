@@ -48,8 +48,8 @@ sub import {
         my ($ref) = @_;
         substr( $$ref, 0, 0 ) = '
 		has Init => (
-			is=> read_write,
-			required=> true
+			is=> \'rw\',
+			required=> 1
 			);
 		method export_public_methods() {   
 		    return @PUBLIC_FUNCTIONS;
@@ -95,7 +95,6 @@ sub import {
        
          ';    # inject 'if' at beginning of parse buffer
     };
-
 
 }
 

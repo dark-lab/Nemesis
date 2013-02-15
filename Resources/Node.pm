@@ -1,7 +1,7 @@
 package Resources::Node;
 use Net::IP;
 use Moose::Util::TypeConstraints;
-use MooseX::DeclareX;
+use MooseX::Declare;
 
   subtype 'port',
       as 'Int',

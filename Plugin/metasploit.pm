@@ -2,7 +2,6 @@ package Plugin::metasploit;
 use warnings;
 use Carp qw( croak );
 use Nemesis::Inject;
-use Nemesis::Process;
 require Data::MessagePack;
 require LWP;
 require HTTP::Request;

@@ -1,13 +1,10 @@
 package Plugin::MooseTest;
 
 
-#use Moose;
-use MooseX::DeclareX
-    keywords => [qw(class)],
-    plugins  => [qw(guard build preprocess std_constants)],
-    types    => [ -Moose ];
-use Nemesis::Inject;
+use MooseX::Declare;
 
+use Nemesis::Inject;
+  use namespace::autoclean;
 class Plugin::MooseTest {
 
     our $VERSION = '0.f1a';
@@ -37,7 +34,7 @@ class Plugin::MooseTest {
     }
 
 }
-
+  __PACKAGE__->meta->make_immutable;
 1;
 
 

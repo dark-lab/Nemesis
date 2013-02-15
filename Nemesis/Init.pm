@@ -1,21 +1,11 @@
 package Nemesis::Init;
 {
-use TryCatch;
-    use Carp qw( croak );
 
-    use Nemesis::Env;
-    use Nemesis::Interfaces;
-    use Nemesis::IO;
-    use Nemesis::Process;
-    use Nemesis::ModuleLoader;
-    use Nemesis::Session;
-    use Nemesis::Packer;
     sub new {
         my $package = shift;
         bless( {}, $package );
         $package->{'Env'} = new Nemesis::Env( Init => $package );
         $package->{'Session'} = new Nemesis::Session( Init => $package );
-
         $package->{'Packer'} = new Nemesis::Packer( Init => $package );
         if ( $package->{'Session'}->exists("default_session") ) {
             $package->{'Session'}->restore("default_session");
@@ -30,11 +20,10 @@ use TryCatch;
         );
         $package->{'Interfaces'} =
             new Nemesis::Interfaces( Init => $package );
-        $package->{'ModuleLoader'} =
-            Nemesis::ModuleLoader->new( Init => $package );
+        
 
-#Load all plugins in plugin directory and passes to the construtor of the modules those objs
-#
+        $package->{'ModuleLoader'} =
+            new Nemesis::ModuleLoader( Init => $package );
         $0 = "SpikeNemesis";
         return $package;
     }

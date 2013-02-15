@@ -1,8 +1,7 @@
-#!/usr/bin/perl -w
-use warnings;
+#!/usr/bin/perl
 use Getopt::Long;
 use Term::ReadLine;
-use Nemesis::Init;
+use Nemesis;
 
 #NOTE:
 #http://search.cpan.org/~flora/Devel-Declare-0.006006/lib/Devel/Declare.pm
