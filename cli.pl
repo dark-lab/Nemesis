@@ -8,10 +8,10 @@ use Nemesis;
 #http://search.cpan.org/~flora/B-Hooks-Parser-0.09/lib/B/Hooks/Parser.pm
 #Guarda test.pl nella home
 #External
+#http://perlbrew.pl/
 
 #TODO: Valutare Net:Interface ?
 #use strict;
-#TODO: TheNet
 #TODO: Valutare l'inclusione di http://search.cpan.org/~reedfish/Net-FullAuto-0.999944/lib/Net/FullAuto.pm
 #Net:Route
 #ANN, SVM, DecisionTree?

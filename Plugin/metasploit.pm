@@ -1,19 +1,60 @@
 package Plugin::metasploit;
-use warnings;
-use Carp qw( croak );
-use Nemesis::Inject;
-require Data::MessagePack;
-require LWP;
-require HTTP::Request;
-my $VERSION = '0.1a';
-my $AUTHOR  = "mudler";
-my $MODULE  = "Metasploit Module";
-my $INFO    = "<www.dark-lab.net>";
+    use Nemesis::Inject;
+    use MooseX::Declare;
+class Plugin::metasploit{
 
-#Public exported functions
-my @PUBLIC_FUNCTIONS =
-    qw(configure call check_installation status where stop status_pids browser_autopwn)
-    ;    #NECESSARY
+
+    my $VERSION = '0.1a';
+    my $AUTHOR  = "mudler";
+    my $MODULE  = "Metasploit Module";
+    my $INFO    = "<www.dark-lab.net>";
+
+    #Funzioni che fornisco.
+    my @PUBLIC_FUNCTIONS =
+        qw(start clear)
+        ;    #NECESSARY
+#Attributo Processo del demone MSFRPC
+    has 'Process' => (isa=>"Nemesis::Process",is=>"rw"); 
+#Risorsa MSFRPC che mi fornirà il modo di connettermi a MSFRPC
+    has 'MSFRPC'  => (isa=> "Resources::MSFRPC",is=>"rw",writer=>"start"); 
+    
+    method start(){
+
+        my $Io    = $self->Init->getIO();
+
+        $self->MSFRPC($self->Init->getModuleLoader->loadmodule("MSFRPC")); #Carico la risorsa MSFRPC
+
+        my $code =
+              'msfrpcd -U '
+            . $self->MSFRPC->Username . ' -P '
+            . $self->MSFRPC->Password . ' -p '
+            . $self->MSFRPC->Port . ' -S';
+        $Io->print_info("Starting msfrpcd service."); #AVVIO il demone msfrpc con le configurazioni della risorsa
+        my $Process = $self->Init->getModuleLoader->loadmodule('Process'); ##Carico il modulo process
+        $Process->set(
+            type => 'daemon',    # tipologia demone
+            code => $code # linea di comando...
+        );
+        $Process->start(); #Avvio
+        $Io->debug( $Io->generate_command($code) ); #stampo a video il comando che ho eseguito.
+        $self->Process($Process); #Nell'attributo processo del plugin ci inserisco il processo
+        if ( $Process->is_running ) {
+            $Io->print_info("Service msfrcpd started"); #Controllo se si è avviato
+            $Io->process_status($Process); #Stampo lo status
+            $Io->print_alert(
+                "Now you have to give some time to metasploit to be up and running.."
+            );
+        }
+
+    }
+    method clear(){
+        $self->Process->destroy() if($self->Process) ;
+        #Il metodo clear viene chiamato quando chiudiamo tutto, dunque se ho un processo attivo, lo chiudo!
+    }
+}
+
+1;
+__END__
 my $CONF = {
     VARS => {
         MSFRPCD_USER => 'spike',
@@ -178,5 +219,3 @@ sub parse_result() {
         }
     }
 }
-1;
-__END__

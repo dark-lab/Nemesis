@@ -64,8 +64,8 @@ sub import {
         my ($ref) = @_;
         substr( $$ref, 0, 0 ) = '
 		has Init => (
-			is=> read_write,
-			required=> true
+			is=> \'rw\',
+			required=> 1
 			);
 
          ';    # inject 'if' at beginning of parse buffer

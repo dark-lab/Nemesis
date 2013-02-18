@@ -59,8 +59,8 @@ sub pack() {
             #For Libpath add
             my @LIBPATH;
             push (@LIBPATH,$Init->getEnv->getPathBin);
-            $opt{P}   = 1;           #Output perl
-            #$opt{c}=1; #compiles-> MUST BE ENABLED ONLY WHEN LIBRARY ARE INSTALLED IN O.S.
+           $opt{P}   = 1;           #Output perl
+            $opt{c}=1; #compiles-> MUST BE ENABLED ONLY WHEN LIBRARY ARE INSTALLED IN O.S.
                         #OTHERWISE NOTHING OF WHAT IS "USING" a PLUGIN WILL BE BUNDLED (e.g. MoooseX::Declare)
             $opt{vvv} = 1;
             $opt{o}   = $FileName;

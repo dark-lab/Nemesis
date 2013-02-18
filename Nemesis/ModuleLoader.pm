@@ -3,6 +3,10 @@ package Nemesis::ModuleLoader;
     no warnings 'redefine';
    # use Try::Tiny;
    # use TryCatch;
+    use LWP::Simple;
+    use Regexp::Common qw /URI/;
+    use The::Net;
+
 
     #external modules
     my @MODULES_PATH = ( 'Plugin', 'Resources' );
@@ -85,12 +89,26 @@ package Nemesis::ModuleLoader;
         }
     }
 
+    sub _findLibName{
+        my $self=shift;
+        my $URL=$_[0];
+        my $Fetch = get($URL);
+        while($Fetch=~/package\s+(.*?)\;/i){
+            return $1;
+        }
+
+    }
+
     sub loadmodule() {
         my $self   = shift;
         my $module = $_[0];
         my $IO     = $Init->getIO();
         my $object;
-        if ( my $Type = $self->_findLib($module) ) {
+        if($module =~/$RE{URI}{HTTP}/) {
+           require $module;
+           $object=$self->_findLibName($module);
+        }
+        elsif ( my $Type = $self->_findLib($module) ) {
             $object = $Type . "::" . $module;
         }
         else {

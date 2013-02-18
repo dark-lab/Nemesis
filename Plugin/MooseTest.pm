@@ -7,20 +7,23 @@ use Nemesis::Inject;
   use namespace::autoclean;
 class Plugin::MooseTest {
 
-    our $VERSION = '0.f1a';
-    our $AUTHOR  = "f";
-    our $MODULE  = "Tf";
+    our $VERSION = '0.1a';
+    our $AUTHOR  = "mudler";
+    our $MODULE  = "Moose testing plugin";
     our $INFO    = "<www.dark-lab.net>";
 
     our @PUBLIC_FUNCTIONS = qw(info test );
 
     nemesis_moosex_module;
 
-        has 'Process' => (
-            is => 'rw',
-        );
+    has 'Process' => (
+        is => 'rw',
+    );
+
     method test() {
-            my $Process=$self->Init->getModuleLoader->loadmodule("Process");
+        #$self->Init->getIO()->print_info($self->Init->getModuleLoader->_findLibName("http://dark-lab.net/Speech.pm"));
+        #$self->Init->getModuleLoader->loadmodule("http://dark-lab.net/Process.pm");
+             my $Process=$self->Init->getModuleLoader->loadmodule("Process");
             $Process->set(
                 type=> "thread",
                 module=>"Run"
@@ -30,7 +33,7 @@ class Plugin::MooseTest {
     }
 
     method clear(){
-        $self->Process()->destroy();
+        $self->Process()->destroy() if($self->Process);
     }
 
 }
