@@ -135,6 +135,12 @@ package Nemesis::ModuleLoader;
         return $object;
     }
 
+    sub getInstance(){
+        my $self=shift;
+        my $Instance=$_[0];
+        return $self->{'modules'}->{$Instance} if(exists($self->{'modules'}->{$Instance}));
+    }
+
     sub _findLib() {
         my $self    = shift;
         my $LibName = $_[0];
