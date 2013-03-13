@@ -6,7 +6,7 @@ use warnings;
 use PAR::Packer      ();
 use PAR              ();
 use Module::ScanDeps;
-use Acme::EyeDrops;
+#use Acme::EyeDrops;
 use Carp qw(croak);
 
 our $Init;

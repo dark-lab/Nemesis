@@ -5,6 +5,7 @@ package Nemesis::Process;
     #TODO: Have a look to IPC::Run and IPC::Open3
     use Carp qw( croak );
     use Unix::PID;
+    use forks;
     use Data::Dumper;
 
     our $Init;
@@ -56,10 +57,11 @@ package Nemesis::Process;
 
     sub thread() {
         my $self = shift;
+
         if ( exists( $self->{'CONFIG'}->{'code'} ) ) {
-            $self->{'INSTANCE'} = async {
+            $self->{'INSTANCE'} = threads->new( sub {  
                 eval( $self->{'CONFIG'}->{'code'} );
-            };
+            });
         }
         elsif ( exists( $self->{'CONFIG'}->{'module'} ) ) {
             $Init->getIO()->debug("I'm here... i hope.");
@@ -85,9 +87,9 @@ package Nemesis::Process;
                     # $Module =~ s/\//\:\:/g;
                     $self->{'INSTANCE'} = threads->new(
                         sub {
-                            my $istance =
+                            my $instance =
                                 $Init->getModuleLoader()->loadmodule($Module);
-                            $istance->run();
+                            $instance->run();
                         }
                     );
 
@@ -127,12 +129,16 @@ package Nemesis::Process;
 
     sub is_running() {
         my $self = shift;
-        my $pid  = Unix::PID->new();
-        if ( $self->get_pid and $pid->is_pid_running( $self->get_pid() ) ) {
-            return 1;
-        }
-        else {
-            return 0;
+        if(exists($self->{'INSTANCE'})){
+            return $self->{'INSTANCE'}->is_running();
+        } else {
+            my $pid  = Unix::PID->new();
+            if ( $self->get_pid and $pid->is_pid_running( $self->get_pid() ) ) {
+                return 1;
+            }
+            else {
+                return 0;
+            }
         }
     }
 

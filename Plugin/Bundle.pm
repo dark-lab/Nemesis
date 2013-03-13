@@ -3,7 +3,6 @@ use MooseX::Declare;
 use Nemesis::Inject;
   use namespace::autoclean;
 
-##PLEASE BE CAREFUL: MooseX::DeclareX modules currently can't be packed because of PAR.
 
 class Plugin::Bundle {
 

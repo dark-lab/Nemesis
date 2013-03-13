@@ -25,12 +25,17 @@ sub get_completion_color {
 
 sub get_prompt_out {
     my $self = shift;
+
+    return "Nemesis\@".$Init->getSession()->getName().">#"; #For now, we have to change Term::ReadLine
+
+
     return
           colored( "Nemesis", "green on_black" )
         . colored( "\@",                           "white on_black" )
         . colored( $Init->getSession()->getName(), "cyan on_black" )
         . colored( ">",                            "white on_black" )
-        . colored( "# ",                           "blue on_black blink" );
+        . colored( "# ",                           "blue on_black blink" )
+       ;
 }
 
 sub print_ascii {

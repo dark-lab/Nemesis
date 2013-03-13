@@ -1,7 +1,7 @@
 package Plugin::shell;
 
 use Nemesis::Inject; #Requested to have your injection
-use TryCatch; #I really need that? :)
+use Try::Tiny; #I really need that? :)
 
 #@PUBLIC_FUNCTION will contain the function(s) that i want to need public to other modules (or by the cli) ?
 my @PUBLIC_FUNCTIONS = qw(run);    
@@ -32,9 +32,9 @@ sub run() {
         #Taking the result of command in @RESULT
         $IO->print_info( "\n" . join( "\n", @RESULT ) );
     }
-    catch($error) {
+    catch {
         #Printing the error (also if it's difficult to believe that there will be one)
-        $IO->print_error("Error executing command $command! $error");
+        $IO->print_error("Error executing command $command! $_");
     }
 
 }

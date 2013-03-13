@@ -1,13 +1,10 @@
 #!/usr/bin/perl
-use Getopt::Long;
-use Term::ReadLine;
+use Term::ReadLine::Perl5;
 use Nemesis;
 
 #NOTE:
 #http://search.cpan.org/~flora/Devel-Declare-0.006006/lib/Devel/Declare.pm
 #http://search.cpan.org/~flora/B-Hooks-Parser-0.09/lib/B/Hooks/Parser.pm
-#Guarda test.pl nella home
-#External
 #http://perlbrew.pl/
 
 #TODO: Valutare Net:Interface ?
@@ -29,7 +26,7 @@ $SIG{'INT'} = sub { $Init->sighandler(); };
 
 # Setting the terminal
 my $term_name = "Nemesis";
-my $nemesis_t = new Term::ReadLine::Gnu($term_name);
+my $nemesis_t = new Term::ReadLine::Perl5($term_name);
 
 
 if ( $moduleloader->loadmodules() != 1 )

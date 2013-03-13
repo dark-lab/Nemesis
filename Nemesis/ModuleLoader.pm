@@ -141,6 +141,19 @@ package Nemesis::ModuleLoader;
         return $self->{'modules'}->{$Instance} if(exists($self->{'modules'}->{$Instance}));
     }
 
+    sub canModule(){
+        my $self=shift;
+        my $Can=$_[0];
+        return @{$self->{'can'}->{$Can}} if(exists($self->{'can'}->{$Can}));
+        foreach my $module ( sort( keys %{ $self->{'modules'} } ) ) {
+            my $Mod=$self->{'modules'}->{$module};
+               if(eval{$Mod->can($Can)}){
+                push(@{$self->{'can'}->{$Can}},$module);
+               }
+        }
+        return @{$self->{'can'}->{$Can}};
+    }
+
     sub _findLib() {
         my $self    = shift;
         my $LibName = $_[0];
@@ -306,5 +319,24 @@ package Nemesis::ModuleLoader;
         }
         return 0;
     }
+
+    sub isResource() {
+        my $self   = shift;
+        my $module = $_[0];
+        open MODULE, "<" . $module
+            or $Init->getIO()->print_alert("$module can't be opened");
+        my @MOD = <MODULE>;
+        close MODULE;
+        foreach my $rigo (@MOD) {
+            if ( $rigo
+                =~ /(?<![#|#.*|.?#])(nemesis_resource|nemesis_moose_resource|nemesis_moosex_resource)/
+                )
+            {
+                return 1;
+            }
+        }
+        return 0;
+    }
+
 }
 1;
