@@ -15,23 +15,31 @@ class Plugin::LiveSniffer {
     nemesis_moosex_module;
 
     has 'Sniffer' => (
-        is => 'rw',
-        isa=>'Resources::Monitor'
+        is => 'rw'
     );
 
     method start() {
 
-      if(!$self->Init->checkroot()){
+      if($self->Init->checkroot()){
         $self->Init->getIO()->print_alert("You need root permission to do this; otherwise you wouldn't see anything");
       }
-      my $Sniffer=$self->Init->getModuleLoader()->loadmodule("Monitor");
-       $Sniffer->start();
-       $self->Sniffer($Sniffer);
+          my $Process=$self->Init->getModuleLoader->loadmodule("Process");
+          my $Monitor=$self->Init->getModuleLoader->loadmodule("Monitor");
+
+            $Process->set(
+                type=> "thread",
+                instance=>$Monitor
+                );
+            $Process->start();
+            $self->Sniffer($Process);
     }
 
+    method clear(){
+      $self->stop();
+    }
 
     method stop(){
-        $self->Sniffer()->stop();
+        $self->Sniffer()->destroy();
     }
 
 }

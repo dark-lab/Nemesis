@@ -7,7 +7,7 @@ package Nemesis::Process;
     use Unix::PID;
     use forks;
     use Data::Dumper;
-
+use Scalar::Util 'reftype';
     our $Init;
 
     sub new {
@@ -58,10 +58,30 @@ package Nemesis::Process;
     sub thread() {
         my $self = shift;
 
-        if ( exists( $self->{'CONFIG'}->{'code'} ) ) {
+        if ( exists( $self->{'CONFIG'}->{'instance'} ) ) {
+            my $instance=$self->{'CONFIG'}->{'instance'};
+
+                        $Init->getIO()->debug("got that $instance.");
+
+         $self->{'INSTANCE'} = threads->new(
+                        sub {
+                            $instance->run();
+                        }
+                    );
+
+}
+        elsif ( exists( $self->{'CONFIG'}->{'code'} ) ) {
+            if(reftype($self->{'CONFIG'}->{'code'}) eq "CODE"){
+                my $code=$self->{'CONFIG'}->{'code'};
+               $self->{'INSTANCE'} = threads->new( 
+                   \&$code
+                );
+            } else {
+
             $self->{'INSTANCE'} = threads->new( sub {  
                 eval( $self->{'CONFIG'}->{'code'} );
             });
+            }
         }
         elsif ( exists( $self->{'CONFIG'}->{'module'} ) ) {
             $Init->getIO()->debug("I'm here... i hope.");
@@ -71,7 +91,6 @@ package Nemesis::Process;
             my @LOADED_LIBS = $Init->getModuleLoader()->getLoadedLib();
             foreach my $Lib (@LOADED_LIBS) {
 
-                $self->{'CONFIG'}->{'module'} =~ s/\:\:/\//g;
 
                 #$self->{'CONFIG'}->{'module'}=~s/\//\:\:/g;
 

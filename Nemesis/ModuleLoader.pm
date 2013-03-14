@@ -102,6 +102,7 @@ package Nemesis::ModuleLoader;
     sub loadmodule() {
         my $self   = shift;
         my $module = $_[0];
+        my %args = $_[1];
         my $IO     = $Init->getIO();
         my $object;
         if($module =~/$RE{URI}{HTTP}/) {
@@ -122,9 +123,15 @@ package Nemesis::ModuleLoader;
                 ->print_error("Something went wrong loading $object: $@");
                 return ();
             }
-        eval {
-            $object = $object->new( Init => $Init );
-        };
+        if(%args){
+            eval {
+                $object = $object->new( Init => $Init, %args );
+            };
+        } else {
+            eval {
+                $object = $object->new( Init => $Init );
+            };
+        }
         if($@) {
             $Init->getIO()
                 ->print_error("Something went wrong loading $object: $@");

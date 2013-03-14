@@ -1,11 +1,13 @@
 use MooseX::Declare;
+use Nemesis::Inject;
+
 class Resources::Dispatcher{
-	use Nemesis::Inject;
+
 		nemesis_moosex_resource;
 		method dispatch(@Packet_info){
 		    my ($npe, $ether, $po, $spo, $header ) = @_;
 		    if( $po ) {
-   			 	$self->Init->debug_dumper($spo);
+   			 	$self->Init->getIO()->debug_dumper($spo);
 
 		        if( $po->isa("NetPacket::IP") ) {
 
@@ -31,11 +33,8 @@ class Resources::Dispatcher{
 		        } elsif( $po->isa("NetPacket::ARP") ) {
 		            print "ARP packet: $po->{sha} -> $po->{tha}\n";
 		        }
-		 
 		    } else {
 		        print "IPv6 or appletalk or something... huh\n";
 		    }
 		}
-
-
 }
