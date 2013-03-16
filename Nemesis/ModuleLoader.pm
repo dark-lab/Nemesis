@@ -154,7 +154,7 @@ package Nemesis::ModuleLoader;
         return @{$self->{'can'}->{$Can}} if(exists($self->{'can'}->{$Can}));
         foreach my $module ( sort( keys %{ $self->{'modules'} } ) ) {
             my $Mod=$self->{'modules'}->{$module};
-               if(eval{$Mod->can($Can)}){
+               if(eval{$Mod->can($Can);}){
                 push(@{$self->{'can'}->{$Can}},$module);
                }
         }

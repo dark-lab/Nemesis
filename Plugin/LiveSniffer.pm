@@ -39,7 +39,7 @@ class Plugin::LiveSniffer {
     }
 
     method stop(){
-        $self->Sniffer()->destroy();
+        $self->Sniffer->destroy();
     }
 
 }
