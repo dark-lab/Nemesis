@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-use Term::ReadLine::Perl5;
+use Term::ReadLine;
 use Nemesis;
 
 #NOTE:
@@ -12,8 +12,10 @@ use Nemesis;
 #TODO: Valutare l'inclusione di http://search.cpan.org/~reedfish/Net-FullAuto-0.999944/lib/Net/FullAuto.pm
 #Net:Route
 #ANN, SVM, DecisionTree?
-#Dunque KiokuDB per i moduli moose.
-
+#Dunque KiokuDB per i moduli moose KiokuX::Model e Search::GIN ? KiokuDB::LiveObjects?
+#XXX:https://metacpan.org/module/KiokuDB
+#https://metacpan.org/module/KiokuDB::Tutorial
+#Websploit? dsniff?
 
 ##General Settings
 my $Init         = new Nemesis::Init();
@@ -26,7 +28,7 @@ $SIG{'INT'} = sub { $Init->sighandler(); };
 
 # Setting the terminal
 my $term_name = "Nemesis";
-my $nemesis_t = new Term::ReadLine::Perl5($term_name);
+my $nemesis_t = new Term::ReadLine($term_name);
 
 
 if ( $moduleloader->loadmodules() != 1 )

@@ -116,7 +116,7 @@ package Nemesis::ModuleLoader;
             $object = "Nemesis::" . $module;
         }
         $Init->getIO()
-            ->debug( "[" . __PACKAGE__ . "] : loading plugin $object" );
+            ->debug("loading plugin $object",__PACKAGE__  );
             eval("use $object");
             if($@){
                 $Init->getIO()
@@ -138,7 +138,7 @@ package Nemesis::ModuleLoader;
                 return ();
         } 
         $object->prepare if ( eval { $object->can("prepare") } );
-        $Init->getIO()->debug("Module $module correctly loaded");
+        $Init->getIO()->debug("Module $module correctly loaded",__PACKAGE__ );
         return $object;
     }
 
@@ -269,10 +269,8 @@ package Nemesis::ModuleLoader;
 
         foreach my $Library (@Libs) {
             my ($name) = $Library =~ m/([^\.|^\/]+)\.pm/;
-            $Init->getIO()
-                ->debug( "["
-                    . __PACKAGE__
-                    . "] : detected Plugin/Resource $name in $Library" );
+           # $Init->getIO()
+            #    ->debug( "detected Plugin/Resource $name in $Library",__PACKAGE__ );
             eval {
                 if ( exists( $self->{'modules'}->{$name} ) ) {
                     delete $self->{'modules'}->{$name};
@@ -281,17 +279,21 @@ package Nemesis::ModuleLoader;
 
                if ( $self->isModule($Library)) {
 
-                    $Init->getIO()->debug( $Library . " is a module!" );
+                    $Init->getIO()->debug( $Library . " is a module!",__PACKAGE__ );
                     $self->{'modules'}->{$name} = $self->loadmodule($name);
                     if ( exists( $self->{'modules'}->{$name} )  and $self->{'modules'}->{$name} ne "") {
                         $mods++;
                     }
        
 
-                } 
+                }
+                elsif ($self->isResource($Library)) {
+                    $Init->getIO()
+                        ->debug("$name is a Nemesis Resource",__PACKAGE__ );
+                }
                 else {
                     $Init->getIO()
-                        ->print_alert("$name it's not a Nemesis module");
+                        ->debug("$name it's nothing to me",__PACKAGE__ );
                 }
 
             };

@@ -26,7 +26,7 @@ sub get_completion_color {
 sub get_prompt_out {
     my $self = shift;
 
-    return "Nemesis\@".$Init->getSession()->getName().">#"; #For now, we have to change Term::ReadLine
+    #   return "Nemesis\@".$Init->getSession()->getName().">#"; #For now, we have to change Term::ReadLine
 
 
     return
@@ -85,12 +85,16 @@ sub debug() {
     if ( exists( $self->{'debug'} )
         and $self->{'debug'} == 1 )
     {
+
+        print colored( " ->","magenta on_black bold") . 
+            colored( $_[1],"cyan on_black bold")
+            .colored("<- ","magenta on_black bold") if($_[1]);
         print colored( "[",     "magenta on_black bold" )
-            . colored( "Debug", "white on_black bold" )
+            . colored( "Debug", "red on_black bold" )
             . colored( "]",     "magenta on_black bold" )
             . colored( " (",    "magenta on_black bold" )
             . colored( $Init->getEnv()->time_seconds(),
-            "bold on_black white" )
+            "bold on_black green" )
             . colored( ") ",  "magenta on_black bold" )
             . colored( $_[0], "white on_black bold" ) . "\n";
     }
@@ -110,7 +114,7 @@ sub print_info() {
 sub print_error() {
     my $self = shift;
     print colored( "[",                             "magenta on_black bold" )
-        . colored( "Err",                           "red on_black bold" )
+        . colored( "Err",                           "red on_black bold blink" )
         . colored( "]",                             "magenta on_black bold" )
         . colored( " (",                            "magenta on_black bold" )
         . colored( $Init->getEnv()->time_seconds(), "bold on_black red" )
@@ -253,9 +257,8 @@ sub generate_command() {
         $command = $tmp . " @tmp_c";
     }
     else {
-        my $stop = 0;
         foreach my $p (@path) {
-            next if $stop == 1;
+
             $pp = $p;
             if ( -e "$p/$command" && $command !~ /\// )
             { #serve per ritrovare il programma di lancio e aggiungergli la path assoluta davanti
@@ -263,7 +266,7 @@ sub generate_command() {
                     chop($pp);
                 }
                 $command = $pp . '/' . $command;
-                $stop    = 1;
+                last;
             }
         }
     }
