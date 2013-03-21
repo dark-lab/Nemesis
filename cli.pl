@@ -71,7 +71,11 @@ while ( defined( $_ = $nemesis_t->readline( $output->get_prompt_out() ) ) )
 		if ( "@cmd" =~ /help/i ) { $cmd[0] = $method; $method = 'help'; }
 		if ( $list =~ /$command/i and $method ne "" )
 		{
-			$moduleloader->execute( $module, $method, @cmd );
+			if(scalar(@cmd)!=0){
+				$moduleloader->execute( $module, $method, @cmd );
+			} else {
+				$moduleloader->execute( $module, $method );
+			}
 		} else
 		{
 			$output->print_alert("function not implemented");

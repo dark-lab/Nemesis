@@ -225,7 +225,7 @@ sub unici {
 sub sanitize {
     my @unici = ();
     foreach my $elemento (@_) {
-        next if $elemento eq "";
+        next if $elemento eq "" or $elemento eq " ";
         push @unici, $elemento;
     }
     return @unici;
