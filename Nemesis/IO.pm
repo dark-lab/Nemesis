@@ -86,16 +86,20 @@ sub debug() {
         and $self->{'debug'} == 1 )
     {
 
+
+
+        print colored( " (",    "magenta on_black bold" )
+            . colored( $Init->getEnv()->time_seconds(),
+            "bold on_black green" )
+            . colored( ")",  "magenta on_black bold" );
+
         print colored( " ->","magenta on_black bold") . 
             colored( $_[1],"cyan on_black bold")
             .colored("<- ","magenta on_black bold") if($_[1]);
         print colored( "[",     "magenta on_black bold" )
             . colored( "Debug", "red on_black bold" )
-            . colored( "]",     "magenta on_black bold" )
-            . colored( " (",    "magenta on_black bold" )
-            . colored( $Init->getEnv()->time_seconds(),
-            "bold on_black green" )
-            . colored( ") ",  "magenta on_black bold" )
+            . colored( "] ",     "magenta on_black bold" )
+          
             . colored( $_[0], "white on_black bold" ) . "\n";
     }
 }
@@ -124,7 +128,7 @@ sub print_error() {
 
 sub print_tabbed {
     my $self = shift;
-    $num = $_[1] || 1;
+    $num = $_[scalar(@_)] || 1;
     print( colored( ( "\t" x $num ) . "~> ", "green on_black bold" ),
         colored( $_[0], "blue on_black bold" ), "\n" );
 }
@@ -212,10 +216,11 @@ sub debug_dumper() {
 }
 
 sub unici {
+    shift;
     my @unici = ();
     my %visti = ();
     foreach my $elemento (@_) {
-        $elemento =~ s/\/+/\//g;
+     #   $elemento =~ s/\/+/\//g;
         next if $visti{$elemento}++;
         push @unici, $elemento;
     }
