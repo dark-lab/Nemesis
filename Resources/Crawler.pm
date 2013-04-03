@@ -13,11 +13,9 @@ class Resources::Crawler{
 	use Regexp::Common qw /URI/;
 
 	method search($String){
-	
 		my $mech = WWW::Mechanize->new();
 		$mech->agent_alias( 'Windows IE 6' );
 		$mech->get( $self->SearchURL );
-
 		$mech->submit_form(
 		    fields      => {
 		        $self->FieldName  => $String
@@ -28,17 +26,35 @@ class Resources::Crawler{
 
 	method getLinkFromPage($mech){
 		my @URLS=$self->urlclean($mech->links);
-
 		my @ActualURLS=@{$self->Result};
-		$self->Init->getIO()->print_info("Good for now.");
-
 		push(@{$self->Result},@URLS);
-		$self->Init->getIO()->print_info("There will be ".scalar(@URLS)." URLS");
-
-
 		$self->sugar;
 
 	}
+
+	method stripLinks(){
+		return map {push @_ , &links($_);} @{$self->Result};
+	}
+
+
+	sub links() {
+        my @list;
+        my $link = $_[0];
+        my $host = $_[0];
+        my $hdir = $_[0];
+        $hdir =~ s/(.*)\/[^\/]*$/$1/;
+        $host =~ s/([-a-zA-Z0-9\.]+)\/.*/$1/;
+        $host .= "/";
+        $link .= "/";
+        $hdir .= "/";
+        $host =~ s/\/\//\//g;
+        $hdir =~ s/\/\//\//g;
+        $link =~ s/\/\//\//g;
+        push(@list,$link,$host,$hdir);
+        return @list;
+    }
+
+
 
 	method urlclean(@Urls){
 
@@ -65,9 +81,9 @@ class Resources::Crawler{
 	method sugar(){
 
 
-		$self->Init->getIO()->print_info("Found a total of ".scalar(@{$self->Result})." links");
+		$self->Init->getIO()->print_info("Found a total of ".scalar(@{$self->Result})." links from ".$self->SearchURL);
 		$self->Init->getIO()->print_tabbed(join("\t",@{$self->Result}),2);
-		$self->Init->getIO()->print_info("We get also ".scalar(@{$self->Pages})." pages to crawl more");
+		$self->Init->getIO()->print_info("We get also ".scalar(@{$self->Pages})." pages to crawl for more");
 				$self->Init->getIO()->print_tabbed(join("\t",@{$self->Pages}),2);
 
 	}
@@ -78,7 +94,6 @@ class Resources::Crawler{
 		my $Page=shift @{$self->Pages};
 		$mech->get( $Page );
 		$self->getLinkFromPage($mech);
-
 	}
 
 }
