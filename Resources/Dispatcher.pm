@@ -11,18 +11,22 @@ class Resources::Dispatcher{
 			$self->debug($spo);
 		    my ($L) = $po=~/\:\:(.*)\=/;
 		    my ($PT) = $spo=~/\:\:(.*)\=/;
-		    $L=lc($L);$PT=lc($PT);
-		    $self->command($po,$L);
-   		    $self->command($spo,$PT);
+		    $self->command($po,lc($L));
+   		    $self->command($spo,lc($PT));
 		}
 
 		method command($Packet,$Type){
 
-		    my $command="event_".$Type;
-			foreach my $Module($self->Init->getModuleLoader->canModule($command)){	
+			$self->match("event_".$Type,$Packet);
+
+		}
+
+		method match(@Args){
+			my $Command=shift(@Args);
+			foreach my $Module($self->Init->getModuleLoader->canModule($Command)){	
 		    	my $Instance=$self->Init->getModuleLoader->getInstance($Module);
-		    	$self->Init->getIO()->print_info("I can do that $Instance $Packet $Type");
-		    	eval { $Instance->$command($Packet); };
+		    	$self->Init->getIO()->print_info("I can do that $Instance");
+		    	eval { $Instance->$Command(@Args); };
 		    }
 
 		}
