@@ -11,12 +11,12 @@ class Plugin::metasploit{
 
     #Funzioni che fornisco.
     my @PUBLIC_FUNCTIONS =
-        qw(start clear)
+        qw(start clear sessionlist)
         ;    #NECESSARY
 #Attributo Processo del demone MSFRPC
-    has 'Process' => (isa=>"Nemesis::Process",is=>"rw"); 
+    has 'Process' => (is=>"rw"); 
 #Risorsa MSFRPC che mi fornirà il modo di connettermi a MSFRPC
-    has 'MSFRPC'  => (isa=> "Resources::MSFRPC",is=>"rw",writer=>"start"); 
+    has 'MSFRPC'  => (is=>"rw",writer=>"start"); 
     
     method start(){
 
@@ -24,7 +24,7 @@ class Plugin::metasploit{
 
         $self->MSFRPC($self->Init->getModuleLoader->loadmodule("MSFRPC")); #Carico la risorsa MSFRPC
 
-        my $code =
+        my $processString =
               'msfrpcd -U '
             . $self->MSFRPC->Username . ' -P '
             . $self->MSFRPC->Password . ' -p '
@@ -33,10 +33,9 @@ class Plugin::metasploit{
         my $Process = $self->Init->getModuleLoader->loadmodule('Process'); ##Carico il modulo process
         $Process->set(
             type => 'daemon',    # tipologia demone
-            code => $code # linea di comando...
+            code => $processString # linea di comando...
         );
         $Process->start(); #Avvio
-        $Io->debug( $Io->generate_command($code) ); #stampo a video il comando che ho eseguito.
         $self->Process($Process); #Nell'attributo processo del plugin ci inserisco il processo
         if ( $Process->is_running ) {
             $Io->print_info("Service msfrcpd started"); #Controllo se si è avviato
@@ -47,6 +46,26 @@ class Plugin::metasploit{
         }
 
     }
+
+
+    method sessionlist(){
+
+        my @OPTIONS = (
+            "auxiliary",
+            "server/browser_autopwn",
+            {   LHOST   => "0.0.0.0",
+                SRVPORT => "8080",
+                URIPATH => "/"
+            }
+        );
+        #my $response = $self->call( "session.list", @OPTIONS );
+        my $response = $self->MSFRPC->call( "session.list" );
+        $self->MSFRPC->parse_result($response);
+
+    }
+
+
+
     method clear(){
         $self->Process->destroy() if($self->Process) ;
         #Il metodo clear viene chiamato quando chiudiamo tutto, dunque se ho un processo attivo, lo chiudo!
