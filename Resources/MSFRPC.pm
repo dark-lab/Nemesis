@@ -52,6 +52,25 @@ class Resources::MSFRPC{
             $self->Init->getIO()->print_error("Failed auth with MSFRPC");
         }
     }
+    method parse_result() {
 
+        my $pack = $_[0];
+        if ( exists( $pack->{'error'} ) ) {
+            $self->Init->getIO()
+                ->print_error("Something went wrong with your MSFRPC call");
+            $self->Init->getIO()->print_error( "Code error: " . $pack->{'error_code'} );
+            $self->Init->getIO()->print_error( "Message: " . $pack->{'error_message'} );
+            foreach my $trace ( $pack->{'error_backtrace'} ) {
+                $self->Init->getIO()->print_tabbed( "Backtrace: " . $trace, 2 );
+            }
+        }
+        else {
+            if ( exists( $pack->{'job_id'} ) ) {
+                $self->Init->getIO()->print_info( "Job ID: " . $pack->{'job_id'} );
+            } else {
+                $self->Init->getIO()->debug_dumper($pack);
+            }
+        }
+    }
 
 }
