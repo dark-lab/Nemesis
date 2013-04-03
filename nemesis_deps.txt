@@ -9,3 +9,4 @@ LWP::Simple
 Net::Easy::Pcap
 Term::ReadLine::Gnu
 Regexp::Common
+Mojolicious
