@@ -6,12 +6,17 @@ class Resources::DB {
 	use KiokuDB;
 	nemesis_moosex_resource;
 
-	has 'BackEnd' => (is="rw");
+	has 'BackEnd' => (is=>"rw");
 
 	  method add ($Obj){
-            $self->BackEnd->txn_do(sub {
-                $self->BackEnd->insert($Obj);
-            });
+
+	  	# create a scope object
+my $s = $self->BackEnd->new_scope;
+ 
+ 
+# takes a snapshot of $some_object
+my $uuid = $self->BackEnd->store($Obj);
+ 
             return $Obj;
       }
 
@@ -26,14 +31,14 @@ class Resources::DB {
       }
 
       method list_obj(){
-
-      	my $all = $self->BackEnd->all_entries;
+      	my $scope=$self->BackEnd->new_scope();
+      	my $all = $self->BackEnd->all_objects;
         while( my $chunk = $all->next ){
-            entry: for my $id (@$chunk) {
-                my $entry = $kioku->lookup($id->id);
-              #  next entry unless blessed $entry && $entry->isa('DayDayUpX::Note');
-              	$self->Init->getIO()->print_alert("Obj $entry");
-              #  $entry->{id} = $id->id; # hack
+            for my $object (@$chunk) {
+
+            	              	$self->Init->getIO()->print_alert("Obj $object");
+
+      
             }
         }
       }
