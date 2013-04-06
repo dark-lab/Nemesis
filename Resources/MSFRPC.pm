@@ -12,8 +12,8 @@ class Resources::MSFRPC{
 	has 'Host' => (isa=>'Str', is=>'rw', default=>'127.0.0.1');
 	has 'Port' => (isa=>'Int', is=>'rw', default=>5553);
 	has 'API' => (isa=>'Str', is=>'rw', default=>'/api/');
-    has 'Token' => (isa=>'Str');
-    has 'Auth' => (isa=>'Int');
+    has 'Token' => (is=>'rw');
+    has 'Auth' => (isa=>'Int',is=>'rw');
     nemesis_moosex_resource;
 
 	method call (Str $meth,ArrayRef[Str] @Options){

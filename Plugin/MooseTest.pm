@@ -23,13 +23,19 @@ class Plugin::MooseTest {
     method test() {
         #$self->Init->getIO()->print_info($self->Init->getModuleLoader->_findLibName("http://dark-lab.net/Speech.pm"));
         #$self->Init->getModuleLoader->loadmodule("http://dark-lab.net/Process.pm");
-             my $Process=$self->Init->getModuleLoader->loadmodule("Process");
-            $Process->set(
-                type=> "thread",
-                module=>"Run"
-                );
-            $Process->start();
-            $self->Process($Process);
+            #  my $Process=$self->Init->getModuleLoader->loadmodule("Process");
+            # $Process->set(
+            #     type=> "thread",
+            #     module=>"Run"
+            #     );
+            # $Process->start();
+            # $self->Process($Process);
+            my $MSFRPC=$self->Init->getModuleLoader->loadmodule("MSFRPC");
+            my $DB=$self->Init->getModuleLoader->loadmodule("DB");
+            $DB->connect();
+            $DB->add($MSFRPC);
+            $DB->list_obj();
+
     }
 
     method clear(){

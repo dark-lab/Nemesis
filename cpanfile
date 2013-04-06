@@ -6,6 +6,7 @@ requires 'Devel::Declare::Context::Simple';
 requires 'Getopt::Long';
 requires 'HTTP::Request';
 requires 'Keyword::Simple';
+requires 'KiokuDB';
 requires 'LWP';
 requires 'LWP::Simple';
 requires 'Module::ScanDeps';
