@@ -33,7 +33,7 @@ class Plugin::Scanner {
                         my $NIP=Net::IP->new($Ip);
 
             $self->Init->getIO()->print_info("IP: ".$Ip."/24");
-            $self->nmapscan($Ip);
+            $self->nmapscan($Ip."/24");
 
 
         }
@@ -43,6 +43,9 @@ class Plugin::Scanner {
 
 
    }
+
+
+ 
 
    method nmapscan($Ip){
     my $Np=Nmap::Parser->new();
@@ -59,11 +62,12 @@ class Plugin::Scanner {
         $self->Init->getIO()->print_tabbed("Status: ".$host->status,3);
         $self->Init->getIO()->print_tabbed("HostNames: ".join(" ",$host->all_hostnames()),3);
         $self->Init->getIO()->print_tabbed("Mac HW: ".$host->mac_addr(),3);
+           my $os_name = $os->name();
+        $self->Init->getIO()->print_tabbed("OS Name: ".$os_name,3);
 
         for my $port ($host->tcp_ports()){
             my $service = $host->tcp_service($port);
-            my $os = $host->os_sig;
-            $self->Init->getIO()->print_info($host->hostname().",".$host->ipv4_addr().",".$host->mac_addr().",".$os->name.",".$os->family.",".$os->osgen().",".$os->name_accuracy().",".$port.",".$service->name.",".$service->product.",".$service->version.",".$service->confidence());
+            $self->Init->getIO()->print_tabbed($port.": ".$service->name." ".$service->product." ".$service->version."(".$service->confidence().")",3);
         }
 
     }

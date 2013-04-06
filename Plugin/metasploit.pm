@@ -16,8 +16,8 @@ class Plugin::metasploit{
 #Attributo Processo del demone MSFRPC
     has 'Process' => (is=>"rw"); 
 #Risorsa MSFRPC che mi fornirà il modo di connettermi a MSFRPC
-    has 'MSFRPC'  => (is=>"rw",writer=>"start"); 
-    
+    has 'MSFRPC'  => (is=>"rw"); 
+    nemesis_moosex_module;
     method start(){
 
         my $Io    = $self->Init->getIO();
@@ -64,7 +64,11 @@ class Plugin::metasploit{
 
     }
 
+    method call($String){
+                my $response = $self->MSFRPC->call($String);
+        $self->MSFRPC->parse_result($response);
 
+    }
 
     method clear(){
         $self->Process->destroy() if($self->Process) ;
