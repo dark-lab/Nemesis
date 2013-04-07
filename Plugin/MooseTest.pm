@@ -30,11 +30,25 @@ class Plugin::MooseTest {
             #     );
             # $Process->start();
             # $self->Process($Process);
-            my $MSFRPC=$self->Init->getModuleLoader->loadmodule("MSFRPC");
+           # my $MSFRPC=$self->Init->getModuleLoader->loadmodule("MSFRPC");
+           # $MSFRPC->Username("Cane");
             my $DB=$self->Init->getModuleLoader->loadmodule("DB");
             $DB->connect();
-            $DB->add($MSFRPC);
+           #$DB->add($MSFRPC);
             $DB->list_obj();
+            my $results=$DB->search(class => "Resources::MSFRPC");
+                while( my $block = $results->next ) {
+                    foreach my $item ( @$block ) {
+                        $self->Init->getIO->debug($item->Username);
+                    }
+                }
+            $self->Init->getIO->print_info("Second test");
+            my $results=$DB->search(Username => 'Cane');
+               while( my $block = $results->next ) {
+                    foreach my $item ( @$block ) {
+                        $self->Init->getIO->debug($item->Username);
+                    }
+                }
 
     }
 

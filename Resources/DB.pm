@@ -4,6 +4,9 @@ use MooseX::Declare;
 class Resources::DB {
 	use Nemesis::Inject;
 	use KiokuDB;
+      use Search::GIN::Extract::Class;
+      use Search::GIN::Query::Manual;
+      use Search::GIN::Query::Class;
 	nemesis_moosex_resource;
 
 	has 'BackEnd' => (is=>"rw");
@@ -11,21 +14,28 @@ class Resources::DB {
 	  method add ($Obj){
 
 	  	# create a scope object
-my $s = $self->BackEnd->new_scope;
- 
- 
-# takes a snapshot of $some_object
-my $uuid = $self->BackEnd->store($Obj);
+            my $s = $self->BackEnd->new_scope;
+             
+             
+            # takes a snapshot of $some_object
+            my $uuid = $self->BackEnd->store($Obj);
  
             return $Obj;
       }
 
       method connect($BackEnd?){
+
+
+
       	if($BackEnd ){
       		$self->BackEnd($BackEnd);
       		return $self;
       	} else {
-      		$BackEnd=KiokuDB->connect("bdb:dir=".$self->Init->getSession()->getSessionPath, create => 1);
+      		$BackEnd=KiokuDB->connect(
+                                                "bdb-gin:dir=".$self->Init->getSession()->getSessionPath, 
+                                                create => 1,
+                                                extract => Search::GIN::Extract::Class->new
+                                          );
       		$self->BackEnd($BackEnd);
       	}
       }
@@ -41,6 +51,39 @@ my $uuid = $self->BackEnd->store($Obj);
       
             }
         }
+      }
+
+      method search(%Search){
+            my $results;
+       
+
+            if($Search{'class'}){
+
+                # create query
+                my $query = Search::GIN::Query::Class->new(
+                    class => $Search{'class'},
+                );
+
+                # get results
+                $results = $self->BackEnd->search($query);
+            } else{
+
+                my $query = Search::GIN::Query::Manual->new(
+                    values => {%Search}
+                );
+
+                $results = $self->BackEnd->search($query);
+            }
+            return $results;
+
+           # results are Data::Stream::Bulk
+
+           #      while( my $chunk = $results->next ){
+           #          for my $author (@$chunk){
+           #              ...
+           #          }
+           #      }
+
       }
 
 
