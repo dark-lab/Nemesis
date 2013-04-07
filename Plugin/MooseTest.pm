@@ -35,15 +35,18 @@ class Plugin::MooseTest {
             my $DB=$self->Init->getModuleLoader->loadmodule("DB");
             $DB->connect();
            #$DB->add($MSFRPC);
-            $DB->list_obj();
+           $self->Init->getIO->debug("test 0: lista tutti oggetti");
+            my $Data_Bulk=$DB->list_obj();
+            $self->Init->getIO->debug("test 1: ricerca classe di tipo Resources::MSFRPC");
+
             my $results=$DB->search(class => "Resources::MSFRPC");
                 while( my $block = $results->next ) {
                     foreach my $item ( @$block ) {
                         $self->Init->getIO->debug($item->Username);
                     }
                 }
-            $self->Init->getIO->print_info("Second test");
-            my $results=$DB->search(Username => 'Cane');
+            $self->Init->getIO->debug("test 2: ricerca nel campo Username il valore Cane");
+            $results=$DB->search(Username => 'Cane');
                while( my $block = $results->next ) {
                     foreach my $item ( @$block ) {
                         $self->Init->getIO->debug($item->Username);

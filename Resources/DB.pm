@@ -45,34 +45,23 @@ class Resources::DB {
       	my $all = $self->BackEnd->all_objects;
         while( my $chunk = $all->next ){
             for my $object (@$chunk) {
-
-            	              	$self->Init->getIO()->print_alert("Obj $object");
-
-      
+            	$self->Init->getIO()->debug("Obj $object");
             }
         }
+        return $all;
       }
 
       method search(%Search){
             my $results;
-       
-
             if($Search{'class'}){
-
                 # create query
                 my $query = Search::GIN::Query::Class->new(
                     class => $Search{'class'},
                 );
-
                 # get results
                 $results = $self->BackEnd->search($query);
             } else{
-
-                my $query = Search::GIN::Query::Manual->new(
-                    values => {%Search}
-                );
-
-                $results = $self->BackEnd->search($query);
+                $results = $self->BackEnd->search(\%Search);
             }
             return $results;
 
