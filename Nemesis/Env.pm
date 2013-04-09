@@ -53,6 +53,7 @@ sub select_info() {
 
 sub ipv4_forward {
     my $self = shift;
+    if($self->check_root==1) {
     if ( $_[0] eq "on" ) {
         open FILE, ">/proc/sys/net/ipv4/ip_forward";
         print FILE 1;
@@ -65,6 +66,9 @@ sub ipv4_forward {
     }
     open FILE, "</proc/sys/net/ipv4/ip_forward";
     my $res = <FILE>;
+    } else {
+        $Init->getIO->print_error("Insufficent permission to do that");
+    }
     return $res;
 }
 
