@@ -123,7 +123,7 @@ sub print_error() {
         . colored( " (",                            "magenta on_black bold" )
         . colored( $Init->getEnv()->time_seconds(), "bold on_black red" )
         . colored( ") ",                            "magenta on_black bold" )
-        . colored( $_[0],                           "red on_black" ) . "\n";
+        . colored( $_[0],                           "cyan on_black" ) . "\n";
 }
 
 sub print_tabbed {
@@ -241,7 +241,7 @@ sub generate_command() {
     my $command = $_[0];
     my $env     = $Init->getEnv();
     my @path    = $env->path();
-    if ( $command =~ / / ) {
+    if ( $command =~/\s+/) {
         my @tmp_c = split( / /, $command );
         my $pp;
 

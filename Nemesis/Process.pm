@@ -210,7 +210,7 @@ use Scalar::Util 'reftype';
         my $p;
         my $cmd =
             $Init->getIO()->generate_command( $self->{'CONFIG'}->{'code'} );
-
+            $Init->getIO()->debug($cmd);
         #$Init->getIO()->set_debug(1);
         if ( system($cmd) == 0 ) {
             $Init->getIO()
