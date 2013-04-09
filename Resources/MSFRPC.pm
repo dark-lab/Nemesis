@@ -13,12 +13,15 @@ class Resources::MSFRPC{
 	has 'Port' => (isa=>'Int', is=>'rw', default=>5553);
 	has 'API' => (isa=>'Str', is=>'rw', default=>'/api/');
     has 'Token' => (is=>'rw');
-    has 'Auth' => (isa=>'Int',is=>'rw');
+    has 'Auth' => (isa=>'Int',is=>'rw', default => 0);
+    has 'Result' => (is=>"rw");
     nemesis_moosex_resource;
 
-	method call (Str $meth,ArrayRef[Str] @Options){
+	method call (@Options){
+        my $meth = shift @Options;
         my $UserAgent   = LWP::UserAgent->new;
         my $MessagePack = Data::MessagePack->new();
+       # $self->Init->getIO()->debug("Method $meth");
         my $URL =
               'http://'
             . $self->Host . ":"
@@ -33,17 +36,28 @@ class Resources::MSFRPC{
         $HttpRequest->content_type('binary/message-pack');
         $HttpRequest->content( $MessagePack->pack( \@Options ) );
         my $res = $UserAgent->request($HttpRequest);
-        $self->parse_result($res);
         return 0 if $res->code == 500 or $res->code != 200;
-        $self->Init->getIO()->debug_dumper( $MessagePack->unpack( $res->content ) );
+        $self->Result($MessagePack->unpack( $res->content ));
+                $self->parse_result();
+
         return $MessagePack->unpack( $res->content );
 	}
+
+    method info(@Options){
+        $self->call('module.info',@Options);
+    }
+
 
     method login(){
         my $user = $self->Username();
         my $pass = $self->Password();
         my $ret  = $self->call( 'auth.login', $user, $pass );
-        if ( $ret->{'result'} eq 'success' ) {
+        if($ret==0){
+            $self->Init->getIO()->print_alert("Give some time to metas to boot up");
+            return 0;
+        }
+        elsif ( defined ($ret)  && $ret->{'result'} eq 'success' ) {
+
             $self->Token($ret->{'token'});
             $self->Auth(1);
         }
@@ -53,12 +67,11 @@ class Resources::MSFRPC{
         }
     }
     method parse_result() {
-
-        my $pack = $_[0];
+        my $pack = $self->Result;
         if ( exists( $pack->{'error'} ) ) {
             $self->Init->getIO()
                 ->print_error("Something went wrong with your MSFRPC call");
-            $self->Init->getIO()->print_error( "Code error: " . $pack->{'error_code'} );
+            $self->Init->getIO()->print_error( "Backtrace error: " . $pack->{'error_backtrace'} );
             $self->Init->getIO()->print_error( "Message: " . $pack->{'error_message'} );
             foreach my $trace ( $pack->{'error_backtrace'} ) {
                 $self->Init->getIO()->print_tabbed( "Backtrace: " . $trace, 2 );
@@ -68,7 +81,7 @@ class Resources::MSFRPC{
             if ( exists( $pack->{'job_id'} ) ) {
                 $self->Init->getIO()->print_info( "Job ID: " . $pack->{'job_id'} );
             } else {
-                $self->Init->getIO()->debug_dumper($pack);
+              #  $self->Init->getIO()->debug_dumper($pack);
             }
         }
     }

@@ -18,11 +18,17 @@ class Resources::DB {
              
              
             # takes a snapshot of $some_object
-            my $uuid = $self->BackEnd->store($Obj);
- 
+            $self->BackEnd->txn_do( sub {$self->BackEnd->store($Obj);}  );
+     
             return $Obj;
       }
 
+
+      method delete($Obj){
+            my $s = $self->BackEnd->new_scope;
+            $self->BackEnd->txn_do( sub {$self->BackEnd->delete($Obj);}  );     
+            return ();
+      }
       method connect($BackEnd?){
 
 
@@ -38,6 +44,7 @@ class Resources::DB {
                                           );
       		$self->BackEnd($BackEnd);
       	}
+        return $self;
       }
 
       method list_obj(){
