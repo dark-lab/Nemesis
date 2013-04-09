@@ -12,13 +12,16 @@ class Plugin::MooseTest {
     our $MODULE  = "Moose testing plugin";
     our $INFO    = "<www.dark-lab.net>";
 
-    our @PUBLIC_FUNCTIONS = qw(info test );
+    our @PUBLIC_FUNCTIONS = qw(info test);
 
     nemesis_moosex_module;
 
     has 'Process' => (
         is => 'rw',
     );
+    method cane(){
+
+    }
 
     method test() {
         #$self->Init->getIO()->print_info($self->Init->getModuleLoader->_findLibName("http://dark-lab.net/Speech.pm"));
@@ -35,23 +38,17 @@ class Plugin::MooseTest {
             my $DB=$self->Init->getModuleLoader->loadmodule("DB");
             $DB->connect();
            #$DB->add($MSFRPC);
-           $self->Init->getIO->debug("test 0: lista tutti oggetti");
-            my $Data_Bulk=$DB->list_obj();
-            $self->Init->getIO->debug("test 1: ricerca classe di tipo Resources::MSFRPC");
+          #  my $Data_Bulk=$DB->list_obj(); Lista tutti gli oggetti
+            $self->Init->getIO->debug("test 1:  ricerca classe di tipo Resources::Exploit");
 
-            my $results=$DB->search(class => "Resources::MSFRPC");
+            my $results=$DB->search(class => "Resources::Exploit");
+
                 while( my $block = $results->next ) {
                     foreach my $item ( @$block ) {
-                        $self->Init->getIO->debug($item->Username);
+                        $self->Init->getIO->debug($item->name.": ".$item->description);
                     }
                 }
-            $self->Init->getIO->debug("test 2: ricerca nel campo Username il valore Cane");
-            $results=$DB->search(Username => 'Cane');
-               while( my $block = $results->next ) {
-                    foreach my $item ( @$block ) {
-                        $self->Init->getIO->debug($item->Username);
-                    }
-                }
+            
 
     }
 

@@ -68,6 +68,9 @@ class Plugin::Scanner {
         for my $port ($host->tcp_ports()){
             my $service = $host->tcp_service($port);
             $self->Init->getIO()->print_tabbed($port.": ".$service->name." ".$service->product." ".$service->version."(".$service->confidence().")",3);
+        my $M=$self->Init->getModuleLoader()->loadmodule("MSFRPC");
+        #$M->
+
         }
 
     }
