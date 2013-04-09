@@ -2,7 +2,7 @@ package Plugin::metasploit;
     use Nemesis::Inject;
     use MooseX::Declare;
 class Plugin::metasploit{
-
+    use Resources::Exploit;
 
     my $VERSION = '0.1a';
     my $AUTHOR  = "mudler";
@@ -11,18 +11,23 @@ class Plugin::metasploit{
 
     #Funzioni che fornisco.
     my @PUBLIC_FUNCTIONS =
-        qw(start clear sessionlist)
+        qw(start clear sessionlist call test generate)
         ;    #NECESSARY
 #Attributo Processo del demone MSFRPC
     has 'Process' => (is=>"rw"); 
 #Risorsa MSFRPC che mi fornirà il modo di connettermi a MSFRPC
     has 'MSFRPC'  => (is=>"rw"); 
+    has 'DB' => (is=>"rw");
     nemesis_moosex_module;
+
     method start(){
+
+        return 1 if($self->Process && $self->Process->is_running);
 
         my $Io    = $self->Init->getIO();
 
         $self->MSFRPC($self->Init->getModuleLoader->loadmodule("MSFRPC")); #Carico la risorsa MSFRPC
+        $self->DB($self->Init->getModuleLoader->loadmodule("DB")->connect()); #Lo userò spesso.
 
         my $processString =
               'msfrpcd -U '
@@ -47,7 +52,98 @@ class Plugin::metasploit{
 
     }
 
+    method safe_database(){
 
+        my $result=$self->DB->search(class => "Resources::Exploit");
+
+
+        while( my $block = $result->next ) {
+            foreach my $item ( @$block ) {
+                my $result2=$self->DB->search(module=>$item->module);
+                        while( my $block2 = $result2->next ) {
+                          foreach my $item2 ( @$block2 ) {  
+                           if($item ne $item2){
+                                $self->DB->delete($item2);
+                                $self->Init->getIO->debug("Deleting $item2");
+                            }
+                          }
+                        }
+            }
+        }
+
+  
+
+
+
+    }
+
+    method generate() {
+        my $response=$self->MSFRPC->call('module.exploits');
+        my @EXPL_LIST=@{$response->{'modules'}};
+        $self->Init->getIO()->print_alert("Syncing db with msf exploits, this can take a while");
+        $self->Init->getIO()->print_info("There are " .scalar(@EXPL_LIST). " exploits in metasploit");
+        my $result=$self->DB->search(class => "Resources::Exploit");
+            my $Counter=0;
+                while( my $block = $result->next ) {
+                    foreach my $item ( @$block ) {
+                        $Counter++;
+                    }
+                }
+        $self->Init->getIO()->print_info("$Counter of them already are in the database ");
+
+        $Counter=0;
+        foreach my $exploit (@EXPL_LIST) {
+
+            my $Information = $self->MSFRPC->info("exploits",$exploit);
+
+
+            my $result=$self->DB->search(module => $exploit);
+            my $AlreadyThere=0;
+
+                while( my $block = $result->next ) {
+                    foreach my $item ( @$block ) {
+                        $AlreadyThere=1;
+                    }
+                }
+
+            if($AlreadyThere == 0) {
+                $self->Init->getIO()->debug("$exploit not present");
+                my @Targets  =  values % { $Information->{'targets'} };
+                my @References = map { $_ = join("|", @{$_} ); } @{$Information->{'references'}};
+                $self->DB->add(Resources::Exploit->new(
+                               type=> "exploits",
+                                module=>$exploit,
+                                rank=> $Information->{'rank'},
+                                description=>$Information->{'description'},
+                                name=>$Information->{'name'},
+                                tagets=>\@Targets,
+                                references=>\@References
+
+
+                                ));
+                $Counter++;
+            }
+
+  
+
+
+        }
+        $self->Init->getIO()->print_info(" $Counter added");
+
+     #   $self->safe_database;
+
+    }
+
+    method test(){
+
+
+        my @OPTIONS = (
+            "exploits",
+            "windows/novell/nmap_stor",
+           );
+        $self->MSFRPC->call( "module.info" ,@OPTIONS);
+
+    }
     method sessionlist(){
 
         my @OPTIONS = (
@@ -59,15 +155,12 @@ class Plugin::metasploit{
             }
         );
         #my $response = $self->call( "session.list", @OPTIONS );
-        my $response = $self->MSFRPC->call( "session.list" );
-        $self->MSFRPC->parse_result($response);
+        $self->MSFRPC->call( "session.list" );
 
     }
 
     method call($String){
-                my $response = $self->MSFRPC->call($String);
-        $self->MSFRPC->parse_result($response);
-
+        $self->MSFRPC->call($String);
     }
 
     method clear(){
