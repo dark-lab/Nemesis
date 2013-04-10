@@ -26,11 +26,12 @@ package Nemesis::ModuleLoader;
         my $self          = shift;
         my $module        = shift @_;
         my $command       = shift @_;
+        my $return;
         my @ARGS          = @_;
         my $currentModule = $self->{'modules'}->{$module};
         eval {
             if ( eval { $currentModule->can($command);} ) {
-                if ( $currentModule->$command(@ARGS) ) {
+                if ( $return=$currentModule->$command(@ARGS) ) {
                     $Init->getSession()
                         ->execute_save( $module, $command, @ARGS )
                         if $module ne "session";
@@ -45,6 +46,7 @@ package Nemesis::ModuleLoader;
                 "Something went wrong calling the method '$command' on '$module': $@"
             );
         }
+        return $return;
     }
 
     sub execute_on_all {
@@ -344,7 +346,7 @@ package Nemesis::ModuleLoader;
                 return 1;
             }
         }
-        return 0;
+        return 0;   
     }
 
 }
