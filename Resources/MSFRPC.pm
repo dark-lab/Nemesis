@@ -81,7 +81,7 @@ class Resources::MSFRPC{
             if ( exists( $pack->{'job_id'} ) ) {
                 $self->Init->getIO()->print_info( "Job ID: " . $pack->{'job_id'} );
             } else {
-              #  $self->Init->getIO()->debug_dumper($pack);
+               $self->Init->getIO()->debug_dumper($pack);
             }
         }
     }

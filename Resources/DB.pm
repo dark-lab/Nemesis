@@ -31,17 +31,15 @@ class Resources::DB {
       }
       method connect($BackEnd?){
 
-
-
       	if($BackEnd ){
       		$self->BackEnd($BackEnd);
       		return $self;
       	} else {
       		$BackEnd=KiokuDB->connect(
-                                                "bdb-gin:dir=".$self->Init->getSession()->getSessionPath, 
-                                                create => 1,
-                                                extract => Search::GIN::Extract::Class->new
-                                          );
+                                      "bdb-gin:dir=".$self->Init->getSession()->getSessionPath, 
+                                      create => 1,
+                                      extract => Search::GIN::Extract::Class->new
+                                    );
       		$self->BackEnd($BackEnd);
       	}
         return $self;
@@ -80,6 +78,38 @@ class Resources::DB {
            #          }
            #      }
 
+      }
+
+
+      method searchRegex(%Search){
+        my @Result;
+        if(!exists($Search{'class'}))) { $Init->getIO->print_alert("You must supply"); return 0;}
+            my $query = Search::GIN::Query::Class->new(
+              class => $Search{'class'},
+          );
+          # get results
+          $results = $self->BackEnd->search($query);
+
+          delete $Search{'class'};
+
+        while( my $chunk = $all->next ){
+            for my $object (@$chunk) {
+
+                 foreach my $attribute ( sort( keys %Search ) ) {
+                    if(eval { 
+                      my $res= $Obj->$attribute;
+                      return 1 if($res=~$Search{$attribute});
+                      return 0;
+                    }){
+                      push(@Result,$Obj);
+                    }
+                }
+
+              $self->Init->getIO()->debug("Obj $object");
+            }
+        }
+
+        return @Result;
       }
 
 
