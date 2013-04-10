@@ -83,12 +83,12 @@ class Resources::DB {
 
       method searchRegex(%Search){
         my @Result;
-        if(!exists($Search{'class'}))) { $Init->getIO->print_alert("You must supply"); return 0;}
+        if(!exists($Search{'class'})) { $self->Init->getIO->print_alert("You must supply"); return 0;}
             my $query = Search::GIN::Query::Class->new(
               class => $Search{'class'},
           );
           # get results
-          $results = $self->BackEnd->search($query);
+          my $all = $self->BackEnd->search($query);
 
           delete $Search{'class'};
 
@@ -96,16 +96,18 @@ class Resources::DB {
             for my $object (@$chunk) {
 
                  foreach my $attribute ( sort( keys %Search ) ) {
-                    if(eval { 
-                      my $res= $Obj->$attribute;
-                      return 1 if($res=~$Search{$attribute});
-                      return 0;
-                    }){
-                      push(@Result,$Obj);
-                    }
+                    eval { 
+                      my $res= $object->$attribute;
+                      if(defined($res) && $res=~/$Search{$attribute}/i){
+                        $self->Init->getIO->print_alert("Got you!");
+                         push(@Result,$object);
+                      }
+
+                    };
+                    
                 }
 
-              $self->Init->getIO()->debug("Obj $object");
+             # $self->Init->getIO()->debug("Obj $object");
             }
         }
 

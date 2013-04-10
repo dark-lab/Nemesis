@@ -98,6 +98,9 @@ class Plugin::metasploit{
         foreach my $exploit (@EXPL_LIST) {
 
             my $Information = $self->MSFRPC->info("exploits",$exploit);
+            my $Options = $self->MSFRPC->options("exploits",$exploit);
+
+
             my $result=$self->DB->search(module => $exploit);
             my $AlreadyThere=0;
                 while( my $block = $result->next ) {
@@ -116,7 +119,8 @@ class Plugin::metasploit{
                                 description=>$Information->{'description'},
                                 name=>$Information->{'name'},
                                 tagets=>\@Targets,
-                                references=>\@References
+                                references=>\@References,
+                                default_rport=> $Options->{'RPORT'}->{'default'}
 
 
                                 ));
@@ -137,18 +141,39 @@ class Plugin::metasploit{
             "windows/novell/nmap_stor",
            );
         $self->MSFRPC->call( "module.info" ,@OPTIONS);
+         $self->MSFRPC->call( "module.options" ,@OPTIONS);
 
     }
 
     method matchExpl($String){
 
-       my $result=$self->DB->search(module=> /$String/);
-            my $Counter=0;
-                while( my $block = $result->next ) {
-                    foreach my $item ( @$block ) {
-                        $self->Init->getIO->print_alert("Found $item ".$item->name." ".$item->description)
-                    }
-                }
+       my @Objs=$self->DB->searchRegex(class=> "Resources::Exploit",module=> $String);
+
+$self->Init->getIO->print_info("Found a total of ".scalar(@Objs)." objects for /$String/i");
+        foreach my $item ( @Objs ) {
+            $self->Init->getIO->print_info("Found ".$item->module." ".$item->name." ".$item->description);
+        }
+        return @Objs;
+                
+    }
+
+
+
+    method matchPort($String){
+
+       my $Objs=$self->DB->search(default_rport=> $String);
+       $self->Init->getIO->print_info("Searching a matching exploit for port $String");
+
+       my @Return;
+        while( my $chunk = $Objs->next ){
+            for my $item (@$chunk) {
+            $self->Init->getIO->print_info("Found ".$item->module." ".$item->name." ".$item->description);
+            push(@Return,$item);
+            }
+        }
+     
+        return @Return;
+                
     }
 
     method sessionlist(){

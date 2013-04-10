@@ -46,7 +46,9 @@ class Resources::MSFRPC{
     method info(@Options){
         $self->call('module.info',@Options);
     }
-
+    method options(@Options){
+        $self->call('module.options',@Options);
+    }
 
     method login(){
         my $user = $self->Username();

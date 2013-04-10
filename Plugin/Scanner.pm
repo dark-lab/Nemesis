@@ -70,11 +70,13 @@ class Plugin::Scanner {
         $self->Init->getIO()->print_tabbed("Mac HW: ".$host->mac_addr(),3) if $host->mac_addr();
            my $os_name = $os->name();
         $self->Init->getIO()->print_tabbed("OS Name: ".$os_name,3);
+        my $Meta = $self->Init->getModuleLoader()->getInstance("metasploit");
 
         for my $port ($host->tcp_ports()){
             my $service = $host->tcp_service($port);
             $self->Init->getIO()->print_tabbed($port.": ".$service->name." ".$service->version."(".$service->confidence().")",3);
-
+            my @EXPL = $Meta->matchExpl($service->name);
+            push(@EXPL,$Meta->matchPort($port));
         }
 
     }
