@@ -11,7 +11,7 @@ class Plugin::metasploit{
 
     #Funzioni che fornisco.
     my @PUBLIC_FUNCTIONS =
-        qw(start clear sessionlist call test generate)
+        qw(start clear sessionlist call test generate matchExpl)
         ;    #NECESSARY
 #Attributo Processo del demone MSFRPC
     has 'Process' => (is=>"rw"); 
@@ -20,6 +20,10 @@ class Plugin::metasploit{
     has 'DB' => (is=>"rw");
     nemesis_moosex_module;
 
+    method prepare(){
+                $self->DB($self->Init->getModuleLoader->loadmodule("DB")->connect()); #Lo userò spesso.
+    }
+
     method start(){
 
         return 1 if($self->Process && $self->Process->is_running);
@@ -27,7 +31,6 @@ class Plugin::metasploit{
         my $Io    = $self->Init->getIO();
 
         $self->MSFRPC($self->Init->getModuleLoader->loadmodule("MSFRPC")); #Carico la risorsa MSFRPC
-        $self->DB($self->Init->getModuleLoader->loadmodule("DB")->connect()); #Lo userò spesso.
 
         my $processString =
               'msfrpcd -U '
@@ -95,19 +98,15 @@ class Plugin::metasploit{
         foreach my $exploit (@EXPL_LIST) {
 
             my $Information = $self->MSFRPC->info("exploits",$exploit);
-
-
             my $result=$self->DB->search(module => $exploit);
             my $AlreadyThere=0;
-
                 while( my $block = $result->next ) {
                     foreach my $item ( @$block ) {
                         $AlreadyThere=1;
                     }
                 }
-
             if($AlreadyThere == 0) {
-                $self->Init->getIO()->debug("$exploit not present");
+                $self->Init->getIO()->debug("Adding $exploit to Exploit DB");
                 my @Targets  =  values % { $Information->{'targets'} };
                 my @References = map { $_ = join("|", @{$_} ); } @{$Information->{'references'}};
                 $self->DB->add(Resources::Exploit->new(
@@ -123,10 +122,6 @@ class Plugin::metasploit{
                                 ));
                 $Counter++;
             }
-
-  
-
-
         }
         $self->Init->getIO()->print_info(" $Counter added");
 
@@ -144,6 +139,18 @@ class Plugin::metasploit{
         $self->MSFRPC->call( "module.info" ,@OPTIONS);
 
     }
+
+    method matchExpl($String){
+
+       my $result=$self->DB->search(module=> /$String/);
+            my $Counter=0;
+                while( my $block = $result->next ) {
+                    foreach my $item ( @$block ) {
+                        $self->Init->getIO->print_alert("Found $item ".$item->name." ".$item->description)
+                    }
+                }
+    }
+
     method sessionlist(){
 
         my @OPTIONS = (
