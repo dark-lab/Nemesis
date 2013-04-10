@@ -10,11 +10,18 @@ class Plugin::Scanner {
     our @PUBLIC_FUNCTIONS = qw(info test nmap);
 
     has 'Arguments' => (is=>"rw",default=>"-sS -sV -O -A -P0");
+    has 'DB' =>(is=> "rw" );
 
     nemesis_moosex_module;
     use HTTP::Request;
     use Net::IP;
     use Nmap::Parser;
+    use Resources::Node;
+
+
+    method prepare(){
+        $self->DB($self->Init->getModuleLoader->loadmodule("DB")->connect());
+    }
     method test($SearchString,$Exploit) {
         my $Crawler=$self->Init->getModuleLoader()->loadmodule("Crawler");
         $Crawler->search($SearchString);
@@ -62,22 +69,43 @@ class Plugin::Scanner {
 
     foreach my $host($Np->all_hosts()){
 
+        my $results=$self->DB->search(ip => $host->addr);
+        my $DBHost;
+        while( my $chunk = $results->next ){
+                     for my $foundhost (@$chunk){
+                      $DBHost=$foundhost;last;
+                  }
+        }
+        if(!defined($DBHost)){
+            $DBHost=Resources::Node->new(
+                ip => $host->addr
+
+                );
+        }
+
         my $os         = $host->os_sig();
 
         $self->Init->getIO()->print_info($host->addr);
         $self->Init->getIO()->print_tabbed("Status: ".$host->status,3);
         $self->Init->getIO()->print_tabbed("HostNames: ".join(" ",$host->all_hostnames()),3);
         $self->Init->getIO()->print_tabbed("Mac HW: ".$host->mac_addr(),3) if $host->mac_addr();
-           my $os_name = $os->name();
-        $self->Init->getIO()->print_tabbed("OS Name: ".$os_name,3);
-        my $Meta = $self->Init->getModuleLoader()->getInstance("metasploit");
+          
 
+        $self->Init->getIO()->print_tabbed("OS Name: ".$os->name(),3) if($os->name);
+        my $Meta = $self->Init->getModuleLoader()->getInstance("metasploit");
+        my @Found_Ports ;
         for my $port ($host->tcp_ports()){
+            push(@Found_Ports,$port);
             my $service = $host->tcp_service($port);
             $self->Init->getIO()->print_tabbed($port.": ".$service->name." ".$service->version."(".$service->confidence().")",3);
-            my @EXPL = $Meta->matchExpl($service->name);
-            push(@EXPL,$Meta->matchPort($port));
+            
+            foreach my $expl (($Meta->matchExpl($service->name),$Meta->matchPort($port))){
+                $DBHost->attachments->insert($expl);
+            }
         }
+        $DBHost->ports(\@Found_Ports);
+        $self->DB->add($DBHost);
+
 
     }
 

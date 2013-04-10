@@ -99,7 +99,6 @@ class Resources::DB {
                     eval { 
                       my $res= $object->$attribute;
                       if(defined($res) && $res=~/$Search{$attribute}/i){
-                        $self->Init->getIO->print_alert("Got you!");
                          push(@Result,$object);
                       }
 

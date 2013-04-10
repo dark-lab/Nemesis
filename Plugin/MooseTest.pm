@@ -41,11 +41,13 @@ class Plugin::MooseTest {
           #  my $Data_Bulk=$DB->list_obj(); Lista tutti gli oggetti
             $self->Init->getIO->debug("test 1:  ricerca classe di tipo Resources::Exploit");
 
-            my $results=$DB->search(class => "Resources::Exploit");
+            my $results=$DB->search(class => "Resources::Node");
 
                 while( my $block = $results->next ) {
                     foreach my $item ( @$block ) {
-                        $self->Init->getIO->debug($item->name.": ".$item->description);
+                        $self->Init->getIO->debug($item->ip.": ".join(",",@{$item->ports}));
+                        $self->Init->getIO->debug("Possible vulns ".$item->attachments->size);
+
                     }
                 }
             
