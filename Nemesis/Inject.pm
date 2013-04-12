@@ -34,6 +34,11 @@ sub import {
         substr( $$ref, 0, 0 ) = '  our $Init;         sub new(){			my $package = shift;			bless( {}, $package );			%{ $package } = @_;			$Init=$package->{\'Init\'};			return $package;         }                ';    # inject 'if' at beginning of parse buffer
     };
 
+    Keyword::Simple::define 'nemesis_mojo', sub {
+        my ($ref) = @_;
+        substr( $$ref, 0, 0 ) = ' our $Init; sub setInit(){  my $self=shift;  $Init=$_[0];}               ';    # inject 'if' at beginning of parse buffer
+    };
+    
 }
 
 sub unimport {

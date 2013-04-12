@@ -28,16 +28,9 @@ class Resources::Dispatcher{
 		    	$self->Init->getIO()->print_info("I can do that $Instance");
 		    	eval { $Instance->$Command(@Args); };
 		    }
-
 		}
-
-	
-
 		method debug($Packet){
-
-
 		    if( $Packet ) {
-
    			 	my $IO = $self->Init->getIO;
 		        if( $Packet->isa("NetPacket::IP") ) {
 					$IO->print_info("IP packet: ".$Packet->{src_ip}." -> ".$Packet->{dest_ip});
@@ -52,8 +45,6 @@ class Resources::Dispatcher{
    	   			 	$self->Init->getIO()->debug_dumper($Packet);
 		        }
 		    } 
-
-
 		}
 
 }

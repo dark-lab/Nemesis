@@ -24,6 +24,7 @@ use Mojo::Server::Daemon;
     method run($ResourceName){
 
         eval ("use $ResourceName");
+        $ResourceName->setInit($self->Init);
 
          my $daemon = Mojo::Server::Daemon->new(app => $ResourceName->app, listen => ['http://*:'.$self->Port ]);
          $daemon->start;

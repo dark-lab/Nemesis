@@ -1,10 +1,29 @@
 package Resources::WebApp;
 
 {
+    use Nemesis::Inject;
+    nemesis_mojo;
 
     use Mojolicious::Lite;
 
-  get '/' => {text => 'Hello World!'};
+  get '/' => sub {
+    my $self=shift;
+
+    my $Scanner = $Init->getModuleLoader()->loadmodule("Scanner");
+    my $meta = $Scanner->meta;
+
+     my @Attr;
+     for my $attr ( $meta->get_all_attributes ) {
+      push(@Attr,$attr->name." DOC >".$attr->documentation);
+     }
+
+    for my $method ( $meta->get_all_methods ) {
+            push(@Attr,$method->fully_qualified_name);
+
+    }
+
+    $self->render(text => "Hello <br>".join("<br>",@Attr));
+  };
 
   # Route associating "/time" with template in DATA section
   get '/time' => 'clock';
@@ -48,4 +67,5 @@ __DATA__
 @@ clock.html.ep
 % use Time::Piece;
 % my $now = localtime;
+%
 The time is <%= $now->hms %>.

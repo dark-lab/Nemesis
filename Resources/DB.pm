@@ -23,6 +23,15 @@ class Resources::DB {
             return $Obj;
       }
 
+      method update($Obj){
+              my $s = $self->BackEnd->new_scope;
+             $self->delete($Obj);
+             $self->add($Obj);
+           #   $self->BackEnd->txn_do( sub {$self->BackEnd->update($Obj);}  );
+
+            return $Obj;
+
+      }
 
       method delete($Obj){
             my $s = $self->BackEnd->new_scope;

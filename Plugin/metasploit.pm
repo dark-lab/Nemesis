@@ -121,8 +121,6 @@ class Plugin::metasploit{
                                 tagets=>\@Targets,
                                 references=>\@References,
                                 default_rport=> $Options->{'RPORT'}->{'default'}
-
-
                                 ));
                 $Counter++;
             }
@@ -151,7 +149,7 @@ class Plugin::metasploit{
 
 $self->Init->getIO->print_info("Found a total of ".scalar(@Objs)." objects for /$String/i");
         foreach my $item ( @Objs ) {
-            $self->Init->getIO->print_info("Found ".$item->module." ".$item->name." ".$item->description);
+            $self->Init->getIO->print_info("Found ".$item->module." ".$item->name);
         }
         return @Objs;
                 
@@ -167,7 +165,7 @@ $self->Init->getIO->print_info("Found a total of ".scalar(@Objs)." objects for /
        my @Return;
         while( my $chunk = $Objs->next ){
             for my $item (@$chunk) {
-            $self->Init->getIO->print_info("Found ".$item->module." ".$item->name." ".$item->description);
+            $self->Init->getIO->print_info("Found ".$item->module." ".$item->name);
             push(@Return,$item);
             }
         }
@@ -202,6 +200,7 @@ $self->Init->getIO->print_info("Found a total of ".scalar(@Objs)." objects for /
     method event_tcp(){
         $self->getIO->debug("I got a tcp packet here... metas");
     }
+    
 }
 
 1;

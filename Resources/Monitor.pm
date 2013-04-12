@@ -25,7 +25,9 @@ use Net::Pcap::Easy;
 										    bytes_to_capture => 1024,
 										    timeout_in_ms    => 0, # 0ms means forever
 										    promiscuous      => $self->Promiscuous, # true or false
-											default_callback => sub {$d->dispatch(@_);}
+											default_callback => sub {
+												$d->dispatch(@_);
+											}
 											
 										);
 
