@@ -36,9 +36,11 @@ class Resources::MSFRPC{
         $HttpRequest->content_type('binary/message-pack');
         $HttpRequest->content( $MessagePack->pack( \@Options ) );
         my $res = $UserAgent->request($HttpRequest);
-        return 0 if $res->code == 500 or $res->code != 200;
+      #  $self->Init->getIO->debug_dumper($res);
+        return $res if $res->code == 500 or $res->code != 200;
+
         $self->Result($MessagePack->unpack( $res->content ));
-                $self->parse_result();
+              #  $self->parse_result();
 
         return $MessagePack->unpack( $res->content );
 	}
@@ -54,7 +56,7 @@ class Resources::MSFRPC{
         my $user = $self->Username();
         my $pass = $self->Password();
         my $ret  = $self->call( 'auth.login', $user, $pass );
-        if($ret==0){
+        if(defined ($ret)  && exists($ret->{'_msg'}) ){
             $self->Init->getIO()->print_alert("Give some time to metas to boot up");
             return 0;
         }

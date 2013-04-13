@@ -9,15 +9,20 @@ class Plugin::Scanner {
 
     our @PUBLIC_FUNCTIONS = qw(info test nmap);
 
-    has 'Arguments' => (is=>"rw",default=>"-sS -sV -O -A -P0", documentation=> "Nmap arguments");
-    has 'DB' =>(is=> "rw" );
+    has 'Arguments' => (
+                            is=>"rw",
+                            default=>"-sS -sV -O -A -P0", 
+                            documentation => "Nmap arguments"
+                        );
+    has 'DB' =>( is=> "rw",
+                 documentation=>"Database ");
 
     nemesis_moosex_module;
     use HTTP::Request;
     use Net::IP;
     use Nmap::Parser;
     use Resources::Node;
-
+    use DateTime;
 
     method prepare(){
         $self->DB($self->Init->getModuleLoader->loadmodule("DB")->connect());
@@ -49,6 +54,9 @@ class Plugin::Scanner {
 
    method nmapscan($Ip){
     my $Np=Nmap::Parser->new();
+
+    $Np->cache_scan($self->Init->getSession()->new_file(DateTime->now,__PACKAGE__));
+
     $self->Init->getIO()->print_info("Scanning started on $Ip");
     $Np->parsescan($self->Init->getEnv()->whereis("nmap"), $self->Arguments." $Ip");
     my $Session=$Np->get_session;
@@ -60,34 +68,40 @@ class Plugin::Scanner {
         while( my $chunk = $results->next ){
                      for my $foundhost (@$chunk){
                       $DBHost=$foundhost;
-                      $self->DB->delete($foundhost);
                       last;
                   }
         }
-        if(!defined($DBHost)){
-            $DBHost=Resources::Node->new(
+        my $Node=Resources::Node->new(
                 ip => $host->addr
                 );
-        }
         my $os         = $host->os_sig();
         $self->Init->getIO()->print_info($host->addr);
         $self->Init->getIO()->print_tabbed("Status: ".$host->status,3);
         $self->Init->getIO()->print_tabbed("HostNames: ".join(" ",$host->all_hostnames()),3);
+        $Node->hostnames(join(" ",$host->all_hostnames()));
         $self->Init->getIO()->print_tabbed("Mac HW: ".$host->mac_addr(),3) if $host->mac_addr();
-        $self->Init->getIO()->print_tabbed("OS Name: ".$os->name(),3) if($os->name);
-        my $Meta = $self->Init->getModuleLoader()->getInstance("metasploit");
-        my @Found_Ports ;
-        for my $port ($host->tcp_ports()){
-            push(@Found_Ports,$port);
-            my $service = $host->tcp_service($port);
-            $self->Init->getIO()->print_tabbed($port.": ".$service->name." ".$service->version."(".$service->confidence().")",3);
-            foreach my $expl (($Meta->matchExpl($service->name),$Meta->matchPort($port))){
-                $DBHost->attachments->insert($expl);
-            }
+        if($os->name){
+            $self->Init->getIO()->print_tabbed("OS Name: ".$os->name()." Family: ".$os->osfamily,3);
+            $Node->os($os->osfamily);
         }
-        $DBHost->ports(\@Found_Ports);
-        $self->DB->add($DBHost);
-       
+        my $Meta = $self->Init->getModuleLoader()->getInstance("metasploit");
+        my @Found_Ports;
+        for my $port ($host->tcp_ports()){
+            my $service = $host->tcp_service($port);
+                        push(@Found_Ports,$port."|".$service->name);
+
+            $self->Init->getIO()->print_tabbed("===== ".$port." =====",3);
+            $self->Init->getIO()->print_tabbed("Service Name: ".$service->name,4) if $service->name ;
+            $self->Init->getIO()->print_tabbed("Service Version: ".$service->version,4) if $service->version;
+            $self->Init->getIO()->print_tabbed("Confidence: ".$service->confidence,4) if $service->confidence;
+        }
+        $Node->ports(\@Found_Ports);
+        $Node=$Meta->matchNode($Node);
+        if(!defined($DBHost)){
+            $self->DB->add($Node);
+        } else {
+            $self->DB->swap($DBHost,$Node);#This automatically generate a Resources::Snap db object to track the change
+        }    
     }
    }
 

@@ -80,9 +80,20 @@ class Plugin::metasploit{
 
     }
 
+
+    method LaunchExploitOnNode($Node,$Exploit){}
+
     method generate() {
+
+        $self->start if(!$self->Process or !$self->Process->is_running);
+
         my $response=$self->MSFRPC->call('module.exploits');
+        if(!exists($response->{'modules'})){
+            $self->Init->getIO->print_alert("Cannot sync with meta");
+            return;
+        }
         my @EXPL_LIST=@{$response->{'modules'}};
+
         $self->Init->getIO()->print_alert("Syncing db with msf exploits, this can take a while");
         $self->Init->getIO()->print_info("There are " .scalar(@EXPL_LIST). " exploits in metasploit");
         my $result=$self->DB->search(class => "Resources::Exploit");
@@ -112,13 +123,14 @@ class Plugin::metasploit{
                 $self->Init->getIO()->debug("Adding $exploit to Exploit DB");
                 my @Targets  =  values % { $Information->{'targets'} };
                 my @References = map { $_ = join("|", @{$_} ); } @{$Information->{'references'}};
+                $self->Init->getIO()->debug(join(" ",@Targets)." targets");
                 $self->DB->add(Resources::Exploit->new(
                                type=> "exploits",
                                 module=>$exploit,
                                 rank=> $Information->{'rank'},
                                 description=>$Information->{'description'},
                                 name=>$Information->{'name'},
-                                tagets=>\@Targets,
+                                targets=>\@Targets,
                                 references=>\@References,
                                 default_rport=> $Options->{'RPORT'}->{'default'}
                                 ));
@@ -147,25 +159,45 @@ class Plugin::metasploit{
 
        my @Objs=$self->DB->searchRegex(class=> "Resources::Exploit",module=> $String);
 
-$self->Init->getIO->print_info("Found a total of ".scalar(@Objs)." objects for /$String/i");
+$self->Init->getIO->print_tabbed("Found a total of ".scalar(@Objs)." objects for /$String/i",3);
         foreach my $item ( @Objs ) {
-            $self->Init->getIO->print_info("Found ".$item->module." ".$item->name);
+            $self->Init->getIO->print_tabbed("Found ".$item->module." ".$item->name,4);
         }
         return @Objs;
                 
     }
 
 
+    method matchNode($Node){
+        $self->Init->getIO->print_info("Matching the node against Metasploit database");
+        foreach my $port(@{$Node->ports}){
+            my ($porta,$service) = split(/\|/,$port);
+            foreach my $expl (($self->matchExpl($service),$self->matchPort($porta))){
+                $self->Init->getIO->print_info("Exploit targets: ".join(" ",@{$expl->targets}));
+
+                foreach my $target(@{$expl->targets}){
+                    my $os=$Node->os;
+                    if($Node->os =~ /embedded/){$os="linux";} #it's a good assumption, i know
+                    if($target=~/$os/i or $target=~/Automatic/){
+                        $self->Init->getIO->print_info("$target match");
+                        $Node->attachments->insert($expl);
+                        last;
+                    }
+                }
+            }
+        }
+        return $Node;
+    }
 
     method matchPort($String){
 
        my $Objs=$self->DB->search(default_rport=> $String);
-       $self->Init->getIO->print_info("Searching a matching exploit for port $String");
+       $self->Init->getIO->print_tabbed("Searching a matching exploit for port $String",3);
 
        my @Return;
         while( my $chunk = $Objs->next ){
             for my $item (@$chunk) {
-            $self->Init->getIO->print_info("Found ".$item->module." ".$item->name);
+            $self->Init->getIO->print_tabbed("Found ".$item->module." ".$item->name,4);
             push(@Return,$item);
             }
         }

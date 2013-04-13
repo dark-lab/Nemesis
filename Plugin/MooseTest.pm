@@ -19,10 +19,6 @@ class Plugin::MooseTest {
     has 'Process' => (
         is => 'rw',
     );
-    method cane(){
-
-    }
-
     method test() {
         #$self->Init->getIO()->print_info($self->Init->getModuleLoader->_findLibName("http://dark-lab.net/Speech.pm"));
         #$self->Init->getModuleLoader->loadmodule("http://dark-lab.net/Process.pm");

@@ -10,10 +10,12 @@ use MooseX::Declare;
 class Resources::Node{
 use KiokuDB::Util qw(set);
 	has 'ip' => ( is=>'rw');
-	has 'ports' => (is=>'rw',isa=>"ArrayRef[port]" ,default=> sub{ [] });
+	has 'ports' => (is=>'rw',isa=>"ArrayRef" ,default=> sub{ [] });
   has 'url' => (is=>'rw');
-
-  has 'attachments' => (   does     => "KiokuDB::Set",
+  has 'os' => (is=>'rw');
+  has 'hostnames' => (is=>"rw");
+  has 'attachments' => (   
+    does     => "KiokuDB::Set",
     is      => "rw",
     lazy    => 1,
     default => sub { set() } )  ;

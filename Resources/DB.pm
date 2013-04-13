@@ -7,6 +7,8 @@ class Resources::DB {
       use Search::GIN::Extract::Class;
       use Search::GIN::Query::Manual;
       use Search::GIN::Query::Class;
+                   use Resources::Snap;
+
 	nemesis_moosex_resource;
 
 	has 'BackEnd' => (is=>"rw");
@@ -27,10 +29,21 @@ class Resources::DB {
               my $s = $self->BackEnd->new_scope;
              $self->delete($Obj);
              $self->add($Obj);
+   
            #   $self->BackEnd->txn_do( sub {$self->BackEnd->update($Obj);}  );
 
             return $Obj;
 
+      }
+
+      method swap($oldObject,$newObject){
+             my $s = $self->BackEnd->new_scope;
+             my $Snap=Resources::Snap->new(was=>$oldObject,now=>$newObject);
+             $self->Init->getIO->debug("Snap created at ".$Snap->date);
+             $self->delete($oldObject);
+             $self->add($newObject);
+             $self->add($Snap);
+            return $newObject;                  
       }
 
       method delete($Obj){
