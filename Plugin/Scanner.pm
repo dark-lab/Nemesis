@@ -25,7 +25,7 @@ class Plugin::Scanner {
     use DateTime;
 
     method prepare(){
-        $self->DB($self->Init->getModuleLoader->loadmodule("DB")->connect());
+#        $self->DB($self->Init->getModuleLoader->loadmodule("DB")->connect());
     }
     method test($SearchString,$Exploit) {
         my $Crawler=$self->Init->getModuleLoader()->loadmodule("Crawler");
@@ -37,6 +37,7 @@ class Plugin::Scanner {
         $LFI->test();
    }
    method nmap($Ip?){
+$self->DB($self->Init->getModuleLoader->loadmodule("DB")->connect());
     if($Ip) {
         $self->nmapscan($Ip);
     } else {
