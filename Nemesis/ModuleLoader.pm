@@ -6,7 +6,7 @@ package Nemesis::ModuleLoader;
     use LWP::Simple;
     use Regexp::Common qw /URI/;
     use The::Net;
-
+    use File::Find::Object;
 
     #external modules
     my @MODULES_PATH = ( 'Plugin', 'Resources' );
@@ -111,6 +111,9 @@ package Nemesis::ModuleLoader;
            require $module;
            $object=$self->_findLibName($module);
         }
+        elsif( $module=~/\:\:/){
+            $object = $module;
+        }
         elsif ( my $Type = $self->_findLib($module) ) {
             $object = $Type . "::" . $module;
         }
@@ -146,7 +149,7 @@ package Nemesis::ModuleLoader;
 
     sub getInstance(){
         my $self=shift;
-        my $Instance=$_[0];
+        my $Instance=$_[0]; #Only plugins get istances. single name, no namespace on plugins.
         return $self->{'modules'}->{$Instance} if(exists($self->{'modules'}->{$Instance}));
     }
 
@@ -166,55 +169,68 @@ package Nemesis::ModuleLoader;
     sub _findLib() {
         my $self    = shift;
         my $LibName = $_[0];
-        foreach my $Library (@MODULES_PATH) {
-            foreach my $INCLib (@INC) {
-                if ( -e $INCLib . "/" . $Library . "/" . $LibName . ".pm" ) {
-                    return $Library;
-                }
-            }
-            if (  -e $Init->getEnv()->getPathBin . "/" 
-                . $Library . "/"
-                . $LibName
-                . ".pm" )
+        foreach my $Library ($self->getLoadedLib) {
+            my $Path=$Init->getEnv()->getPathBin;
+            my $Match=$Library;
+            $Match=~s/$Path\/?//g;
+            if ( $Match =~ /(.*)\/$LibName\.pm$/i)
             {
-                return $Library;
+                return $1;
             }
         }
     }
 
     sub _findLibsByCategory() {
+
+        #Not used by now, maybe from the packer.
         my $self    = shift;
         my $LibName = $_[0];
         my @Result;
-        foreach my $INCLib (@INC) {
-            if ( -d $INCLib . "/" . $LibName ) {
-                local *DIR;
-                if ( opendir( DIR, $INCLib . "/" . $LibName ) ) {
-                    @Result =
-                        map { $_ = $LibName . "/" . $_; }
-                        grep( !/^\.\.?$/, readdir(DIR) );
-                    close DIR;
-                    last;
 
-                }
 
-            }
-            elsif ( -d $Init->getEnv()->getPathBin . "/" . $LibName ) {
-                local *DIR;
-                if (opendir( DIR, $Init->getEnv()->getPathBin . "/" . $LibName
-                    )
-                    )
-                {
-                    @Result =
-                        map { $_ = $LibName . "/" . $_; }
-                        grep( !/^\.\.?$/, readdir(DIR) );
-                    close DIR;
-                    last;
+        foreach my $Library ($self->getLoadedLib) {
+            my $Path=$Init->getEnv()->getPathBin;
+            my $Match=$Library;
+            $Match=~s/$Path\/?//g;
 
-                }
+            if ( $Match =~ /$LibName/i)
+            {
+                push(@Result,$Library);
             }
         }
-        $Init->getIO()->debug( "FOUND " . join( " ", @Result ) );
+
+
+
+
+        # foreach my $INCLib (@INC) {
+        #     if ( -d $INCLib . "/" . $LibName ) {
+        #         local *DIR;
+        #         if ( opendir( DIR, $INCLib . "/" . $LibName ) ) {
+        #             @Result =
+        #                 map { $_ = $LibName . "/" . $_; }
+        #                 grep( !/^\.\.?$/, readdir(DIR) );
+        #             close DIR;
+        #             last;
+
+        #         }
+
+        #     }
+        #     elsif ( -d $Init->getEnv()->getPathBin . "/" . $LibName ) {
+        #         local *DIR;
+        #         if (opendir( DIR, $Init->getEnv()->getPathBin . "/" . $LibName
+        #             )
+        #             )
+        #         {
+        #             @Result =
+        #                 map { $_ = $LibName . "/" . $_; }
+        #                 grep( !/^\.\.?$/, readdir(DIR) );
+        #             close DIR;
+        #             last;
+
+        #         }
+        #     }
+        # }
+        # $Init->getIO()->debug( "FOUND " . join( " ", @Result ) );
 
         return @Result;
 
@@ -225,50 +241,68 @@ package Nemesis::ModuleLoader;
         return @{ $self->{'LibraryList'} };
     }
 
-    sub loadmodules {
-        my $self = shift;
-        my @modules;
+    sub getLibs(){
         my $IO   = $Init->getIO();
-        my @Libs = ();
-        my $modules;
-        my $mods = 0;
-        foreach my $Library (@MODULES_PATH) {
+        my $Path=$Init->getEnv()->getPathBin;
+        my @Libs;
+           foreach my $Library (@MODULES_PATH) {
             local *DIR;
-            if ( !opendir( DIR, $Init->getEnv()->getPathBin . "/" . $Library )
+            if ( !opendir( DIR, $Path . "/" . $Library )
                 )
             {
                 ##Se non riesco a vedere in locale, forse sono nell'INC?
                 $IO->print_alert( "No "
-                        . $Init->getEnv()->getPathBin . "/"
+                        . $Path . "/"
                         . $Library
                         . " detected to find modules" );
                 foreach my $INCLib (@INC) {
                     if ( -d $INCLib . "/" . $Library ) {
                         #Oh, eccoli!
-                        opendir( DIR, $INCLib . "/" . $Library );
-                        push( @Libs,
-                            map { $_ = $INCLib . "/" . $Library . "/" . $_ }
-                            grep( !/^\.\.?$/, readdir(DIR) ) );
-                        closedir(DIR);
+                        # opendir( DIR, $INCLib . "/" . $Library );
+                        # push( @Libs,
+                        #     map { $_ = $INCLib . "/" . $Library . "/" . $_ }
+                        #     grep( !/^\.\.?$/, readdir(DIR) ) );
+                        # closedir(DIR);
+                        my $tree = File::Find::Object->new({},$INCLib . "/" . $Library  );
+                        while (my $r = $tree->next_obj()) {
+                            push(@Libs,$r->path) if $r->is_file ; 
+                        }
                     }
                 }
             }
             else {
-                push(
-                    @Libs,
-                    map {
-                        $_ =
-                              $self->{'Base'}->{'pwd'} 
-                            . $Library . "/"
-                            . $_
-                        }
-                        grep( !/^\.\.?$/, readdir(DIR) )
-                );
+                # push(
+                #     @Libs,
+                #     map {
+                #         $_ =
+                #               $self->{'Base'}->{'pwd'} 
+                #             . $Library . "/"
+                #             . $_
+                #         }
+                #         grep( !/^\.\.?$/, readdir(DIR) )
+                # );
+                my $tree = File::Find::Object->new({},$Path . "/" . $Library );
+                while (my $r = $tree->next_obj()) {
+                    push(@Libs,$r->path()) if  $r->is_file ; 
+                }
                 closedir(DIR);
             }
 
         }
+        return @Libs;
+    }
 
+
+
+    sub loadmodules {
+        my $self = shift;
+        my @modules;
+        my $IO   = $Init->getIO();
+        my @Libs = $self->getLibs;
+        my $modules;
+        my $mods = 0;
+        my $Path=$Init->getEnv()->getPathBin;
+        @{ $self->{'LibraryList'} } = @Libs;
         foreach my $Library (@Libs) {
             my ($name) = $Library =~ m/([^\.|^\/]+)\.pm/;
            # $Init->getIO()
@@ -277,8 +311,6 @@ package Nemesis::ModuleLoader;
                 if ( exists( $self->{'modules'}->{$name} ) ) {
                     delete $self->{'modules'}->{$name};
                 }
-
-
                if ( $self->isModule($Library)) {
 
                     $Init->getIO()->debug( $Library . " is a module!",__PACKAGE__ );
@@ -286,16 +318,14 @@ package Nemesis::ModuleLoader;
                     if ( exists( $self->{'modules'}->{$name} )  and $self->{'modules'}->{$name} ne "") {
                         $mods++;
                     }
-       
-
                 }
                 elsif ($self->isResource($Library)) {
                     $Init->getIO()
-                        ->debug("$name is a Nemesis Resource",__PACKAGE__ );
+                        ->debug("$Library ($name) is a Nemesis Resource",__PACKAGE__ );
                 }
                 else {
                     $Init->getIO()
-                        ->debug("$name it's nothing to me",__PACKAGE__ );
+                        ->debug("$Library it's nothing to me",__PACKAGE__ );
                 }
 
             };
@@ -307,8 +337,6 @@ package Nemesis::ModuleLoader;
         }
         $IO->print_info(
             "> $mods modules available. Double tab to see them\n");
-        @{ $self->{'LibraryList'} } = @Libs;
-
         #delete $self->{'modules'};
         return 1;
     }
