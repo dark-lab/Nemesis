@@ -1,4 +1,4 @@
-package Resources::WebApp;
+package Resources::UI::WebApp;
 
 {
     use Nemesis::Inject;
@@ -9,17 +9,16 @@ package Resources::WebApp;
   get '/' => sub {
     my $self=shift;
 
-    my $Scanner = $Init->getModuleLoader()->loadmodule("Scanner");
+    my $Scanner = $Init->getModuleLoader()->getInstance("Scanner");
     my $meta = $Scanner->meta;
 
      my @Attr;
      for my $attr ( $meta->get_all_attributes ) {
-      push(@Attr,$attr->name." DOC >".$attr->documentation);
+      push(@Attr,"Attribute: ".$attr->name." DOC >".$attr->documentation);
      }
 
     for my $method ( $meta->get_all_methods ) {
-            push(@Attr,$method->fully_qualified_name);
-
+            push(@Attr,"Method: ".$method->fully_qualified_name);
     }
 
     $self->render(text => "Hello <br>".join("<br>",@Attr));
