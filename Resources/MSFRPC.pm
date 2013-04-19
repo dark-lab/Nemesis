@@ -15,7 +15,7 @@ class Resources::MSFRPC{
     has 'Token' => (is=>'rw');
     has 'Auth' => (isa=>'Int',is=>'rw', default => 0);
     has 'Result' => (is=>"rw");
-    nemesis_moosex_resource;
+    nemesis_resource;
 
 	method call (@Options){
         my $meth = shift @Options;

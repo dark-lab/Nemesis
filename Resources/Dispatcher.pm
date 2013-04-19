@@ -3,7 +3,7 @@ use Nemesis::Inject;
 
 class Resources::Dispatcher{
 
-		nemesis_moosex_resource;
+		nemesis_resource;
 
 		method dispatch(@Packet_info){
 		    my ($this,$npe, $ether, $po, $spo, $header ) = @_;

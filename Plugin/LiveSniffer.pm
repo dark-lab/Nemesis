@@ -10,9 +10,9 @@ class Plugin::LiveSniffer {
     our $MODULE  = "LiveSniffer plugin";
     our $INFO    = "<www.dark-lab.net>";
 
-    our @PUBLIC_FUNCTIONS = qw(info start stop);
+    our @PUBLIC_FUNCTIONS = qw(start stop);
 
-    nemesis_moosex_module;
+    nemesis_module;
 
     has 'Sniffer' => (
         is => 'rw'

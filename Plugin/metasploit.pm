@@ -18,10 +18,11 @@ class Plugin::metasploit{
 #Risorsa MSFRPC che mi fornirà il modo di connettermi a MSFRPC
     has 'MSFRPC'  => (is=>"rw"); 
     has 'DB' => (is=>"rw");
-    nemesis_moosex_module;
+    nemesis_module;
 
     method prepare(){
-                $self->DB($self->Init->getModuleLoader->loadmodule("DB")->connect()); #Lo userò spesso.
+        my $DB=$self->Init->getModuleLoader->loadmodule("DB");
+                $self->DB($DB->connect); #Lo userò spesso.
     }
 
     method start(){
@@ -125,7 +126,7 @@ class Plugin::metasploit{
                 my @References = map { $_ = join("|", @{$_} ); } @{$Information->{'references'}};
                 $self->Init->getIO()->debug(join(" ",@Targets)." targets");
                 $self->DB->add(Resources::Exploit->new(
-                               type=> "exploits",
+                                type=> "exploits",
                                 module=>$exploit,
                                 rank=> $Information->{'rank'},
                                 description=>$Information->{'description'},

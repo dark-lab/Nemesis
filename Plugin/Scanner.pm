@@ -7,7 +7,7 @@ class Plugin::Scanner {
     our $MODULE  = "Scanner plugin";
     our $INFO    = "<www.dark-lab.net>";
 
-    our @PUBLIC_FUNCTIONS = qw(info test nmap);
+    our @PUBLIC_FUNCTIONS = qw(test nmap);
 
     has 'Arguments' => (
                             is=>"rw",
@@ -17,7 +17,7 @@ class Plugin::Scanner {
     has 'DB' =>( is=> "rw",
                  documentation=>"Database ");
 
-    nemesis_moosex_module;
+    nemesis_module;
     use HTTP::Request;
     use Net::IP;
     use Nmap::Parser;
@@ -37,7 +37,8 @@ class Plugin::Scanner {
         $LFI->test();
    }
    method nmap($Ip?){
-$self->DB($self->Init->getModuleLoader->loadmodule("DB")->connect());
+    my $ModuleLoader=$self->Init->getModuleLoader;
+        $self->DB($ModuleLoader->loadmodule("DB")->connect());
     if($Ip) {
         $self->nmapscan($Ip);
     } else {

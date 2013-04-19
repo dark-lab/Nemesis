@@ -8,7 +8,7 @@ class Resources::Crawler{
 	has 'SearchURL' =>		(is=>"rw", default=>"http://www.google.com");
 	has 'PageRegex' =>		(is=>"rw", default=>'start');
 	has 'Pages'     =>		(is=>"rw", isa=>"ArrayRef",default => sub { [] });
-	nemesis_moosex_resource;
+	nemesis_resource;
 	use WWW::Mechanize;
 	use Regexp::Common qw /URI/;
 

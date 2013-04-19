@@ -1,19 +1,22 @@
 package Plugin::Bundle;
-use MooseX::Declare;
-use Nemesis::Inject;
-  use namespace::autoclean;
 
+
+use MooseX::Declare;
 
 class Plugin::Bundle {
+
+
+    use Nemesis::Inject;
+    use namespace::autoclean;
 
     our $VERSION = '0.1a';
     our $AUTHOR  = "mudler";
     our $MODULE  = "This is an interface to the Packer library";
     our $INFO    = "<www.dark-lab.net>";
 
-    our @PUBLIC_FUNCTIONS = qw(info export exportCli exportWrap);
+    our @PUBLIC_FUNCTIONS = qw(export exportCli exportWrap);
 
-    nemesis_moosex_module;
+    nemesis_module;
 
     method export( $What, $FileName ) {
         $self->Init->getIO()->print_info("Packing $What in $FileName");

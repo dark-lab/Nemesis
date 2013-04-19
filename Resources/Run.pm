@@ -6,7 +6,7 @@ use Nemesis::Inject;
 use MooseX::Declare;
 
 class Resources::Run{
-	nemesis_moosex_resource;
+	nemesis_resource;
 
 	$SIG{'TERM'}=sub { exit; };
 

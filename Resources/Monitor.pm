@@ -10,7 +10,7 @@ use Net::Pcap::Easy;
 	has 'Filter' => (is=>"rw",default=>"");
 	has 'Promiscuous' => (is=>"rw",default=>"0");
 	has 'Dispatcher' => (is=>"rw");
-	nemesis_moosex_resource;
+	nemesis_resource;
 
 
 

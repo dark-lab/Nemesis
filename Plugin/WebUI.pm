@@ -11,9 +11,9 @@ use Mojo::Server::Daemon;
     our $MODULE  = "Moose test module";
     our $INFO    = "<www.dark-lab.net>";
 
-    our @PUBLIC_FUNCTIONS = qw(info test run);
+    our @PUBLIC_FUNCTIONS = qw(test run);
 
-    nemesis_moosex_module;
+    nemesis_module;
 
     has 'Port' => (is=>"rw",default=>"8080");
 

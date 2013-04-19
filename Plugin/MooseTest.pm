@@ -12,9 +12,9 @@ class Plugin::MooseTest {
     our $MODULE  = "Moose testing plugin";
     our $INFO    = "<www.dark-lab.net>";
 
-    our @PUBLIC_FUNCTIONS = qw(info test);
+    our @PUBLIC_FUNCTIONS = qw(test);
 
-    nemesis_moosex_module;
+    nemesis_module;
 
     has 'Process' => (
         is => 'rw',
@@ -35,12 +35,12 @@ class Plugin::MooseTest {
             $DB->connect();
            #$DB->add($MSFRPC);
           #  my $Data_Bulk=$DB->list_obj(); Lista tutti gli oggetti
-            $self->Init->getIO->debug("test 1:  ricerca classe di tipo Resources::Exploit");
+            $self->Init->getIO->debug("test 1:  ricerca classe di tipo Resources::Node");
 
             my $results=$DB->search(class => "Resources::Node");
 
                 while( my $block = $results->next ) {
-                    foreach my $item ( @$block ) {
+                    foreach my $item ( @{$block} ) {
                         $self->Init->getIO->debug($item->ip.": ".join(",",@{$item->ports}));
                         $self->Init->getIO->debug("Possible vulns ".$item->attachments->size);
 
@@ -55,7 +55,7 @@ class Plugin::MooseTest {
     }
 
 }
-  __PACKAGE__->meta->make_immutable;
+#  __PACKAGE__->meta->make_immutable;
 1;
 
 

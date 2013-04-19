@@ -9,7 +9,7 @@ class Resources::DB {
       use Search::GIN::Query::Class;
                    use Resources::Snap;
 
-	nemesis_moosex_resource;
+	nemesis_resource;
 
 	has 'BackEnd' => (is=>"rw");
 
@@ -52,7 +52,6 @@ class Resources::DB {
             return ();
       }
       method connect($BackEnd?){
-
       	if($BackEnd ){
       		$self->BackEnd($BackEnd);
       		return $self;

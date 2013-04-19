@@ -9,7 +9,7 @@ class Resources::LFI{
 	has 'Test' 	  => (is=>"rw",default=>"/proc/self/environ");
 	has 'TestRegex' => (is=>"rw",default=>"DOCUMENT_ROOT=\/|HTTP_USER_AGENT");
 
-	nemesis_moosex_resource;
+	nemesis_resource;
 	use LWP::Simple;
 
 	method test() {

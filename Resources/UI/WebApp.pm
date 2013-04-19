@@ -1,10 +1,11 @@
 package Resources::UI::WebApp;
 
 {
-    use Nemesis::Inject;
-    nemesis_mojo;
-
     use Mojolicious::Lite;
+    use Nemesis::Inject;
+    nemesis_resource_mojo;
+
+ 
 
   get '/' => sub {
     my $self=shift;
