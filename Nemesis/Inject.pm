@@ -7,44 +7,38 @@ sub import {
     # create keyword 'provided', expand it to 'if' at parse time
     Keyword::Simple::define 'nemesis_module', sub {
         my ($ref) = @_;
-        substr( $$ref, 0, 0 ) = ' our $Init;sub new(){my $package = shift;bless( {}, $package );%{ $package } = @_;$Init=$package->{\'Init\'};return $package;}sub export_public_methods() {   my $self = shift;return @PUBLIC_FUNCTIONS;}sub info(){$Init->getIO()->print_tabbed("__PACKAGE__ $MODULE v$VERSION ~ $AUTHOR ~ $INFO",2);	} ';    # inject 'if' at beginning of parse buffer
+        substr( $$ref, 0, 0 ) = 'our $Init; if(!eval{__PACKAGE__->can("meta")}) {  my $code=\'sub new(){my $package = shift;bless( {}, $package );%{ $package } = @_;$Init=$package->{\\\'Init\\\'};return $package;}sub export_public_methods() {   my $self = shift; push(@PUBLIC_FUNCTIONS,"info");return @PUBLIC_FUNCTIONS;}sub info(){$Init->getIO()->print_tabbed("__PACKAGE__ $MODULE v$VERSION ~ $AUTHOR ~ $INFO",2);}\'; eval $code;   } else {    __PACKAGE__->meta->add_attribute( \'Init\' => ( is => \'rw\',required=> 1    ) );__PACKAGE__->meta->add_method( \'info\' => sub { my $self=shift;            $self->Init->getIO()->print_tabbed(__PACKAGE__ ." $MODULE v$VERSION ~ $AUTHOR ~ $INFO",2); } );__PACKAGE__->meta->add_method( \'export_public_methods\' => sub { push(@PUBLIC_FUNCTIONS,"info"); return @PUBLIC_FUNCTIONS; } ); } ';    # inject 'if' at beginning of parse buffer
     };
 
-    Keyword::Simple::define 'nemesis_moose_module', sub {
-        my ($ref) = @_;
-        substr( $$ref, 0, 0 ) = '		has \'Init\' => (			is=>\'rw\',			required=> 1			);		sub export_public_methods() {		    return @PUBLIC_FUNCTIONS;			}		sub info(){			my $self=shift;			$self->Init->getIO()->print_tabbed(__PACKAGE__ ." $MODULE v$VERSION ~ $AUTHOR ~ $INFO",2);		}         ';    # inject 'if' at beginning of parse buffer
-    };
 
-    Keyword::Simple::define 'nemesis_moosex_module', sub {
-        my ($ref) = @_;
-        substr( $$ref, 0, 0 ) = '		has Init => (			is=> \'rw\',			required=> 1			);		method export_public_methods() {   		    return @PUBLIC_FUNCTIONS;			}		method info(){			$self->Init->getIO()->print_tabbed(__PACKAGE__ ." $MODULE v$VERSION ~ $AUTHOR ~ $INFO",2);		}         ';    # inject 'if' at beginning of parse buffer
-    };
 
-    Keyword::Simple::define 'nemesis_moosex_resource', sub {
-        my ($ref) = @_;
-        substr( $$ref, 0, 0 ) = '		has Init => (			is=> \'rw\',			required=> 1			);         ';    # inject 'if' at beginning of parse buffer
-    };
-
-    Keyword::Simple::define 'nemesis_moose_resource', sub {
-        my ($ref) = @_;
-        substr( $$ref, 0, 0 ) = '		has \'Init\' => (			is=> read_write,			required=> true			);         ';    # inject 'if' at beginning of parse buffer
-    };
     Keyword::Simple::define 'nemesis_resource', sub {
         my ($ref) = @_;
-        substr( $$ref, 0, 0 ) = '  our $Init;         sub new(){			my $package = shift;			bless( {}, $package );			%{ $package } = @_;			$Init=$package->{\'Init\'};			return $package;         }                ';    # inject 'if' at beginning of parse buffer
+        substr( $$ref, 0, 0 ) = 'our $Init; if(!eval{__PACKAGE__->can("meta")}) {  my $code=\'sub new(){my $package = shift;bless( {}, $package );%{ $package } = @_;$Init=$package->{\\\'Init\\\'};return $package;}\'; eval $code;   } else {__PACKAGE__->meta->add_method( \'BUILD\' => sub { my $self=shift;my $args=shift; $Init=$args->{Init}; } ); __PACKAGE__->meta->add_attribute( \'Init\' => ( is => \'rw\',required=> 1    ) );} ';    # inject 'if' at beginning of parse buffer
     };
-
-    Keyword::Simple::define 'nemesis_mojo', sub {
+    Keyword::Simple::define 'nemesis_resource_mojo', sub {
         my ($ref) = @_;
-        substr( $$ref, 0, 0 ) = ' our $Init; sub setInit(){  my $self=shift;  $Init=$_[0];}               ';    # inject 'if' at beginning of parse buffer
+        substr( $$ref, 0, 0 ) = 'our $Init; my $code=\' sub setInit(){  my $self=shift;  $Init=$_[0];}\'; eval $code; ';    # inject 'if' at beginning of parse buffer
     };
     
+    Keyword::Simple::define 'iGet', sub {
+        my ($ref) = @_;
+        substr( $$ref, 0, 0 ) = '$Init->getModuleLoader->getInstance';    # inject 'if' at beginning of parse buffer
+    };
+    Keyword::Simple::define 'iLoad', sub {
+        my ($ref) = @_;
+        substr( $$ref, 0, 0 ) = '$Init->getModuleLoader->loadmodule';    # inject 'if' at beginning of parse buffer
+    };
+   
 }
 
 sub unimport {
 
     # lexically disable keyword again
-    Keyword::Simple::undefine 'nemesis';
+    Keyword::Simple::undefine 'nemesis_module';
+    Keyword::Simple::undefine 'nemesis_resource';
+    Keyword::Simple::undefine 'nemesis_resource_mojo';
+
 }
 
 1;
