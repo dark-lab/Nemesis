@@ -22,21 +22,21 @@ package Resources::SiteCloner;
   get '/facebook' => sub {
     my $self    = shift;
 		my $mech = WWW::Mechanize->new(); #Alloco un nuovo Mechanize
-		$mech->agent_alias( 'Windows IE 6' ); #Setto l'agent del client
+		$mech->agent_alias( 'Windows IE 6' ); #Setto l'agent del client (ovviamente per facebook IE6 si vede da cazzo, dunque l'output non sarà spendido, ecco)
 		$mech->get( "http://www.facebook.it" ); #Prendo il sito
-		say $mech->res->content(); #$mech->res ritorna un HTTP::Response object, che ha un metodo content per visualizzare il contenuto della risposta http
-		$self->render(text =>$mech->res->content() );
+		say $mech->res->decoded_content(); #$mech->res ritorna un HTTP::Response object, che ha un metodo content e decode_content(content già decodificato, per comodità) per visualizzare il contenuto della risposta http
+		$self->render(text =>$mech->res->decoded_content() );
   };
 
   any '/a' => sub { #Esatto, gestisce anche tutto! :D
   	my $self=shift;
-  	$self->render(text => $self->ua->get("http://".$self->tx->req->content->headers->host); #Questo in teoria dovrebbe fare il nostro giochetto.
+  	$self->render(text => $self->ua->get("http://".$self->tx->req->content->headers->host)); #Questo in teoria dovrebbe fare il nostro giochetto.
   		 #Ma : la ua (UserAgent) di Mojo per quanto ne so, non automatizza il redirect in caso di HTTP Response Moved Permantently/Temporary per questo ti consiglio di usare 
   		 #Mech e quindi:
 	my $mech = WWW::Mechanize->new();
 	$mech->agent_alias( 'Windows IE 6' );
 	$mech->get( "http://".$self->tx->req->content->headers->host );
-	$self->render(text => $mech->res->content()); #ok, così va meglio dunque :)
+	$self->render(text => $mech->res->decoded_content()); #ok, così va meglio dunque :)
   }
 
   
