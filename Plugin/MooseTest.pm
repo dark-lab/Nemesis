@@ -35,13 +35,13 @@ class Plugin::MooseTest {
             $DB->connect();
            #$DB->add($MSFRPC);
           #  my $Data_Bulk=$DB->list_obj(); Lista tutti gli oggetti
-            $self->Init->getIO->debug("test 1:  ricerca classe di tipo Resources::Node");
+            $self->Init->getIO->print_info("test 1:  ricerca classe di tipo Resources::Node");
 
             my $results=$DB->search(class => "Resources::Node");
 
                 while( my $block = $results->next ) {
                     foreach my $item ( @{$block} ) {
-                        $self->Init->getIO->debug($item->ip.": ".join(",",@{$item->ports}));
+                        $self->Init->getIO->debug($item->ip.": ".join(",",@{$item->ports}),__PACKAGE__);
                         $self->Init->getIO->debug("Possible vulns ".$item->attachments->size);
 
                     }

@@ -20,18 +20,18 @@ class Plugin::metasploit{
     has 'DB' => (is=>"rw");
     nemesis_module;
 
-    method prepare(){
-        my $DB=$self->Init->getModuleLoader->loadmodule("DB");
-                $self->DB($DB->connect); #Lo userò spesso.
-    }
+  method prepare(){
+            
+               $self->DB($Init->getModuleLoader->loadmodule("DB")->connect); #Lo userò spesso.
+  }
 
     method start(){
 
         return 1 if($self->Process && $self->Process->is_running);
 
-        my $Io    = $self->Init->getIO();
+        my $Io    = $Init->getIO();
 
-        $self->MSFRPC($self->Init->getModuleLoader->loadmodule("MSFRPC")); #Carico la risorsa MSFRPC
+        $self->MSFRPC($Init->getModuleLoader->loadmodule("MSFRPC")); #Carico la risorsa MSFRPC
 
         my $processString =
               'msfrpcd -U '
@@ -39,7 +39,7 @@ class Plugin::metasploit{
             . $self->MSFRPC->Password . ' -p '
             . $self->MSFRPC->Port . ' -S';
         $Io->print_info("Starting msfrpcd service."); #AVVIO il demone msfrpc con le configurazioni della risorsa
-        my $Process = $self->Init->getModuleLoader->loadmodule('Process'); ##Carico il modulo process
+        my $Process = $Init->getModuleLoader->loadmodule('Process'); ##Carico il modulo process
         $Process->set(
             type => 'daemon',    # tipologia demone
             code => $processString # linea di comando...
@@ -68,7 +68,7 @@ class Plugin::metasploit{
                           foreach my $item2 ( @$block2 ) {  
                            if($item ne $item2){
                                 $self->DB->delete($item2);
-                                $self->Init->getIO->debug("Deleting $item2");
+                                $Init->getIO->debug("Deleting $item2");
                             }
                           }
                         }
@@ -82,7 +82,19 @@ class Plugin::metasploit{
     }
 
 
-    method LaunchExploitOnNode($Node,$Exploit){}
+    method LaunchExploitOnNode($Node,$Exploit){
+          my @OPTIONS = (
+            "exploits",
+            $Exploit->module,
+           );
+ 
+         my $Options = $self->MSFRPC->options("exploits",$Exploit->module);
+         my $Payloads = $self->MSFRPC->payloads($Exploit->module);
+         $Init->getIO->debug_dumper(\$Options);
+                  $Init->getIO->debug_dumper(\$Payloads);
+
+
+    }
 
     method generate() {
 
@@ -111,7 +123,7 @@ class Plugin::metasploit{
 
             my $Information = $self->MSFRPC->info("exploits",$exploit);
             my $Options = $self->MSFRPC->options("exploits",$exploit);
-
+            $self->MSFRPC->parse_result;
 
             my $result=$self->DB->search(module => $exploit);
             my $AlreadyThere=0;
@@ -147,12 +159,12 @@ class Plugin::metasploit{
     method test(){
 
 
-        my @OPTIONS = (
-            "exploits",
-            "windows/novell/nmap_stor",
-           );
-        $self->MSFRPC->call( "module.info" ,@OPTIONS);
-         $self->MSFRPC->call( "module.options" ,@OPTIONS);
+    $self->LaunchExploitOnNode(Resources::Node->new(
+                ip => "127.0.0.1"
+                ),Resources::Exploit->new(
+                                type=> "exploits",
+                                module=> "auxiliary/admin/backupexec/dump"
+                                ));
 
     }
 
