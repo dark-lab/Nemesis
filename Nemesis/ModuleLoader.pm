@@ -115,6 +115,7 @@ package Nemesis::ModuleLoader;
             $object = $module;
         }
         elsif ( my $Type = $self->_findLib($module) ) {
+            if($Type=~/\//){$Type=~s/\//\:/g;}
             $object = $Type . "::" . $module;
         }
         else {
@@ -169,12 +170,26 @@ package Nemesis::ModuleLoader;
     sub _findLib() {
         my $self    = shift;
         my $LibName = $_[0];
+        #
         foreach my $Library ($self->getLoadedLib) {
             my $Path=$Init->getEnv()->getPathBin;
             my $Match=$Library;
             $Match=~s/$Path\/?//g;
-            if ( $Match =~ /(.*)\/$LibName\.pm$/i)
+             #
+        # $Init->getIO()->debug("Lib $Match for $LibName",__PACKAGE__);
+            my @I= @INC;
+            my $c=0;
+            for (0..scalar(@I)){
+               delete $I[$c] if($I[$c] eq ".");
+                $c++;
+            }
+
+            foreach my $INCLib (@I) {$Match=~s/$INCLib//g;}
+         #   $Init->getIO->debug("this is my match $Match INC is ".join(" ",@I),__PACKAGE__);
+            if ( $Match =~ /\/?(.*)\/$LibName/i)
             {
+             #   
+          #   $Init->getIO->debug(" findLib matched $1 for $Match ($LibName)",__PACKAGE__);
                 return $1;
             }
         }
@@ -305,38 +320,38 @@ package Nemesis::ModuleLoader;
         @{ $self->{'LibraryList'} } = @Libs;
         foreach my $Library (@Libs) {
             my ($name) = $Library =~ m/([^\.|^\/]+)\.pm/;
-           # $Init->getIO()
-            #    ->debug( "detected Plugin/Resource $name in $Library",__PACKAGE__ );
+            $Init->getIO()
+                ->debug( "detected Plugin/Resource $name in $Library",__PACKAGE__ );
             eval {
                 if ( exists( $self->{'modules'}->{$name} ) ) {
                     delete $self->{'modules'}->{$name};
                 }
                if ( $self->isModule($Library)) {
 
-                    $Init->getIO()->debug( $Library . " is a module!",__PACKAGE__ );
+                   # $Init->getIO()->debug( $Library . " is a module!",__PACKAGE__ );
                     $self->{'modules'}->{$name} = $self->loadmodule($name);
                     if ( exists( $self->{'modules'}->{$name} )  and $self->{'modules'}->{$name} ne "") {
                         $mods++;
+                        $Init->getIO->print_info("Module $name ($Library) correctly loaded.")
                     }
                 }
                 elsif ($self->isResource($Library)) {
-                    $Init->getIO()
-                        ->debug("$Library ($name) is a Nemesis Resource",__PACKAGE__ );
+                    #$Init->getIO()->debug("$Library ($name) is a Nemesis Resource",__PACKAGE__ );
+                    $Init->getIO->print_info("Resource $name ($Library) detected");
                 }
                 else {
-                    $Init->getIO()
-                        ->debug("$Library it's nothing to me",__PACKAGE__ );
+                    #    $Init->getIO()
+                    #    ->debug("$Library it's nothing to me",__PACKAGE__ );
                 }
 
             };
             if($@){
                 $IO->print_error($@);
                     delete $self->{'modules'}->{$name};
-                    next;
+                    return 0;
             }
         }
-        $IO->print_info(
-            "> $mods modules available. Double tab to see them\n");
+        $IO->print_info(" $mods modules available. Double tab to see them");
         #delete $self->{'modules'};
         return 1;
     }
