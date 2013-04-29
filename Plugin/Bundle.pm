@@ -10,7 +10,7 @@ use Module::ScanDeps;
 
     use Nemesis::Inject;
     use namespace::autoclean;
-
+    use App::Packer::PAR;
     our $VERSION = '0.1a';
     our $AUTHOR  = "mudler";
     our $MODULE  = "This is an interface to the Packer library";
