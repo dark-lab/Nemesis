@@ -52,6 +52,12 @@ class Resources::MSFRPC{
         $self->call('module.options',@Options);
     }
 
+    method payloads(@Options){
+                $self->call('module.compatible_payloads',@Options);
+
+
+
+    }
     method login(){
         my $user = $self->Username();
         my $pass = $self->Password();
