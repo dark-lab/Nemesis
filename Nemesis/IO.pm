@@ -14,7 +14,7 @@ sub new {
 
     #open STDIN, '/dev/null'   or die "Can't read /dev/null: $!";
     #open STDOUT, '>>/dev/null';
-    #open STDERR,'>>/dev/null';
+    #open STDERR,'>>/tmp/nemesis_log.txt';
     umask 0;
     return $package;
 }

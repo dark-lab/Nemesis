@@ -104,7 +104,9 @@ package Nemesis::ModuleLoader;
     sub loadmodule() {
         my $self   = shift;
         my $module = $_[0];
+        if($_[1]){
         my %args = $_[1];
+        }
         my $IO     = $Init->getIO();
         my $object;
         if($module =~/$RE{URI}{HTTP}/) {
@@ -179,12 +181,12 @@ package Nemesis::ModuleLoader;
         # $Init->getIO()->debug("Lib $Match for $LibName",__PACKAGE__);
             my @I= @INC;
             my $c=0;
-            for (0..scalar(@I)){
+            foreach my $a (@I){
                delete $I[$c] if($I[$c] eq ".");
                 $c++;
             }
 
-            foreach my $INCLib (@I) {$Match=~s/$INCLib//g;}
+            foreach my $INCLib (@I) {$Match=~s/$INCLib//g if defined($INCLib);}
          #   $Init->getIO->debug("this is my match $Match INC is ".join(" ",@I),__PACKAGE__);
             if ( $Match =~ /\/?(.*)\/$LibName/i)
             {
