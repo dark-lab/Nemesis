@@ -42,6 +42,15 @@ class Plugin::LiveSniffer {
         $self->Sniffer()->destroy() if($self->Sniffer);
     }
 
+    method event_tcp(@Info){
+        $Init->getIO->debug("i got a packet ".join(" ",@Info),__PACKAGE__);
+        foreach my $data(@Info){
+            $Init->getIO->debug_dumper($data);
+        #$Init->getIO->debug("$data");
+        }
+
+    }
+
 }
 1;
 

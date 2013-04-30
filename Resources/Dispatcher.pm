@@ -5,27 +5,27 @@ class Resources::Dispatcher{
 
 		nemesis_resource;
 
-		method dispatch(@Packet_info){
-		    my ($this,$npe, $ether, $po, $spo, $header ) = @_;
-		    $self->debug($po);
-			$self->debug($spo);
-		    my ($L) = $po=~/\:\:(.*)\=/;
-		    my ($PT) = $spo=~/\:\:(.*)\=/;
-		    $self->command($po,lc($L));
-   		    $self->command($spo,lc($PT));
-		}
-
-		method command($Packet,$Type){
-
-			$self->match("event_".$Type,$Packet);
-
+		method dispatch_packet(@Packet_info){
+		    
+		   # my $this=shift @Packet_info;
+		    my $npe=shift @Packet_info;
+		   # $self->debug($po);
+			#$self->debug($spo);
+			foreach my $data(@Packet_info){
+				my ($Type) = $data=~/\:\:(.*)\=/;
+				if(defined($Type)){
+					#$Init->getIO->debug("$data is $Type");
+					$self->match("event_".lc($Type),@Packet_info);
+					#$self->debug($data);
+				}
+			}
 		}
 
 		method match(@Args){
 			my $Command=shift(@Args);
 			foreach my $Module($self->Init->getModuleLoader->canModule($Command)){	
 		    	my $Instance=$self->Init->getModuleLoader->getInstance($Module);
-		    	$self->Init->getIO()->print_info("I can do that $Instance");
+		    	#$self->Init->getIO()->print_info("I can do that $Instance");
 		    	eval { $Instance->$Command(@Args); };
 		    }
 		}

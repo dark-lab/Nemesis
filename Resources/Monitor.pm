@@ -6,7 +6,7 @@ use Resources::Dispatcher;
 	
 use Net::Pcap::Easy;
 
-	has 'Device' => (is=>"rw",default=>"mon0");
+	has 'Device' => (is=>"rw",default=>"eth0");
 	has 'Filter' => (is=>"rw",default=>"");
 	has 'Promiscuous' => (is=>"rw",default=>"0");
 	has 'Dispatcher' => (is=>"rw");
@@ -26,7 +26,7 @@ use Net::Pcap::Easy;
 										    timeout_in_ms    => 0, # 0ms means forever
 										    promiscuous      => $self->Promiscuous, # true or false
 											default_callback => sub {
-												$d->dispatch(@_);
+												$d->dispatch_packet(@_);
 											}
 											
 										);
@@ -34,7 +34,7 @@ use Net::Pcap::Easy;
 
 		1 while $npe->loop;
 
-		$self->Init->getIO()->print_alert("Exited from loop, something happened");
+		$Init->getIO()->print_alert("Exited from loop, something happened");
 	}
 
 }
