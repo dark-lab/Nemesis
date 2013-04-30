@@ -22,13 +22,13 @@ class Plugin::metasploit{
 
   method prepare(){
             
-               $self->DB($Init->getModuleLoader->loadmodule("DB")->connect); #Lo userò spesso.
+           #    $self->DB($Init->getModuleLoader->loadmodule("DB")->connect); #Lo userò spesso.
   }
 
     method start(){
 
         return 1 if($self->Process && $self->Process->is_running);
-
+        $self->DB($Init->getModuleLoader->loadmodule("DB")->connect) if !$self->DB;
         my $Io    = $Init->getIO();
 
         $self->MSFRPC($Init->getModuleLoader->loadmodule("MSFRPC")); #Carico la risorsa MSFRPC
