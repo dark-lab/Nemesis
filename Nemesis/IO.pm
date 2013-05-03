@@ -244,7 +244,7 @@ sub debug() {
                 "\0(squareb)(\0(warn)".
                 $Init->getEnv()->time_seconds().
                 "\0(squareb)) \0(squareb)[\0(logo)Debug\0(squareb)] \0(debugtext) ".
-                join(" ",@_));
+                $_[0]);
   
             }
         } else {
@@ -268,7 +268,7 @@ sub debug() {
 
 sub print_info() {
     my $self = shift;
-           if(exists($self->{'vt'})){
+    if(exists($self->{'vt'})){
              $self->{'vt'}->print($self->{'vt'}->current_window(),"\0(squareb)[\0(warn)**\0(squareb)] \0(squareb)(\0(warn)".$Init->getEnv()->time_seconds()."\0(squareb))\0(infotext) ".join(" ",@_));
         } else {
     print colored( "[",                             "magenta on_black bold" )
@@ -281,6 +281,23 @@ sub print_info() {
     }
 }
 
+sub info(){
+    my $self=shift;
+    $self->print_info(@_);
+}
+
+sub error(){
+    my $self=shift;
+    $self->print_error(@_);
+}
+sub alert(){
+    my $self=shift;
+    $self->print_alert(@_);
+}
+sub tabbed(){
+    my $self=shift;
+    $self->print_tabbed(@_);
+}
 sub print_error() {
     my $self = shift;
            if(exists($self->{'vt'})){
@@ -393,14 +410,14 @@ sub set_debug() {
 
 sub debug_dumper() {
     my $self = shift;
-    my $Arg=shift;
-    my $LogFile=shift || undef;
-    $self->debug( Dumper($Arg) ) if(!defined($LogFile));
-    if(defined($LogFile)){
-        open my $Log, ">".$LogFile;
-        print $Log Dumper($Arg);
-        close $Log;
-    }
+    my $Arg=$_[0];
+   # my $LogFile=$_[1] if($_[1]);
+    $self->debug( Dumper($Arg),__PACKAGE__ );
+  ##  if(defined($LogFile)){
+   #     open my $Log, ">".$LogFile;
+    #    print $Log Dumper($Arg);
+    ##    close $Log;
+    #}
 }
 
 sub unici {
