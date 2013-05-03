@@ -6,7 +6,7 @@ use Resources::Dispatcher;
 	
 use Net::Pcap::Easy;
 
-	has 'Device' => (is=>"rw",default=>"eth0");
+	has 'Device' => (is=>"rw",default=>"wlan0");
 	has 'Filter' => (is=>"rw",default=>"");
 	has 'Promiscuous' => (is=>"rw",default=>"0");
 	has 'Dispatcher' => (is=>"rw");
@@ -36,5 +36,7 @@ use Net::Pcap::Easy;
 
 		$Init->getIO()->print_alert("Exited from loop, something happened");
 	}
+
+		
 
 }

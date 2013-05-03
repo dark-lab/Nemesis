@@ -29,22 +29,6 @@ class Resources::Dispatcher{
 		    	eval { $Instance->$Command(@Args); };
 		    }
 		}
-		method debug($Packet){
-		    if( $Packet ) {
-   			 	my $IO = $self->Init->getIO;
-		        if( $Packet->isa("NetPacket::IP") ) {
-					$IO->print_info("IP packet: ".$Packet->{src_ip}." -> ".$Packet->{dest_ip});
-		      	} elsif( $Packet->isa("NetPacket::TCP") ) {
-					$IO->print_info("TCP packet: ".$Packet->{src_port}." -> ".$Packet->{dest_port});
-	            } elsif( $Packet->isa("NetPacket::UDP") ) {
-	            	$IO->print_info("UDP packet: ".$Packet->{src_port}." -> ".$Packet->{dest_port});
-		        } elsif( $Packet->isa("NetPacket::ARP") ) {
-	            	$IO->print_info("ARP packet: ".$Packet->{sha}." -> ".$Packet->{tha});
-		        }
-		        else {
-   	   			 	$self->Init->getIO()->debug_dumper($Packet);
-		        }
-		    } 
-		}
+
 
 }
