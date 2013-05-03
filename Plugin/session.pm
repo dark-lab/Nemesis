@@ -46,12 +46,7 @@ sub spawn() {
     }
     else {
         $RealId = $Session->initialize($Session_Name);
-        if ( $RealId ne $Session_Name ) {
-            $Init->getIO()
-                ->print_info(
-                "Session name already taken, that's the new generated: "
-                    . $RealId );
-        }
+         $Session->restore($Session_Name);
     }
 }
 
