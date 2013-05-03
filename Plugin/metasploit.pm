@@ -242,9 +242,6 @@ $self->Init->getIO->print_tabbed("Found a total of ".scalar(@Objs)." objects for
         $self->Process->destroy() if($self->Process) ;
         #Il metodo clear viene chiamato quando chiudiamo tutto, dunque se ho un processo attivo, lo chiudo!
     }
-    method event_tcp(){
-        $self->getIO->debug("I got a tcp packet here... metas");
-    }
     
 }
 
