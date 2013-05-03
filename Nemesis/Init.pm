@@ -47,7 +47,17 @@ package Nemesis::Init;
         return $package->{'Io'};
     }
 
+    sub io{
+        my $package = shift;
+        return $package->{'Io'};
+    }
+
     sub getEnv {
+        my $package = shift;
+        return $package->{'Env'};
+    }
+
+    sub env{
         my $package = shift;
         return $package->{'Env'};
     }
@@ -61,13 +71,32 @@ package Nemesis::Init;
         my $package = shift;
         return $package->{'Interfaces'};
     }
+    sub interfaces {
+        my $package = shift;
+        return $package->{'Interfaces'};
+    }
 
     sub getSession {
         my $package = shift;
         return $package->{'Session'};
     }
 
+    sub session {
+        my $package = shift;
+        return $package->{'Session'};
+    }
+
     sub getModuleLoader {
+        my $package = shift;
+        return $package->{'ModuleLoader'};
+    }
+
+    sub moduleloader {
+        my $package = shift;
+        return $package->{'ModuleLoader'};
+    }
+
+    sub ml {
         my $package = shift;
         return $package->{'ModuleLoader'};
     }
