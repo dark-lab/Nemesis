@@ -43,13 +43,37 @@ class Plugin::LiveSniffer {
     }
 
     method event_tcp(@Info){
-        $Init->getIO->debug("i got a packet ".join(" ",@Info),__PACKAGE__);
+        $Init->io->info(__PACKAGE__." Received a TCP package");
         foreach my $data(@Info){
-            $Init->getIO->debug_dumper($data);
-        #$Init->getIO->debug("$data");
+            $self->debug($data);
         }
-
     }
+
+    method event_arp(@Info){
+         $Init->io->info(__PACKAGE__." Received an ARP package");
+        foreach my $data(@Info){
+            $self->debug($data);
+        }
+    }
+
+    method debug($Packet){
+            if( $Packet ) {
+                my $IO = $Init->io;
+               # $Init->io->debug("Packet is $Packet");
+                if( $Packet->isa("NetPacket::IP") ) {
+                    $IO->print_tabbed("IP packet: ".$Packet->{src_ip}." -> ".$Packet->{dest_ip});
+                } elsif( $Packet->isa("NetPacket::TCP") ) {
+                    $IO->print_tabbed("TCP packet: ".$Packet->{src_port}." -> ".$Packet->{dest_port});
+                } elsif( $Packet->isa("NetPacket::UDP") ) {
+                    $IO->print_tabbed("UDP packet: ".$Packet->{src_port}." -> ".$Packet->{dest_port});
+                } elsif( $Packet->isa("NetPacket::ARP") ) {
+                    $IO->print_tabbed("ARP packet: ".$Packet->{sha}." -> ".$Packet->{tha});
+                }
+                else {
+                  #  $self->Init->io()->debug_dumper(\$Packet);
+                }
+            } 
+        }
 
 }
 1;
