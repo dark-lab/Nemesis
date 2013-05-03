@@ -158,14 +158,18 @@ package Nemesis::ModuleLoader;
 
     sub canModule(){
         my $self=shift;
-        my $Can=$_[0];
+        my $Can=shift;
         return @{$self->{'can'}->{$Can}} if(exists($self->{'can'}->{$Can}));
+        $self->{'can'}->{$Can}= [];
         foreach my $module ( sort( keys %{ $self->{'modules'} } ) ) {
             my $Mod=$self->{'modules'}->{$module};
                if(eval{$Mod->can($Can);}){
                 push(@{$self->{'can'}->{$Can}},$module);
+          #      $Init->getIO->debug("$module cached");
                }
         }
+       # $Init->getIO->debug("Who can $Can? ".join(" ",@{$self->{'can'}->{$Can}})." \n");
+
         return @{$self->{'can'}->{$Can}};
     }
 
