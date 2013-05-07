@@ -49,6 +49,13 @@ class Plugin::LiveSniffer {
         }
     }
 
+    method event_udp(@Info){
+        $Init->io->info(__PACKAGE__." Received a UDP package");
+        foreach my $data(@Info){
+            $self->debug($data);
+        }
+    }
+
     method event_arp(@Info){
          $Init->io->info(__PACKAGE__." Received an ARP package");
         foreach my $data(@Info){
@@ -61,7 +68,11 @@ class Plugin::LiveSniffer {
                 my $IO = $Init->io;
                # $Init->io->debug("Packet is $Packet");
                 if( $Packet->isa("NetPacket::IP") ) {
-                    $IO->tabbed("IP packet: ".$Packet->{src_ip}." -> ".$Packet->{dest_ip});
+                    my $InfoIP=Net::IP->new($Packet->{src_ip});
+                   my $SrcType=$InfoIP->iptype;
+                    $InfoIP=Net::IP->new($Packet->{dest_ip});
+                  my  $DstType=$InfoIP->iptype;                  
+                    $IO->tabbed("IP packet: ".$Packet->{src_ip}."(".$SrcType.") -> ".$Packet->{dest_ip}."(".$DstType.")");
                 } elsif( $Packet->isa("NetPacket::TCP") ) {
                     $IO->tabbed("TCP packet: ".$Packet->{src_port}." -> ".$Packet->{dest_port});
                 } elsif( $Packet->isa("NetPacket::UDP") ) {
