@@ -5,17 +5,22 @@ class Resources::Dispatcher{
 
 		nemesis_resource;
 
-		method dispatch_packet(@Packet_info){
-		    
+		method dispatch_packet($Frame){
+
+		    #$Init->io->info($Frame->print);
+     	  #print "LAyer: ".join(",",$oSimple->layers)."\n";
+
+   
 		   # my $this=shift @Packet_info;
-		    my $npe=shift @Packet_info;
+		    #my $npe=shift @Packet_info;
 		   # $self->debug($po);
-			#$self->debug($spo);
-			foreach my $data(@Packet_info){
-				my ($Type) = $data=~/\:\:(.*)\=/;
+			#$Init->io->debug("my Frame is ".$Frame);
+			foreach my $data($Frame->layers){
+			my ($Type) = $data=~/.*\:\:(.*?)\=/;
+			#$Init->io->debug("$data");
 				if(defined($Type)){
 					#$Init->getIO->debug("$data is $Type");
-					$self->match("event_".lc($Type),@Packet_info);
+					$self->match("event_".lc($Type),$Frame);
 					#$self->debug($data);
 				}
 			}

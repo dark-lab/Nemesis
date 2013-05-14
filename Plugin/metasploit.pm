@@ -242,6 +242,55 @@ $self->Init->getIO->print_tabbed("Found a total of ".scalar(@Objs)." objects for
         $self->Process->destroy() if($self->Process) ;
         #Il metodo clear viene chiamato quando chiudiamo tutto, dunque se ho un processo attivo, lo chiudo!
     }
+
+    method event_tcp(@Packet_info){
+        my $IO=$Init->io;
+        my $PrivIp;
+        my $PubIp;
+        my $SourcePort;
+        my $DestPort;
+        foreach my $Packet(@Packet_info){
+             if( $Packet->isa("NetPacket::IP") ) {
+                    my $InfoIP=Net::IP->new($Packet->{src_ip});
+                    my $SrcType=$InfoIP->iptype;
+                     $InfoIP=Net::IP->new($Packet->{dest_ip});
+                    my  $DstType=$InfoIP->iptype;                 
+                    if($SrcType eq "PRIVATE"  ) {
+                        $PrivIp=$SrcType;
+                    }else {
+                        $PubIp=$SrcType;
+                    }
+                    if($DstType eq "PRIVATE"){
+                        $PrivIp=$DstType;
+                    } else {
+                        $PubIp=$DstType;
+                    }
+                } elsif( $Packet->isa("NetPacket::TCP") ) {
+                    $SourcePort=$Packet->{src_port};
+                    $DestPort=$Packet->{dest_port};
+                }
+        }
+
+        if(defined($PrivIp)){
+                               my $DBHost;
+           $Init->io->info("searching for matches for $PrivIp : $SourcePort/$DestPort");
+
+           my $results=$self->DB->search(ip => $PrivIp);
+
+           while( my $chunk = $results->next ){
+                         foreach my $foundhost (@$chunk){
+                          $DBHost=$foundhost;
+                          last;
+                      }
+            }
+
+          foreach my $FoundExploit(($self->matchPort($SourcePort),$self->matchPort($DestPort))){
+          #Update Database with new information
+            #Launch Exploit
+
+           }
+        }
+    }
     
 }
 
