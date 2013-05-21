@@ -60,15 +60,18 @@ use Net::Packet;
 
     method event_tcp($Frame){
         $Init->io->info($Frame->print);
+        my $Tcp=$Frame->ref->{'TCP'}->unpack;
+        my $payload= $Tcp->payload if $Tcp;
+        $Init->io->debug('PAYLOAD: '.$payload) if $Tcp->payload;
     }
 
     method event_udp($Frame){
-        $Init->io->info($Frame->print);
+        #$Init->io->info($Frame->print);
 
     }
 
     method event_arp($Frame){
-        $Init->io->info($Frame->print);
+        #$Init->io->info($Frame->print);
     }
 
  

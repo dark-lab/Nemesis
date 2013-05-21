@@ -44,9 +44,9 @@ use Net::Frame::Dump::Online;
 
 		while (1) {
 		   if (my $f = $Dump->next) {
-		      my $raw            = $f->{raw};
-		      my $firstLayerType = $f->{firstLayer};
-		      my $timestamp      = $f->{timestamp};
+		      # my $raw            = $f->{raw};
+		      # my $firstLayerType = $f->{firstLayer};
+		      # my $timestamp      = $f->{timestamp};
        		  my $oSimple = Net::Frame::Simple->newFromDump($f);
        		#  $Init->io->debug($oSimple->print);
 		      $d->dispatch_packet($oSimple);
