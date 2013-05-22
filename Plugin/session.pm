@@ -75,6 +75,7 @@ sub stash {
     my $self = shift;
     $Init->getIO()->print_info("Giving your session to the dogs");
     $Init->getSession()->stash();
+    $Init->ml->execute_on_all("prepare");
 }
 
 sub clear() {    #NECESSARY - CALLED ON EXIT

@@ -37,6 +37,8 @@ use File::Path;
         return $var;
     }
 
+    
+
     sub info {
         print "Session module\n";
     }
@@ -158,6 +160,8 @@ use File::Path;
         $session_dir =~ s/\s+/\\ /g;
         $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} = $session_dir;
         chdir( $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} );
+            $Init->ml->execute_on_all("prepare");
+
     }
 
     sub safechdir() {
