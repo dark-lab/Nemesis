@@ -10,6 +10,7 @@ package Nemesis::ModuleLoader;
 
     #external modules
     my @MODULES_PATH = ( 'Plugin', 'Resources' );
+    our @SystemCommands=("reload","exit");
 
     our $Init;
 
@@ -78,7 +79,7 @@ package Nemesis::ModuleLoader;
                     "Error $@ raised when populating public methods");
             }
         }
-        return @OUT;
+        return @OUT,@SystemCommands;
     }
 
     sub listmodules {

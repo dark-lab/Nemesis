@@ -32,12 +32,10 @@ sub parse_cli(){
     $self->print_title("< " .$command." ".join(" ",@cmd)." >");
     if ( $command eq "reload" )
     {
-        $output->print_title("Reloading modules..");
-        if ( $Init->getModuleLoader()->loadmodules() != 1 )
-        {                              
-            $self->print_error($_);
-            exit;
-        }
+        $self->print_title("Reloading modules..");
+         $Init->ml()->loadmodules();
+        
+
        
     } elsif ( $command =~ /exit/ )
     {
