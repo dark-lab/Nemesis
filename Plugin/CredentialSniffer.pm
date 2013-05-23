@@ -15,6 +15,8 @@ class Plugin::CredentialSniffer {
 
     nemesis_module;
 
+    has 'DB' => (is=>"rw");
+
     method start() {
 
       if($self->Init->checkroot()){
