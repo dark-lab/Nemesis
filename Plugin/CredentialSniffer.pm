@@ -17,6 +17,12 @@ class Plugin::CredentialSniffer {
 
     has 'DB' => (is=>"rw");
 
+  method prepare(){#Metodo chiamato durante il caricamento dei moduli
+            
+              $self->DB($Init->getModuleLoader->loadmodule("DB")->connect); #Mi preparo il db all'avvio
+  }
+
+
     method start() {
 
       if($self->Init->checkroot()){
@@ -36,9 +42,7 @@ class Plugin::CredentialSniffer {
 
     method event_tcp($Frame){
       # connection with the DB
-        my $ModuleLoader=$self->Init->getModuleLoader;
-        $self->DB($ModuleLoader->loadmodule("DB")->connect());
-        
+       
         $Init->io->info($Frame->print);
         
         my $Ip = $Frame->ref->{'IPv4'};
@@ -67,7 +71,7 @@ class Plugin::CredentialSniffer {
                                 ip => $Ip->src
                                 );
                     # create a new credential
-                    $Credenzial = new Resources::Credential(
+                   my $Credenzial = new Resources::Credential(
                                 SITE => "soon...",
                                 PARAMETER => $parameter,
                                 VALUE => $value
@@ -88,3 +92,5 @@ class Plugin::CredentialSniffer {
         #$Init->io->debug('PAYLOAD: '.$payload) if $Tcp->payload;
 
     }
+}
+    1;
