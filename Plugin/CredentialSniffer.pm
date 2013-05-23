@@ -1,4 +1,5 @@
 package Plugin::CredentialSniffer;
+
 use MooseX::Declare;
 
 use Nemesis::Inject;
@@ -31,7 +32,7 @@ class Plugin::CredentialSniffer {
         #$self->Sniffer()->destroy() if($self->Sniffer);
     }
 
-    method event_tcp($Packet){
+    method event_tcp($Frame){
       # connection with the DB
         my $ModuleLoader=$self->Init->getModuleLoader;
         $self->DB($ModuleLoader->loadmodule("DB")->connect());
