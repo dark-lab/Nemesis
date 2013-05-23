@@ -17,7 +17,7 @@ class Plugin::CredentialSniffer {
 
     has 'DB' => (is=>"rw");
 
-  method prepare(){#Method called during method loading
+  method prepare(){#Method called during module loading
             
               $self->DB($Init->getModuleLoader->loadmodule("DB")->connect); #load the DB at startup
   }
