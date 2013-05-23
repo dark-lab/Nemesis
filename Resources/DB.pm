@@ -8,21 +8,37 @@ class Resources::DB {
       use Search::GIN::Query::Manual;
       use Search::GIN::Query::Class;
                    use Resources::Snap;
-
+  use Fcntl qw(:DEFAULT :flock);
 	nemesis_resource;
 
 	has 'BackEnd' => (is=>"rw");
+
+  method lookup($uuid){
+    return $self->BackEnd->lookup($uuid);
+  }
 
 	  method add ($Obj){
 
 	  	# create a scope object
             my $s = $self->BackEnd->new_scope;
-             
+                         
+
              
             # takes a snapshot of $some_object
-            $self->BackEnd->txn_do( sub {$self->BackEnd->store($Obj);}  );
-     
+            $self->BackEnd->txn_do( 
+                                  sub {
+                                    $self->signalObj($Init->session->new_file(".ids"),$self->BackEnd->store($Obj),$Obj);
+                                    }
+                                  );
             return $Obj;
+      }
+
+      method signalObj($File,@PrintLine){
+        my $printLine = join("||||",@PrintLine);
+           open FH,">>$File";
+            flock(FH, 1);   
+            print FH $printLine."\n";
+            close FH;
       }
 
       method update($Obj){

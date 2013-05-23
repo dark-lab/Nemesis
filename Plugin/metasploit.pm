@@ -168,7 +168,7 @@ class Plugin::metasploit{
 
     }
 
-    method matchExpl($String){
+   method matchExpl($String){
 
        my @Objs=$self->DB->searchRegex(class=> "Resources::Exploit",module=> $String);
 
