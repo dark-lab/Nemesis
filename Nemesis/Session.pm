@@ -160,7 +160,7 @@ use File::Path;
         $session_dir =~ s/\s+/\\ /g;
         $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} = $session_dir;
         chdir( $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} );
-            $Init->ml->execute_on_all("prepare");
+        $Init->ml->execute_on_all("prepare");
 
     }
 
