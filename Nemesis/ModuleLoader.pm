@@ -5,12 +5,32 @@ package Nemesis::ModuleLoader;
    # use TryCatch;
     use LWP::Simple;
     use Regexp::Common qw /URI/;
-    use The::Net;
     use File::Find::Object;
 
     #external modules
     my @MODULES_PATH = ( 'Plugin', 'Resources' );
-    our @SystemCommands=("reload","exit");
+    our @SystemCommands=("reload","exit");#Exported by defaultxh
+
+    ###### The::Net hack
+    push @INC => sub {
+    require LWP::Simple;
+    require IO::File;
+    require Fcntl;
+ 
+    my $url      = pop;
+ 
+    return unless $url =~ m{^\w+://};
+ 
+    my $document = LWP::Simple::get ($url) or die "Failed to fetch $url: $!\n";
+ 
+    my $fh = IO::File -> new_tmpfile or die "Failed to create temp file: $!\n";
+    $fh -> print ($document) or die "Failed to print: $!\n";
+    $fh -> seek (0, Fcntl::SEEK_SET()) or die "Failed to seek: $!\n";
+ 
+    $fh;
+    };
+
+
 
     our $Init;
 
@@ -101,15 +121,10 @@ package Nemesis::ModuleLoader;
         }
 
     }
-
-    sub loadmodule() {
-        my $self   = shift;
-        my $module = $_[0];
-        if($_[1]){
-        my %args = $_[1];
-        }
-        my $IO     = $Init->getIO();
-        my $object;
+    sub resolvObj(){
+my $self=shift;
+my $module=shift;
+my $object;
         if($module =~/$RE{URI}{HTTP}/) {
            require $module;
            $object=$self->_findLibName($module);
@@ -123,7 +138,21 @@ package Nemesis::ModuleLoader;
         }
         else {
             $object = "Nemesis::" . $module;
+        
         }
+        return $object;
+    }
+
+    sub loadmodule() {
+        my $self   = shift;
+        my $module = $_[0];
+        if($_[1]){
+        my %args = $_[1];
+        }
+        my $IO     = $Init->getIO();
+        $object=$self->resolvObj($module);
+
+
         $Init->getIO()
             ->debug("loading plugin $object",__PACKAGE__  );
             eval("use $object");
@@ -315,6 +344,35 @@ package Nemesis::ModuleLoader;
     }
 
 
+    sub unload(){
+        my $self=shift;
+        my $Class=shift;
+        my $Pm=shift;
+
+         # Flush inheritance caches
+        @{$Class . '::ISA'} = ();
+     
+        my $symtab = $Class.'::';
+        # Delete all symbols except other namespaces
+        for my $symbol (keys %$symtab) {
+            next if $symbol =~ /\A[^:]+::\z/;
+            delete $symtab->{$symbol};
+
+
+        }
+        if(eval{$Class->can("meta")}){
+            $Class->DEMOLISH();
+        }
+        my $AlreadyLoaded = $Pm;
+        my $Path = $Init->env->getPathBin;
+        $AlreadyLoaded=~s/$Path\///;
+        $Init->io->debug(" Unloading $Class in $AlreadyLoaded ");
+        if(exists($INC{$AlreadyLoaded})){
+           #Doing this throws error on moose immutables objects
+           delete $INC{$AlreadyLoaded};
+        }
+    }
+
 
     sub loadmodules {
         my $self = shift;
@@ -327,6 +385,9 @@ package Nemesis::ModuleLoader;
         @{ $self->{'LibraryList'} } = @Libs;
         foreach my $Library (@Libs) {
             my ($name) = $Library =~ m/([^\.|^\/]+)\.pm/;
+            next if !$name;
+            my $Class=$self->resolvObj($name);
+            $self->unload($Class,$Library);
             $Init->getIO()
                 ->debug( "detected Plugin/Resource $name in $Library",__PACKAGE__ );
             eval {
@@ -336,6 +397,7 @@ package Nemesis::ModuleLoader;
                if ( $self->isModule($Library)) {
 
                    # $Init->getIO()->debug( $Library . " is a module!",__PACKAGE__ );
+                    
                     $self->{'modules'}->{$name} = $self->loadmodule($name);
                     if ( exists( $self->{'modules'}->{$name} )  and $self->{'modules'}->{$name} ne "") {
                         $mods++;

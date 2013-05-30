@@ -13,8 +13,8 @@ sub new {
     $Init = $package->{'Init'};
 
     #open STDIN, '/dev/null'   or die "Can't read /dev/null: $!";
-    #open STDOUT, '>>/dev/null';
-    #open STDERR,'>>/tmp/nemesis_log.txt';
+   # open STDOUT, '>>/dev/null';
+    open STDERR,'>>/tmp/nemesis_log.txt';
     umask 0;
     return $package;
 }

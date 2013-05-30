@@ -1,11 +1,12 @@
 package Nemesis::Process;
 {
+        use forks;
+
 
     #TODO: Add tags to processes!  For analyzer.
     #TODO: Have a look to IPC::Run and IPC::Open3
     use Carp qw( croak );
     use Unix::PID;
-    use forks;
     use Data::Dumper;
 use Scalar::Util 'reftype';
     our $Init;
@@ -252,12 +253,13 @@ use Scalar::Util 'reftype';
                 exit;
             }
             else {
+                open STDIN, '/dev/null'   or die "Can't read /dev/null: $!";
                 my $this_pid = Unix::PID->new();
                 my $cmd =
                     $Init->getIO()
                     ->generate_command( $self->{'CONFIG'}->{'code'} );
-                open( $handle, "$cmd  2>&1 |" )
-                    or croak "Failed to open pipeline $!";
+                open( $handle, "$cmd |" )
+                    or $Init->debug("Failed to open pipeline $!",__PACKAGE__);
                 if ( $p = $self->pidof($cmd) ) {
                     $self->save_pid($p);
                     while (<$handle>) {
