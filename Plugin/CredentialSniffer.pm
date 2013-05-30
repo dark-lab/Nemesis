@@ -1,10 +1,9 @@
 package Plugin::CredentialSniffer;
 
-use MooseX::Declare;
+use Moose;
 
 use Nemesis::Inject;
 
-class Plugin::CredentialSniffer {
 
     our $VERSION = '0.1a';
     our $AUTHOR  = "luca9010";
@@ -17,13 +16,14 @@ class Plugin::CredentialSniffer {
 
     has 'DB' => (is=>"rw");
 
-  method prepare(){#Method called during module loading
-            
+  sub prepare(){#Method called during module loading
+            my $self=shift;
               $self->DB($Init->getModuleLoader->loadmodule("DB")->connect); #load the DB at startup
   }
 
 
-    method start() {
+    sub start() {
+        my $self=shift;
 
       if($self->Init->checkroot()){
         $self->Init->getIO()->print_alert("You need root permission to do this; otherwise you wouldn't see anything");
@@ -32,15 +32,18 @@ class Plugin::CredentialSniffer {
          $LiveSniffer->start()
     }
 
-    method clear(){
+    sub clear(){
+        my $self=shift;
       $self->stop();
     }
 
-    method stop(){
+    sub stop(){
         #$self->Sniffer()->destroy() if($self->Sniffer);
     }
 
-    method event_tcp($Frame){
+    sub event_tcp(){
+        my $self=shift;
+        my $Frame=shift;
 
         #$Init->io->info($Frame->print); 
         
@@ -97,5 +100,5 @@ class Plugin::CredentialSniffer {
         #$Init->io->debug('PAYLOAD: '.$payload) if $Tcp->payload;
 
     }
-}
+
     1;
