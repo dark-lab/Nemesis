@@ -8,7 +8,7 @@ use MooseX::Declare;
 class Resources::Run{
 	nemesis_resource;
 
-	$SIG{'TERM'}=sub { exit; };
+	$SIG{'TERM'}=sub { threads->exit; };
 
 	method run(){
 		my $cv = AnyEvent->condvar;
@@ -28,3 +28,4 @@ class Resources::Run{
 }
 1;
 
+a

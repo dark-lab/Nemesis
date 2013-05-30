@@ -150,5 +150,4 @@ class Resources::DB {
         return @Result;
       }
 
-
 	}
