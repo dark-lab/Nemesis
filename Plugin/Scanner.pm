@@ -1,33 +1,38 @@
-use MooseX::Declare;
+package Plugin::Scanner;
+
+use Moose;
 use Nemesis::Inject;
-class Plugin::Scanner {
+use HTTP::Request;
+use Net::IP;
+use Nmap::Parser;
+use Resources::Node;
+use DateTime;
 
-    our $VERSION = '0.1a';
-    our $AUTHOR  = "mudler";
-    our $MODULE  = "Scanner plugin";
-    our $INFO    = "<www.dark-lab.net>";
+our $VERSION = '0.1a';
+our $AUTHOR  = "mudler";
+our $MODULE  = "Scanner plugin";
+our $INFO    = "<www.dark-lab.net>";
 
-    our @PUBLIC_FUNCTIONS = qw(test nmap);
+our @PUBLIC_FUNCTIONS = qw(test nmap);
 
-    has 'Arguments' => (
-                            is=>"rw",
-                            default=>"-sS -sV -O -A -P0", 
-                            documentation => "Nmap arguments"
-                        );
-    has 'DB' =>( is=> "rw",
-                 documentation=>"Database ");
+has 'Arguments' => (
+                    is=>"rw",
+                    default=>"-sS -sV -O -A -P0", 
+                    documentation => "Nmap arguments"
+                );
+has 'DB' =>( is=> "rw",
+         documentation=>"Database ");
 
-    nemesis_module;
-    use HTTP::Request;
-    use Net::IP;
-    use Nmap::Parser;
-    use Resources::Node;
-    use DateTime;
+nemesis_module;
 
-    method prepare(){
+
+    sub prepare(){
 #        $self->DB($self->Init->getModuleLoader->loadmodule("DB")->connect());
     }
-    method test($SearchString,$Exploit) {
+    sub test() {
+        my $self=shift;
+        my $SearchString=shift;
+        my $Exploit=shift;
         my $Crawler=$self->Init->getModuleLoader()->loadmodule("Crawler");
         $Crawler->search($SearchString);
         $Crawler->fetchNext();
@@ -36,7 +41,9 @@ class Plugin::Scanner {
         $LFI->Crawler($Crawler);
         $LFI->test();
    }
-   method nmap($Ip?){
+   sub nmap(){
+    my $self=shift;
+    my $Ip=shift;
     my $ModuleLoader=$self->Init->getModuleLoader;
         $self->DB($ModuleLoader->loadmodule("DB")->connect());
     if($Ip) {
@@ -54,7 +61,9 @@ class Plugin::Scanner {
 
  
 
-   method nmapscan($Ip){
+   sub nmapscan(){
+     my $self=shift;
+    my $Ip=shift;
     my $Np=Nmap::Parser->new();
 
     $Np->cache_scan($self->Init->getSession()->new_file(DateTime->now,__PACKAGE__));
@@ -108,7 +117,7 @@ class Plugin::Scanner {
    }
 
 
-}
+
 1;
 
 

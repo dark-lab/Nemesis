@@ -1,7 +1,8 @@
 package Plugin::metasploit;
+{
+
     use Nemesis::Inject;
-    use MooseX::Declare;
-class Plugin::metasploit{
+    use Moose;
     use Resources::Exploit;
 
     my $VERSION = '0.1a';
@@ -20,14 +21,16 @@ class Plugin::metasploit{
     has 'DB' => (is=>"rw");
     nemesis_module;
 
-  method prepare(){
+  sub prepare(){
             
            #    $self->DB($Init->getModuleLoader->loadmodule("DB")->connect); #Lo userò spesso.
   }
 
-    method start(){
-
+    sub start(){
+my $self=shift;
         return 1 if($self->Process && $self->Process->is_running);
+
+
         $self->DB($Init->getModuleLoader->loadmodule("DB")->connect) if !$self->DB;
         my $Io    = $Init->getIO();
 
@@ -56,8 +59,8 @@ class Plugin::metasploit{
 
     }
 
-    method safe_database(){
-
+    sub safe_database(){
+my $self=shift;
         my $result=$self->DB->search(class => "Resources::Exploit");
 
 
@@ -82,7 +85,10 @@ class Plugin::metasploit{
     }
 
 
-    method LaunchExploitOnNode($Node,$Exploit){
+    sub LaunchExploitOnNode(){
+        my $self=shift;
+        my $Node=shift;
+        my $Exploit=shift;
           my @OPTIONS = (
             "exploits",
             $Exploit->module,
@@ -96,8 +102,8 @@ class Plugin::metasploit{
 
     }
 
-    method generate() {
-
+    sub generate() {
+        my $self=shift;
         $self->start if(!$self->Process or !$self->Process->is_running);
 
         my $response=$self->MSFRPC->call('module.exploits');
@@ -156,8 +162,8 @@ class Plugin::metasploit{
 
     }
 
-    method test(){
-
+    sub test(){
+my $self=shift;
 
     $self->LaunchExploitOnNode(Resources::Node->new(
                 ip => "127.0.0.1"
@@ -168,8 +174,9 @@ class Plugin::metasploit{
 
     }
 
-   method matchExpl($String){
-
+   sub matchExpl(){
+my $self=shift;
+my $String=shift;
        my @Objs=$self->DB->searchRegex(class=> "Resources::Exploit",module=> $String);
 
 $self->Init->getIO->print_tabbed("Found a total of ".scalar(@Objs)." objects for /$String/i",3);
@@ -181,7 +188,10 @@ $self->Init->getIO->print_tabbed("Found a total of ".scalar(@Objs)." objects for
     }
 
 
-    method matchNode($Node){
+    sub matchNode(){
+
+        my $self=shift;
+        my $Node=shift;
         $self->Init->getIO->print_info("Matching the node against Metasploit database");
         foreach my $port(@{$Node->ports}){
             my ($porta,$service) = split(/\|/,$port);
@@ -202,8 +212,9 @@ $self->Init->getIO->print_tabbed("Found a total of ".scalar(@Objs)." objects for
         return $Node;
     }
 
-    method matchPort($String){
-
+    sub matchPort(){
+my $self=shift;
+my $String=shift;
        my $Objs=$self->DB->search(default_rport=> $String);
        $self->Init->getIO->print_tabbed("Searching a matching exploit for port $String",3);
 
@@ -219,8 +230,8 @@ $self->Init->getIO->print_tabbed("Found a total of ".scalar(@Objs)." objects for
                 
     }
 
-    method sessionlist(){
-
+    sub sessionlist(){
+my $self=shift;
         my @OPTIONS = (
             "auxiliary",
             "server/browser_autopwn",
@@ -234,16 +245,19 @@ $self->Init->getIO->print_tabbed("Found a total of ".scalar(@Objs)." objects for
 
     }
 
-    method call($String){
+    sub call(){
+        my $self=shift;
+        my $String=shift;
         $self->MSFRPC->call($String);
     }
 
-    method clear(){
+    sub clear(){
+        my $self=shift;
         $self->Process->destroy() if($self->Process) ;
         #Il metodo clear viene chiamato quando chiudiamo tutto, dunque se ho un processo attivo, lo chiudo!
     }
 
-    method event_tcp($Frame){
+    sub event_tcp(){
         # my $IO=$Init->io;
         # my $PrivIp;
         # my $PubIp;
@@ -459,4 +473,4 @@ sub parse_result() {
             $Init->getIO()->print_info( "Job ID: " . $pack->{'job_id'} );
         }
     }
-}
+} 

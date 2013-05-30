@@ -1,9 +1,8 @@
 package Plugin::Bundle;
 
 
-use MooseX::Declare;
+use Moose;
 
-class Plugin::Bundle {
 use PAR::Packer      ();
 use PAR              ();
 use Module::ScanDeps;
@@ -17,31 +16,56 @@ use Module::ScanDeps;
     our $INFO    = "<www.dark-lab.net>";
 
     our @PUBLIC_FUNCTIONS = qw(export exportCli exportWrap);
+    has 'What' => (is=>"rw");
+    has 'Where' => (is=>"rw");
 
     nemesis_module;
 
-    method export( $What, $FileName ) {
-        $self->Init->getIO()->print_info("Packing $What in $FileName");
-            $self->pack( $What, $FileName );
-            $self->Init->getIO()->print_info("Packed $What in $FileName");
+    sub export(  ) {
+        my $self=shift;
+        my $What;
+        my $Filename;
+        if(scalar(@_)!=0){
+              $What=shift;
+              $Filename=shift;
+              $self->What($What);
+              $self->Where($Filename);
         } 
-
-    method exportCli($Where) {
-        my $path = $self->Init->getEnv()->getPathBin();
-            $self->export( $path . "/cli.pl", $Where );
-            $self->Init->getIO()
-            ->print_info("Export completated, $Where created");
+      
+        if(!$self->What || !$self->Where)
+        {
+            $Init->io->debug("You have not What and Where");
         }
-    method exportWrap($Where) {
+
+        $self->Init->getIO()->print_info("Packing ".$self->What."in ".$self->Where);
+        $self->pack();
+                $self->Init->getIO()->print_info("Packing done");
+
+    } 
+
+    sub exportCli() {
+        my $self=shift;
+        if(my $Where=shift){
+            $self->Where=$Where;
+          }
+        my $path = $self->Init->getEnv()->getPathBin();
+            $self->export( $path . "/cli.pl",$self->Where);
+
+        }
+    sub exportWrap($Where) {
+                my $self=shift;
+        if(my $Where=shift){
+            $self->Where=$Where;
+          }
     my $path = $self->Init->getEnv()->getPathBin();
-        $self->export( $path . "/wrapper.pl", $Where );
-        $self->Init->getIO()
-        ->print_info("Export completated, $Where created");
+        $self->export( $path . "/wrapper.pl", $self->Where );
     }
 
 
 
-    method pack($What, $FileName) {
+    sub pack() {
+                my $self=shift;
+                my ($What, $FileName) = ($self->What,$self->Where);
         my $parpath = $Init->getEnv()->wherepath("par.pl");
       #  $Init->getIO()->debug("Chdir to $parpath");
         $Init->getSession->safedir(
@@ -120,6 +144,6 @@ use Module::ScanDeps;
 
     }
 
-}
+
 
 1;

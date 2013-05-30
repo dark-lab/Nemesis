@@ -1,9 +1,7 @@
 package Plugin::WebUI;
 use Moose;
-use MooseX::Declare;
 use Nemesis::Inject;
 
-class Plugin::WebUI {
 use Mojo::Server::Daemon;
   use Mojo::IOLoop;
     our $VERSION = '0.1a';
@@ -17,14 +15,16 @@ use Mojo::Server::Daemon;
 
     has 'Port' => (is=>"rw",default=>"8080");
 
-    method test() {
+    sub test() {
+      my $self=shift;
         $self->Init->getIO()->print_info("test");
     }
 
-    method run($ResourceName){
-
+    sub run(){
+      my $self=shift;
+      my $ResourceName=shift;
         eval ("use $ResourceName");
-        $ResourceName->setInit($self->Init);
+        $ResourceName->setInit($Init);
 
          my $daemon = Mojo::Server::Daemon->new(app => $ResourceName->app, listen => ['http://*:'.$self->Port ]);
          $daemon->start;
@@ -35,7 +35,5 @@ use Mojo::Server::Daemon;
 
 
 
-
-}
 
 1;
