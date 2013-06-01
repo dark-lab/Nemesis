@@ -83,7 +83,7 @@ use Nemesis::Inject;
                                 VALUE => $value
                                 );
                     # insert in attachments field of the node the new credential found
-                    $Node->attachments->insert($Parameter); 
+                    $Node->attachments->insert($ParamAndValue); 
 
 
                     if(!defined($DBHost)){
@@ -93,7 +93,7 @@ use Nemesis::Inject;
                     }
 
 
-                    print $fh_out $parameter.": ".$value."\n---------------------------------\n";
+                    #print $fh_out $parameter.": ".$value."\n---------------------------------\n";
                 }
             }
         }
