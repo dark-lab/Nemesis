@@ -13,7 +13,7 @@ package Nemesis::Init;
         }
         else {
             $package->{'Session'}->initialize("default_session");
-            $Session->restore("default_session");
+            $package->{'Session'}->restore("default_session");
         }
         $package->{'Io'} = new Nemesis::IO(
             debug   => 1,
