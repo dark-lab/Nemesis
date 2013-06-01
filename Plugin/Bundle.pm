@@ -45,8 +45,9 @@ use Module::ScanDeps;
 
     sub exportCli() {
         my $self=shift;
-        if(my $Where=shift){
-            $self->Where=$Where;
+        my $Where=shift;
+        if(defined($Where)){
+            $self->Where($Where);
           }
         my $path = $self->Init->getEnv()->getPathBin();
             $self->export( $path . "/cli.pl",$self->Where);
@@ -54,8 +55,9 @@ use Module::ScanDeps;
         }
     sub exportWrap($Where) {
                 my $self=shift;
-        if(my $Where=shift){
-            $self->Where=$Where;
+                my $Where=shift;
+        if(defined($Where)){
+            $self->Where($Where);
           }
     my $path = $self->Init->getEnv()->getPathBin();
         $self->export( $path . "/wrapper.pl", $self->Where );
@@ -74,9 +76,12 @@ use Module::ScanDeps;
                 my @OPTS           = ($What);
                 my @LOADED_PLUGINS = map {
                     my ($Name) = $_ =~ m/([^\.|^\/]+)\.pm$/;
-                    $_ =
+                    if($Name){$_ =
                           $Init->getModuleLoader()->_findLib($Name) . "/" 
                         . $Name . ".pm";
+                        } else {
+                            $_="";
+                        }
                 } $Init->getModuleLoader()->getLoadedLib();
 
 
