@@ -76,7 +76,7 @@ class Resources::DB {
                                       "bdb-gin:dir=".$self->Init->getSession()->getSessionPath, 
                                       create => 1,
                                       extract => Search::GIN::Extract::Class->new
-                                    );
+                                    ) or $Init->io->error("Error loading backend, something it's corrupted.query");
       		$self->BackEnd($BackEnd);
       	}
         return $self;
