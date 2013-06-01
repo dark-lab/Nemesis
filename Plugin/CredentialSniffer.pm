@@ -16,25 +16,25 @@ use Nemesis::Inject;
 
     has 'DB' => (is=>"rw");
 
-  sub prepare(){#Method called during module loading
-            my $self=shift;
-              $self->DB($Init->getModuleLoader->loadmodule("DB")->connect); #load the DB at startup
-  }
+    sub prepare(){  #Method called during module loading
+        my $self=shift;
+        $self->DB($Init->getModuleLoader->loadmodule("DB")->connect); #load the DB at startup
+    }
 
 
     sub start() {
         my $self=shift;
 
-      if($self->Init->checkroot()){
-        $self->Init->getIO()->print_alert("You need root permission to do this; otherwise you wouldn't see anything");
-      }
-      my $LiveSniffer=$Init->ml->getInstance("LiveSniffer");
-         $LiveSniffer->start()
+        if($self->Init->checkroot()){
+            $self->Init->getIO()->print_alert("You need root permission to do this; otherwise you wouldn't see anything");
+        }
+        my $LiveSniffer=$Init->ml->getInstance("LiveSniffer");
+            $LiveSniffer->start()
     }
 
     sub clear(){
         my $self=shift;
-      $self->stop();
+        $self->stop();
     }
 
     sub stop(){
@@ -77,13 +77,13 @@ use Nemesis::Inject;
                                 ip => $Ip->src
                                 );
                     # create a new credential
-                    my $Credenzial = new Resources::Credential(
+                    my $ParamAndValue = new Resources::ParamAndValue(
                                 SITE => "soon...",
                                 PARAMETER => $parameter,
                                 VALUE => $value
                                 );
                     # insert in attachments field of the node the new credential found
-                    $Node->attachments->insert($Credenzial); 
+                    $Node->attachments->insert($ParamAndValue); 
 
 
                     if(!defined($DBHost)){
@@ -93,7 +93,7 @@ use Nemesis::Inject;
                     }
 
 
-                    print $fh_out $parameter.": ".$value."\n---------------------------------\n";
+                    #print $fh_out $parameter.": ".$value."\n---------------------------------\n";
                 }
             }
         }
