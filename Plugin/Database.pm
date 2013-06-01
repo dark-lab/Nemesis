@@ -30,12 +30,12 @@ nemesis_module;
 
 $SIG{'TERM'}=sub { threads->exit; };
 
-   sub prepare(){
-      my $self=shift;
-      $self->Dispatcher($Init->ml->loadmodule("Dispatcher"));
-      $self->DB($Init->ml->loadmodule("DB")->connect());
-      $self->start();
-   }
+ sub prepare(){
+    my $self=shift;
+    $self->Dispatcher($Init->ml->loadmodule("Dispatcher"));
+    $self->DB($Init->ml->loadmodule("DB")->connect());
+    $self->start();
+ }
 
 
 sub start(){
@@ -71,6 +71,9 @@ sub run(){
     }
   }
 }
-
+sub clear(){
+  my $self=shift;
+  $self->Process->destroy if($self->Process);
+}
 
 
