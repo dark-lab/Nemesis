@@ -90,7 +90,7 @@ use Module::ScanDeps;
                     $Init->getIO->print_tabbed($Modules,2);
                 }
 
-my @Deps_Mods=Module::ScanDeps::scan_line($Init->getModuleLoader()->getLoadedLib());
+#my @Deps_Mods=Module::ScanDeps::scan_line($Init->getModuleLoader()->getLoadedLib());
 
 #  my $files=scan_deps( 
 #   files   => [     @Deps_Mods, keys %INC],
@@ -103,7 +103,7 @@ my @Deps_Mods=Module::ScanDeps::scan_line($Init->getModuleLoader()->getLoadedLib
 # push(@Deps_Mods,keys %{$files});
                 #Hardcoded Moose required deps (ARGH MOOSEX DECLARE!)
                 $Init->getIO->print_info("Acquiring Plugin dependencies... please wait");
-                push( @LOADED_PLUGINS,@Deps_Mods,keys %INC);
+                push( @LOADED_PLUGINS,keys %INC);
                 #my @CORE_MODULES= $Init->getModuleLoader()->_findLibsByCategory("Nemesis");
                 #push(@LOADED_PLUGINS,@CORE_MODULES);
           $Init->getIO->print_info("Filled with deps :");
