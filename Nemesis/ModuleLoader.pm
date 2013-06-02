@@ -122,14 +122,14 @@ package Nemesis::ModuleLoader;
 
     }
     sub resolvObj(){
-my $self=shift;
-my $module=shift;
-my $object;
+        my $self=shift;
+        my $module=shift;
+        my $object;
         if($module =~/$RE{URI}{HTTP}/) {
            require $module;
            $object=$self->_findLibName($module);
-        }
-        elsif( $module=~/\:\:/){
+       
+        }   elsif( $module=~/\:\:/){
             $object = $module;
         }
         elsif ( my $Type = $self->_findLib($module) ) {
@@ -139,6 +139,11 @@ my $object;
         else {
             $object = "Nemesis::" . $module;
         
+        }
+        if ($object=~/par\-/){
+                    $object2=$object;
+                    $object2=~s/.*?inc\:lib\://g;
+                    return $object2;
         }
         return $object;
     }
