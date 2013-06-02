@@ -2,7 +2,6 @@ package Plugin::LiveSniffer;
 
 use Moose;
 use Nemesis::Inject;
-use Net::Packet;
 
 our $VERSION = '0.1a';
 our $AUTHOR  = "mudler";
@@ -64,7 +63,7 @@ nemesis_module;
                 my $Frame=shift;
 
         $Init->io->info($Frame->print);
-        my $Tcp=$Frame->ref->{'TCP'}->unpack;
+        my $Tcp=$Frame->ref->{'TCP'};
         my $payload= $Tcp->payload if $Tcp;
         $Init->io->debug('PAYLOAD: '.$payload) if $Tcp->payload;
     }
