@@ -45,17 +45,19 @@ use Module::ScanDeps;
 
     sub exportCli() {
         my $self=shift;
-        if(my $Where=shift){
-            $self->Where=$Where;
+        my $Where=shift;
+        if(defined($Where)){
+            $self->Where($Where);
           }
         my $path = $self->Init->getEnv()->getPathBin();
             $self->export( $path . "/cli.pl",$self->Where);
 
         }
-    sub exportWrap($Where) {
+    sub exportWrap() {
                 my $self=shift;
-        if(my $Where=shift){
-            $self->Where=$Where;
+                my $Where=shift;
+        if(defined($Where)){
+            $self->Where($Where);
           }
     my $path = $self->Init->getEnv()->getPathBin();
         $self->export( $path . "/wrapper.pl", $self->Where );
@@ -72,11 +74,14 @@ use Module::ScanDeps;
             $parpath,
             sub {
                 my @OPTS           = ($What);
-                my @LOADED_PLUGINS = map {
+                my @LOADED_PLUGINS =grep /./i, map {
                     my ($Name) = $_ =~ m/([^\.|^\/]+)\.pm$/;
-                    $_ =
+                    if($Name){$_ =
                           $Init->getModuleLoader()->_findLib($Name) . "/" 
                         . $Name . ".pm";
+                        } else {
+                            $_= ();
+                        }
                 } $Init->getModuleLoader()->getLoadedLib();
 
 
@@ -85,36 +90,36 @@ use Module::ScanDeps;
                     $Init->getIO->print_tabbed($Modules,2);
                 }
 
+my @Deps_Mods=Module::ScanDeps::scan_line($Init->getModuleLoader()->getLoadedLib());
+
+#  my $files=scan_deps( 
+#   files   => [     @Deps_Mods, keys %INC],
+#      recurse => 1,
+#      compile => 1,
+
+#      );
+#  $Init->io->debug_dumper(\%INC);
+#  $Init->io->debug_dumper( \$files);
+# push(@Deps_Mods,keys %{$files});
                 #Hardcoded Moose required deps (ARGH MOOSEX DECLARE!)
                 $Init->getIO->print_info("Acquiring Plugin dependencies... please wait");
-                push( @LOADED_PLUGINS,
-                    "MooseX/Declare/Syntax/RoleApplication.pm",
-                    "MooseX/Declare/Syntax/EmptyBlockIfMissing.pm",
-                    "MooseX/Declare/Syntax/InnerSyntaxHandling.pm",
-                    "MooseX/Declare/StackItem.pm",
-                    "MooseX/Declare/Context/Parameterized.pm",
-                    "MooseX/Declare/Context/WithOptions.pm",
-                    "MooseX/Declare/Context/Namespaced.pm",
-                    "MooseX/Declare/Syntax/Keyword/With.pm",
-                    "B/Hooks/EndOfScope/PP.pm",
-                    "B/Hooks/EndOfScope/PP/FieldHash.pm",
-                    "Parse/Method/Signatures/Param/Placeholder.pm",
-                    "MooseX/LazyRequire/Meta/Attribute/Trait/LazyRequire.pm",
-                    "Devel/Declare/Context/Simple.pm",
-                    "MooseX/Declare/Syntax/Keyword/Class.pm",
-                    "Parse/Method/Signatures/Param/Named.pm",
-                    "MooseX/Declare/Syntax/MooseSetup.pm" ,
-                    "MooseX/Declare/Syntax/Keyword/MethodModifier.pm" ,
-                    "MooseX/Declare.pm",
-                    "MooseX/Declare/Syntax/Keyword/Method.pm",
-                    "MooseX/Declare/Context.pm",
-                    "MooseX/Declare/Syntax/Keyword/Clean.pm",
-                    "MooseX/Declare/Syntax/NamespaceHandling.pm",
-                    "MooseX/Declare/Syntax/KeywordHandling.pm",
-                    "MooseX/Declare/Syntax/MethodDeclaration.pm");
+                push( @LOADED_PLUGINS,@Deps_Mods,keys %INC);
                 #my @CORE_MODULES= $Init->getModuleLoader()->_findLibsByCategory("Nemesis");
                 #push(@LOADED_PLUGINS,@CORE_MODULES);
-         
+          $Init->getIO->print_info("Filled with deps :");
+                my @Additional_files;
+                 my $c=0;
+                foreach my $Modules (@LOADED_PLUGINS){
+                                        if($Modules!~/\.txt|\.pm|\.pl/){
+                                           # $Init->io->debug("Tooo bad for you $Modules");
+                                            push(@Additional_files,$Modules);
+                                            delete $LOADED_PLUGINS[$c] ;
+                                        }
+
+                    $Init->getIO->print_tabbed($Modules,2);
+                $c++;}
+
+
                 my %opt;
                 #For Libpath add
                 my @LIBPATH;
@@ -126,8 +131,9 @@ use Module::ScanDeps;
                 $opt{o}   = $FileName;
                 #$opt{x} =1; #with this it still works!
                 $opt{B} = 1;
+                $opt{a} = \@Additional_files;
                 $opt{M} = \@LOADED_PLUGINS;
-                # $opt{l} = \@LIBPATH;
+                $opt{l} = \@LIBPATH;
                 App::Packer::PAR->new(
                     frontend  => 'Module::ScanDeps', #NO BAREWORD cazz
                     backend   => 'PAR::Packer',
