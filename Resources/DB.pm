@@ -94,8 +94,9 @@ sub connect() {
     }
     else {
         $BackEnd = KiokuDB->connect(
-            "bdb-gin:dir=" . $self->Init->getSession()->getSessionPath,
+            "bdi:dir=" . $self->Init->getSession()->getSessionPath,
             create  => 1,
+            log_auto_remove => 1,
             extract => Search::GIN::Extract::Class->new
         );
         $self->BackEnd($BackEnd);
