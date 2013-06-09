@@ -49,9 +49,10 @@ sub update() {
     my $self = shift;
     my $Obj  = shift;
     my $s    = $self->BackEnd->new_scope;
-      $self->BackEnd->txn_do( 
-    $self->delete($Obj);
-    $self->add($Obj);
+    $self->BackEnd->txn_do(sub {
+        $self->delete($Obj);
+            $self->add($Obj);
+        }
     );
 
     #   $self->BackEnd->txn_do( sub {$self->BackEnd->update($Obj);}  );
@@ -67,9 +68,12 @@ sub swap() {
     my $s         = $self->BackEnd->new_scope;
     my $Snap = Resources::Snap->new( was => $oldObject, now => $newObject );
     $self->Init->getIO->debug( "Snap created at " . $Snap->date );
-     $self->BackEnd->txn_do(  $self->delete($oldObject);
-    $self->add($newObject);
-    $self->add($Snap););
+    $self->BackEnd->txn_do(sub {
+        $self->delete($oldObject);
+            $self->add($newObject);
+            $self->add($Snap);
+        }
+    );
     return $newObject;
 }
 
@@ -93,10 +97,10 @@ sub connect() {
             "bdb-gin:dir=" . $self->Init->getSession()->getSessionPath,
             create  => 1,
             extract => Search::GIN::Extract::Class->new
-            );
+        );
         $self->BackEnd($BackEnd);
     }
-    $Init->io->debug("Connected",__PACKAGE__);
+    $Init->io->debug( "Connected", __PACKAGE__ );
     return $self;
 }
 
