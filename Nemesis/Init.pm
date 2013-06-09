@@ -6,7 +6,7 @@ package Nemesis::Init;
         bless( {}, $package );
         $package->{'Env'} = new Nemesis::Env( Init => $package );
         $package->{'Session'} = new Nemesis::Session( Init => $package );
-         $package->{'ModuleLoader'} =
+        $package->{'ModuleLoader'} =
             new Nemesis::ModuleLoader( Init => $package );
         if ( $package->{'Session'}->exists("default_session") ) {
             $package->{'Session'}->restore("default_session");
@@ -16,15 +16,13 @@ package Nemesis::Init;
             $package->{'Session'}->restore("default_session");
         }
         $package->{'Io'} = new Nemesis::IO(
-            debug   => 1,
+            debug   => 0,
             verbose => 0,
             Init    => $package
         );
         $package->{'Interfaces'} =
             new Nemesis::Interfaces( Init => $package );
-        
 
-       
         $0 = "SpikeNemesis";
         return $package;
     }
@@ -36,10 +34,6 @@ package Nemesis::Init;
 
     sub on_exit() {
         my $self = shift;
-        if ( exists( $self->{'Session'} ) ) {
-
-            #	$self->{'Session'}->save();
-        }
         $self->{'ModuleLoader'}->execute_on_all("clear");
         exit 0;
     }
@@ -49,7 +43,7 @@ package Nemesis::Init;
         return $package->{'Io'};
     }
 
-    sub io{
+    sub io {
         my $package = shift;
         return $package->{'Io'};
     }
@@ -59,7 +53,7 @@ package Nemesis::Init;
         return $package->{'Env'};
     }
 
-    sub env{
+    sub env {
         my $package = shift;
         return $package->{'Env'};
     }
@@ -73,6 +67,7 @@ package Nemesis::Init;
         my $package = shift;
         return $package->{'Interfaces'};
     }
+
     sub interfaces {
         my $package = shift;
         return $package->{'Interfaces'};

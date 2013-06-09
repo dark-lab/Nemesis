@@ -1,4 +1,5 @@
 package Resources::VTinterface;
+
 #!/usr/bin/perl
 #use Term::ReadLine;
 use Nemesis::Inject;
@@ -26,43 +27,35 @@ use Term::Visual;
 use Resources::Logo;
 
 sub run() {
-  my $self=shift;
+    my $self = shift;
 
+    #$vt->print($window_id, $Init->getIO->print_ascii_fh(*DATA,"logo"));
 
+    # Setting the terminal
+    #@PUBLIC_LIST = $Init->getModuleLoader->export_public_methods();
 
+    #$Init->getSession()->wrap_history($nemesis_t);
 
-#$vt->print($window_id, $Init->getIO->print_ascii_fh(*DATA,"logo"));
-
-
-
-
-# Setting the terminal
-#@PUBLIC_LIST = $Init->getModuleLoader->export_public_methods();
-
-#$Init->getSession()->wrap_history($nemesis_t);
-
-
-#$vt->print($window_id, $vt->get_palette);
-#$vt->print($window_id, "---------------------------------------");
-#$vt->print($window_id, $vt->get_palette("st_values", "ncolor"));
-#$vt->debug("testing debugging");
+    #$vt->print($window_id, $vt->get_palette);
+    #$vt->print($window_id, "---------------------------------------");
+    #$vt->print($window_id, $vt->get_palette("st_values", "ncolor"));
+    #$vt->debug("testing debugging");
 ## Initialize the back-end guts of the "client".
-our $vt = Term::Visual->new( Alias => "interface" );
+    our $vt = Term::Visual->new( Alias => "interface" );
 
-POE::Session->create(
-    inline_states => {
-        _start         => \&start_guts,
-        got_term_input => \&handle_term_input,
-        update_time    => \&update_time,
-        update_name    => \&update_name,
-        load_all       => \&load_all,
-        test_buffer    => \&test_buffer,
-        _stop          => \&stop_guts,
-    }
-);
+    POE::Session->create(
+        inline_states => {
+            _start         => \&start_guts,
+            got_term_input => \&handle_term_input,
+            update_time    => \&update_time,
+            update_name    => \&update_name,
+            load_all       => \&load_all,
+            test_buffer    => \&test_buffer,
+            _stop          => \&stop_guts,
+        }
+    );
 
-$poe_kernel->run();
-
+    $poe_kernel->run();
 
 }
 
@@ -72,22 +65,23 @@ sub start_guts {
     # Tell the terminal to send me input as "got_term_input".
     $kernel->post( interface => send_me_input => "got_term_input" );
 
-
     $Init->checkroot();
     $kernel->yield("update_name");
     $kernel->yield("update_time");
     $vt = $Init->getIO->setVt($vt);
+
     # Start updating the time.
     $kernel->yield("load_all");
+
     #$vt->set_input_prompt($window_id, "\$");
     #  $kernel->yield( "test_buffer" );
     #  $vt->shutdown;
 }
 
 sub load_all {
-  $Init->getIO->print_ascii_fh( Resources::Logo::DATA, "logo" );
+    $Init->getIO->print_ascii_fh( Resources::Logo::DATA, "logo" );
     $Init->getModuleLoader()->loadmodules();
-$Init->getIO()->print_info("Press CTRL+L to clear screen");
+    $Init->getIO()->print_info("Press CTRL+L to clear screen");
 
 }
 

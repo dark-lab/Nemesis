@@ -49,14 +49,7 @@ sub help() {                                   #NECESSARY
 }
 
 sub clear {    #NECESSARY - CALLED ON EXIT
-    my $self = shift();
-    my $IO   = $Init->getIO();
-    foreach my $dev ( keys %{ $self->{'process'} } ) {
-        foreach my $type ( keys %{ $self->{'process'}->{$dev} } ) {
-            $self->{'process'}->{$dev}->{$type}->destroy();
-            delete $self->{'process'}->{$dev}->{$type};
-        }
-    }
+ 
 }
 
 sub mitm {
@@ -90,10 +83,12 @@ sub sniff {
     my $code;
     my $dev = $_[0];
     my $pcap_file =
-        $Session->new_file( $dev . "-ettercap-" . $env->time() . ".pcap" ,__PACKAGE__);
-    my $log_file = $Session->new_file( $dev . "-etterlog-" . $env->time(),__PACKAGE__ );
+        $Session->new_file( $dev . "-ettercap-" . $env->time() . ".pcap",
+        __PACKAGE__ );
+    my $log_file =
+        $Session->new_file( $dev . "-etterlog-" . $env->time(), __PACKAGE__ );
     $code =
-          'ettercap -Du -i ' 
+          'ettercap -Du -i '
         . $dev . ' -L '
         . $log_file . ' -w '
         . $pcap_file
@@ -152,7 +147,8 @@ sub strip {
         "iptables -t nat -A PREROUTING -p tcp -i $dev --destination-port 80 -j REDIRECT --to-port 8080"
     );
     my $strip_file =
-        $Session->new_file( $dev . "-sslstrip-" . $env->time() . ".log" ,__PACKAGE__);
+        $Session->new_file( $dev . "-sslstrip-" . $env->time() . ".log",
+        __PACKAGE__ );
     my $code    = 'sslstrip -l 8080 -a -k -f -w ' . $strip_file;
     my $Process = $Init->getModuleLoader()->loadmodule("Process");
     $Process->set(

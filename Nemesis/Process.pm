@@ -1,14 +1,13 @@
 package Nemesis::Process;
 {
-        use forks;
-
+    use forks;
 
     #TODO: Add tags to processes!  For analyzer.
     #TODO: Have a look to IPC::Run and IPC::Open3
     use Carp qw( croak );
     use Unix::PID;
     use Data::Dumper;
-use Scalar::Util 'reftype';
+    use Scalar::Util 'reftype';
     our $Init;
 
     sub new {
@@ -36,18 +35,18 @@ use Scalar::Util 'reftype';
         }
         else {
             if ( $self->{'CONFIG'}->{'type'} eq 'daemon' ) {
-                $Init->getIO()->debug("Starting syscall.. ",__PACKAGE__);
+                $Init->getIO()->debug( "Starting syscall.. ", __PACKAGE__ );
 
                 $state = $self->daemon();
             }
             elsif ( $self->{'CONFIG'}->{'type'} eq 'thread' ) {
-                $Init->getIO()->debug("Starting job.. ",__PACKAGE__);
+                $Init->getIO()->debug( "Starting job.. ", __PACKAGE__ );
 
                 $self->thread();
 
             }
             else {
-               $Init->getIO()->debug("Starting fork.. ",__PACKAGE__);
+                $Init->getIO()->debug( "Starting fork.. ", __PACKAGE__ );
 
                 $state = $self->fork();
             }
@@ -66,28 +65,29 @@ use Scalar::Util 'reftype';
         my $self = shift;
 
         if ( exists( $self->{'CONFIG'}->{'instance'} ) ) {
-            my $instance=$self->{'CONFIG'}->{'instance'};
+            my $instance = $self->{'CONFIG'}->{'instance'};
 
-                        $Init->getIO()->debug("got that $instance.");
+            $Init->getIO()->debug("got that $instance.");
 
-         $self->{'INSTANCE'} = threads->new(
-                        sub {
-                            $instance->run();
-                        }
-                    );
+            $self->{'INSTANCE'} = threads->new(
+                sub {
+                    $instance->run();
+                }
+            );
 
-}
+        }
         elsif ( exists( $self->{'CONFIG'}->{'code'} ) ) {
-            if(reftype($self->{'CONFIG'}->{'code'}) eq "CODE"){
-                my $code=$self->{'CONFIG'}->{'code'};
-               $self->{'INSTANCE'} = threads->new( 
-                   \&$code
-                );
-            } else {
+            if ( reftype( $self->{'CONFIG'}->{'code'} ) eq "CODE" ) {
+                my $code = $self->{'CONFIG'}->{'code'};
+                $self->{'INSTANCE'} = threads->new( \&$code );
+            }
+            else {
 
-            $self->{'INSTANCE'} = threads->new( sub {  
-                eval( $self->{'CONFIG'}->{'code'} );
-            });
+                $self->{'INSTANCE'} = threads->new(
+                    sub {
+                        eval( $self->{'CONFIG'}->{'code'} );
+                    }
+                );
             }
         }
         elsif ( exists( $self->{'CONFIG'}->{'module'} ) ) {
@@ -97,7 +97,6 @@ use Scalar::Util 'reftype';
             $self->{'CONFIG'}->{'module'} =~ s/\:\:/\//g;
             my @LOADED_LIBS = $Init->getModuleLoader()->getLoadedLib();
             foreach my $Lib (@LOADED_LIBS) {
-
 
                 #$self->{'CONFIG'}->{'module'}=~s/\//\:\:/g;
 
@@ -127,7 +126,8 @@ use Scalar::Util 'reftype';
     sub stop() {
         my $self = shift;
         if ( exists( $self->{'INSTANCE'} ) ) {
-        $Init->io->debug("Stopping instance ".$self->{'INSTANCE'},__PACKAGE__);
+            $Init->io->debug( "Stopping instance " . $self->{'INSTANCE'},
+                __PACKAGE__ );
 
             #$self->{'INSTANCE'}->cancel();
             $self->{'INSTANCE'}->kill("TERM");
@@ -135,7 +135,8 @@ use Scalar::Util 'reftype';
             delete( $self->{'INSTANCE'} );
         }
         if ( $self->get_pid() ) {
-            $Init->io->debug("Stopping pid ".$self->get_pid(),__PACKAGE__);
+            $Init->io->debug( "Stopping pid " . $self->get_pid(),
+                __PACKAGE__ );
 
             kill 9 => $self->get_pid();
             kill( 9, $self->get_pid() );
@@ -154,22 +155,29 @@ use Scalar::Util 'reftype';
         unlink(   $Init->getEnv()->tmp_dir() . "/"
                 . $self->{'CONFIG'}->{'INDEX'}
                 . ".pid" );
-        $Init->io->debug("Deleted: ".join("\t",  $Init->getEnv()->tmp_dir() . "/"
-                . $self->{'CONFIG'}->{'INDEX'}
-                . ".lock" ,$Init->getEnv()->tmp_dir() . "/"
-                . $self->{'CONFIG'}->{'INDEX'}
-                . ".out" , $Init->getEnv()->tmp_dir() . "/"
-                . $self->{'CONFIG'}->{'INDEX'}
-                . ".pid" ),__PACKAGE__);
+        $Init->io->debug(
+            "Deleted: "
+                . join( "\t",
+                $Init->getEnv()->tmp_dir() . "/"
+                    . $self->{'CONFIG'}->{'INDEX'} . ".lock",
+                $Init->getEnv()->tmp_dir() . "/"
+                    . $self->{'CONFIG'}->{'INDEX'} . ".out",
+                $Init->getEnv()->tmp_dir() . "/"
+                    . $self->{'CONFIG'}->{'INDEX'}
+                    . ".pid" ),
+            __PACKAGE__
+        );
     }
 
     sub is_running() {
         my $self = shift;
-        if(exists($self->{'INSTANCE'})){
+        if ( exists( $self->{'INSTANCE'} ) ) {
             return $self->{'INSTANCE'}->is_running();
-        } else {
-            my $pid  = Unix::PID->new();
-            if ( $self->get_pid and $pid->is_pid_running( $self->get_pid() ) ) {
+        }
+        else {
+            my $pid = Unix::PID->new();
+            if ( $self->get_pid and $pid->is_pid_running( $self->get_pid() ) )
+            {
                 return 1;
             }
             else {
@@ -227,7 +235,8 @@ use Scalar::Util 'reftype';
         my $p;
         my $cmd =
             $Init->getIO()->generate_command( $self->{'CONFIG'}->{'code'} );
-            $Init->getIO()->debug($cmd);
+        $Init->getIO()->debug($cmd);
+
         #$Init->getIO()->set_debug(1);
         if ( system($cmd) == 0 ) {
             $Init->getIO()
@@ -269,13 +278,14 @@ use Scalar::Util 'reftype';
                 exit;
             }
             else {
-                open STDIN, '/dev/null'   or die "Can't read /dev/null: $!";
+                open STDIN, '/dev/null' or die "Can't read /dev/null: $!";
                 my $this_pid = Unix::PID->new();
                 my $cmd =
                     $Init->getIO()
                     ->generate_command( $self->{'CONFIG'}->{'code'} );
                 open( $handle, "$cmd |" )
-                    or $Init->debug("Failed to open pipeline $!",__PACKAGE__);
+                    or
+                    $Init->debug( "Failed to open pipeline $!", __PACKAGE__ );
                 if ( $p = $self->pidof($cmd) ) {
                     $self->save_pid($p);
                     while (<$handle>) {

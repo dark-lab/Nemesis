@@ -53,20 +53,21 @@ sub select_info() {
 
 sub ipv4_forward {
     my $self = shift;
-    if($self->check_root==1) {
-    if ( $_[0] eq "on" ) {
-        open FILE, ">/proc/sys/net/ipv4/ip_forward";
-        print FILE 1;
-        close FILE;
+    if ( $self->check_root == 1 ) {
+        if ( $_[0] eq "on" ) {
+            open FILE, ">/proc/sys/net/ipv4/ip_forward";
+            print FILE 1;
+            close FILE;
+        }
+        elsif ( $_[0] eq "off" ) {
+            open FILE, ">/proc/sys/net/ipv4/ip_forward";
+            print FILE 0;
+            close FILE;
+        }
+        open FILE, "</proc/sys/net/ipv4/ip_forward";
+        my $res = <FILE>;
     }
-    elsif ( $_[0] eq "off" ) {
-        open FILE, ">/proc/sys/net/ipv4/ip_forward";
-        print FILE 0;
-        close FILE;
-    }
-    open FILE, "</proc/sys/net/ipv4/ip_forward";
-    my $res = <FILE>;
-    } else {
+    else {
         $Init->getIO->print_error("Insufficent permission to do that");
     }
     return $res;
@@ -81,9 +82,8 @@ sub check_root() {
 
 sub path() {
     my $self = shift;
-    return
-        @{ $self->{'path'}
-        };    #acquisisce l'array precedentemente messo nella chiave "devices"
+    return @{ $self->{'path'} }
+        ;    #acquisisce l'array precedentemente messo nella chiave "devices"
 }
 
 sub whereis {
@@ -174,7 +174,7 @@ sub time_seconds() {
     my ($second,     $minute,    $hour,
         $dayOfMonth, $month,     $yearOffset,
         $dayOfWeek,  $dayOfYear, $daylightSavings
-    ) = localtime(CORE::time);
+    ) = localtime( CORE::time );
     my $year = 1900 + $yearOffset;
     if ( length($hour) == 1 )   { $hour   = "0" . $hour; }
     if ( length($minute) == 1 ) { $minute = "0" . $minute; }
@@ -189,7 +189,7 @@ sub time_pid {
     my ($second,     $minute,    $hour,
         $dayOfMonth, $month,     $yearOffset,
         $dayOfWeek,  $dayOfYear, $daylightSavings
-    ) = localtime(CORE::time);
+    ) = localtime( CORE::time );
     my $year = 1900 + $yearOffset;
     if ( length($hour) == 1 )   { $hour   = "0" . $hour; }
     if ( length($minute) == 1 ) { $minute = "0" . $minute; }

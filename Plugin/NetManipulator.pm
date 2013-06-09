@@ -56,6 +56,7 @@ sub squid_generate_config {
     my $IO        = $self->{'core'}->{'IO'};
     my $workspace = $env->workspace();
     open FILE, ">" . $env->tmp_dir() . "/squid.conf";
+
 #     print FILE "acl manager proto cache_object
 # acl localhost src 127.0.0.1/32 ::1
 # acl to_localhost dst 127.0.0.0/8 0.0.0.0/32 ::1

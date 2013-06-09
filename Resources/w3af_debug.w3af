@@ -2,17 +2,19 @@
 #                                              W3AF DEBUG SCRIPT
 # -----------------------------------------------------------------------------------------------------------
 
-
 plugins
-#Configure entry point (CRAWLING) scanner
-discovery webSpider, serverHeader, serverStatus
 
+    #Configure entry point (CRAWLING) scanner
+    discovery webSpider, serverHeader, serverStatus
 
-discovery config webSpider
+    discovery config webSpider
+
 # When spidering, only search directories inside the one that was given as target
-set onlyForward True 
+    set onlyForward True
+
 # When spidering, DO NOT follow links that match this regular expression (has precedence over followRegex)
-set ignoreRegex (?i)(logout|disconnect|signout|exit)+
+    set ignoreRegex(
+    ?i)(logout|disconnect|signout|exit)+
 back
 
 

@@ -3,8 +3,8 @@ use File::Path;
 {
     use Carp qw( croak );
     my $CONF =
-        { VARS => { SESSION_DIR => "Sessions", FLOWFILE => ".execution_flow" }
-        };
+        { VARS =>
+            { SESSION_DIR => "Sessions", FLOWFILE => ".execution_flow" } };
     our $Init;
 
     sub new {
@@ -36,8 +36,6 @@ use File::Path;
         $var =~ s/\s+/_/g;
         return $var;
     }
-
-    
 
     sub info {
         print "Session module\n";
@@ -135,7 +133,7 @@ use File::Path;
         open my $COMMAND_LOG, ">>",
             $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/"
             . $CONF->{'VARS'}->{'FLOWFILE'};
-        print $COMMAND_LOG $module . "\@" 
+        print $COMMAND_LOG $module . "\@"
             . $command . "\@"
             . join( '#', @ARGS ) . "\n";
         close $COMMAND_LOG;

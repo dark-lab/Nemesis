@@ -1,12 +1,10 @@
-use MooseX::Declare;
+package Resources::Snap;
+use Moose;
 
-class Resources::Snap{
-		use DateTime;
+use DateTime;
 
-		has 'was'  => (is=>"rw");
-		has 'now'  => (is=>"rw");
-		has 'date' => (is=>"rw" , default => sub { DateTime->now; })
+has 'was'  => ( is => "rw" );
+has 'now'  => ( is => "rw" );
+has 'date' => ( is => "rw", default => sub { DateTime->now; } );
 
-		
-}
 1;

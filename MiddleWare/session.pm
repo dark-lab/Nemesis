@@ -46,7 +46,7 @@ sub spawn() {
     }
     else {
         $RealId = $Session->initialize($Session_Name);
-         $Session->restore($Session_Name);
+        $Session->restore($Session_Name);
     }
 }
 

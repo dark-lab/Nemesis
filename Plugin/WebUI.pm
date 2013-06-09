@@ -3,37 +3,36 @@ use Moose;
 use Nemesis::Inject;
 
 use Mojo::Server::Daemon;
-  use Mojo::IOLoop;
-    our $VERSION = '0.1a';
-    our $AUTHOR  = "skullbocks & mudler";
-    our $MODULE  = "Moose test module";
-    our $INFO    = "<www.dark-lab.net>";
+use Mojo::IOLoop;
+our $VERSION = '0.1a';
+our $AUTHOR  = "skullbocks & mudler";
+our $MODULE  = "Moose test module";
+our $INFO    = "<www.dark-lab.net>";
 
-    our @PUBLIC_FUNCTIONS = qw(test run);
+our @PUBLIC_FUNCTIONS = qw(test run);
 
-    nemesis_module;
+nemesis_module;
 
-    has 'Port' => (is=>"rw",default=>"8080");
+has 'Port' => ( is => "rw", default => "8080" );
 
-    sub test() {
-      my $self=shift;
-        $self->Init->getIO()->print_info("test");
-    }
+sub test() {
+    my $self = shift;
+    $self->Init->getIO()->print_info("test");
+}
 
-    sub run(){
-      my $self=shift;
-      my $ResourceName=shift;
-        eval ("use $ResourceName");
-        $ResourceName->setInit($Init);
+sub run() {
+    my $self         = shift;
+    my $ResourceName = shift;
+    eval("use $ResourceName");
+    $ResourceName->setInit($Init);
 
-         my $daemon = Mojo::Server::Daemon->new(app => $ResourceName->app, listen => ['http://*:'.$self->Port ]);
-         $daemon->start;
-          Mojo::IOLoop->one_tick while 1;
+    my $daemon = Mojo::Server::Daemon->new(
+        app    => $ResourceName->app,
+        listen => [ 'http://*:' . $self->Port ]
+    );
+    $daemon->start;
+    Mojo::IOLoop->one_tick while 1;
 
-    }
-
-
-
-
+}
 
 1;

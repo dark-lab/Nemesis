@@ -4,31 +4,32 @@ use Resources::Logo;
 use Nemesis::Inject;
 nemesis_resource;
 
+sub run() {
 
-sub run(){
+    my $output = $Init->getIO();
+    $output->print_ascii_fh( Resources::Logo::DATA, "red on_black bold" );
+    $Init->{'Interfaces'}->print_devices();
+    $Init->checkroot();
+    $Init->ml()->loadmodules();
 
-	my $output = $Init->getIO();
-	$output->print_ascii_fh( Resources::Logo::DATA, "red on_black bold" );
-	$Init->{'Interfaces'}->print_devices();
-	$Init->checkroot();
-	$Init->ml()->loadmodules();
-	#$Init->ml->execute_on_all("prepare");
-	# Setting the terminal
-	my $term_name = "Nemesis";
-	my $nemesis_t = new Term::ReadLine($term_name);
-	my $attribs   = $nemesis_t->Attribs;
-	@PUBLIC_LIST = $Init->getModuleLoader->export_public_methods();
-	$attribs->{completion_function} = sub { return @PUBLIC_LIST; };
+    #$Init->ml->execute_on_all("prepare");
+    # Setting the terminal
+    my $term_name = "Nemesis";
+    my $nemesis_t = new Term::ReadLine($term_name);
+    my $attribs   = $nemesis_t->Attribs;
+    @PUBLIC_LIST = $Init->getModuleLoader->export_public_methods();
+    $attribs->{completion_function} = sub { return @PUBLIC_LIST; };
 
-	$Init->getSession()->wrap_history($nemesis_t);
+    $Init->getSession()->wrap_history($nemesis_t);
 
-	$Init->getIO()->print_info("Press CTRL+L to clear screen");
+    $Init->getIO()->print_info("Press CTRL+L to clear screen");
 
-	# Main loop. This is inspired from the POD page of Term::Readline.
-	while ( defined( $_ = $nemesis_t->readline( $output->get_prompt_out() ) ) ) {
-	    $Init->getIO()->parse_cli($_);
-	}
-
+    # Main loop. This is inspired from the POD page of Term::Readline.
+    while (
+        defined( $_ = $nemesis_t->readline( $output->get_prompt_out() ) ) )
+    {
+        $Init->getIO()->parse_cli($_);
+    }
 
 }
 

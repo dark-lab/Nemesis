@@ -1,6 +1,5 @@
 #!/usr/bin/perl
 
-
 use Nemesis;
 
 #NOTE:
@@ -19,34 +18,34 @@ use Nemesis;
 #Websploit? dsniff?
 #!/usr/bin/perl -W
 
-
 my $Init = new Nemesis::Init();
 $SIG{'INT'} = sub { $Init->sighandler(); };
 
 use Getopt::Long qw( GetOptions );
 
 GetOptions(
-	"s=s"      => \my $SessionName,        # Session start
-	"w=s"       => \my $Wrap,          # Wrap an execution script
-	"debug"    => \my $DebugCli,       # Debug modality
+    "s=s"   => \my $SessionName,    # Session start
+    "w=s"   => \my $Wrap,           # Wrap an execution script
+    "debug" => \my $DebugCli,       # Debug modality
 
 );
 
- 
-if(defined($DebugCli)){
-my $Interface=$Init->ml->loadmodule("Resources::Terminterface");
-$Interface->run();
+if ( defined($DebugCli) ) {
+	$Init->io->set_debug(1);
+    my $Interface = $Init->ml->loadmodule("Resources::Terminterface");
+    $Interface->run();
 
-} elsif(defined($Wrap)){
+}
+elsif ( defined($Wrap) ) {
+	$Init->getSession()->wrap($Wrap);
+}
+elsif ( defined($SessionName) ) {
+	$Init->getInstance("session")->spawn($Wrap);
+	$Init->getInstance("session")->wrap();
+}
+else {    #VT
 
-
-} elsif(defined($SessionName)){
-
-
-
-} else { #VT
-
-	my $Interface=$Init->ml->loadmodule("Resources::VTinterface");
-$Interface->run();
+    my $Interface = $Init->ml->loadmodule("Resources::VTinterface");
+    $Interface->run();
 
 }

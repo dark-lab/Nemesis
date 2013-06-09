@@ -4,9 +4,8 @@
 #Configure HTTP settings
 #http-settings
 #The timeout for connections to the HTTP server
-#set timeout 30 
+#set timeout 30
 #back
-
 
 #Configure scanner global behaviors
 #misc-settings
@@ -16,23 +15,28 @@
 #set fuzzFileName True
 #back
 
-
 plugins
-#Configure entry point (CRAWLING) scanner
-discovery webSpider, serverHeader, serverStatus, robotsReader, sitemapReader, slash, wordpress_enumerate_users, sharedHosting, pykto, fingerprint_os, fingerBing, findBackdoor
 
-#googleSpider, fingerGoogle, ghdb
+    #Configure entry point (CRAWLING) scanner
+    discovery webSpider, serverHeader, serverStatus, robotsReader,
+    sitemapReader, slash, wordpress_enumerate_users, sharedHosting, pykto,
+    fingerprint_os, fingerBing, findBackdoor
+
+    #googleSpider, fingerGoogle, ghdb
 
 # shared hosting o findVhost: per vedere se sullo stesso server sono presenti più siti ( "Host") da attaccare , dunque i nuovi test saranno fatti sulle  # pagine dei nuovi host.
 # pykto: analizza il webserver nello specifico (nn analizza il sito)
 # ghdb: cerca informazioni sensibili in base alle query di google
 # fingerBing e Google: serve per estrapolare informazioni degli utenti del sito tramite motori di ricerca
 
-discovery config webSpider
+    discovery config webSpider
+
 # When spidering, only search directories inside the one that was given as target
-set onlyForward False 
+    set onlyForward False
+
 # When spidering, DO NOT follow links that match this regular expression (has precedence over followRegex)
-set ignoreRegex (?i)(logout|disconnect|signout|exit)+
+    set ignoreRegex(
+    ?i)(logout|disconnect|signout|exit)+
 back
 
 ###Configure vulnerability scanners

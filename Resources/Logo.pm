@@ -1,6 +1,5 @@
 package Resources::Logo;
 
-
 1;
 __DATA__
                                                                                            

@@ -13,151 +13,158 @@ sub new {
     $Init = $package->{'Init'};
 
     #open STDIN, '/dev/null'   or die "Can't read /dev/null: $!";
-   # open STDOUT, '>>/dev/null';
-    open STDERR,'>>/tmp/nemesis_log.txt';
+    # open STDOUT, '>>/dev/null';
+    open STDERR, '>>/tmp/nemesis_log.txt';
     umask 0;
     return $package;
 }
 
-sub parse_cli(){
-    my $self=shift;
-    my $Input=$_[0];
+sub parse_cli() {
+    my $self        = shift;
+    my $Input       = $_[0];
     my @PUBLIC_LIST = $Init->getModuleLoader()->export_public_methods();
-    my $list = join( " ", @PUBLIC_LIST );
-    my @cmd = split( /\s*("[^"]+"|[^\s"]+)/, $Input );
+    my $list        = join( " ", @PUBLIC_LIST );
+    my @cmd         = split( /\s*("[^"]+"|[^\s"]+)/, $Input );
     @cmd = $self->sanitize(@cmd);    #Depure from evil!
     shift(@cmd);
     my $command = shift(@cmd);
     return if !$command;
-    $self->print_title("< " .$command." ".join(" ",@cmd)." >");
-    if ( $command eq "reload" )
-    {
-        $self->print_title("Reloading modules..");
-         $Init->ml()->loadmodules();
-        
+    $self->print_title( "< " . $command . " " . join( " ", @cmd ) . " >" );
 
-       
-    } elsif ( $command =~ /exit/ )
-    {
+    if ( $command eq "reload" ) {
+        $self->print_title("Reloading modules..");
+        $Init->ml()->loadmodules();
+
+    }
+    elsif ( $command =~ /exit/ ) {
         $Init->on_exit();
-    } elsif ( $command =~ /\./ )
-    {
+    }
+    elsif ( $command =~ /\./ ) {
         my ( $module, $method ) = split( /\./, $command );
         if ( "@cmd" =~ /help/i ) { $cmd[0] = $method; $method = 'help'; }
-        if ( $list =~ /$command/i and $method ne "" )
-        {
-            if(scalar(@cmd)!=0){
+        if ( $list =~ /$command/i and $method ne "" ) {
+            if ( scalar(@cmd) != 0 ) {
                 $Init->getModuleLoader()->execute( $module, $method, @cmd );
-            } else {
+            }
+            else {
                 $Init->getModuleLoader()->execute( $module, $method );
             }
-        } else
-        {
+        }
+        else {
             $self->print_alert("function not implemented");
         }
-    } else
-    {
+    }
+    else {
         $Init->getModuleLoader()->execute( "shell", "run", $command, @cmd );
+
         #eval($command." ".join(" ",@cmd));
     }
     warn $@ if $@;
-   # print "\n";
+
+    # print "\n";
 }
+
 sub get_completion_color {
     return colored( '->', 'cyan bold on_black' );
 }
 
-sub setVt(){
-    my $self=shift;
+sub setVt() {
+    my $self = shift;
 
-    my $vt=$_[0];
-       $vt->set_palette( 
-                    squareb       => "magenta on black",
-                    logo          => "red on black bold",
-                    warn          => "green on black bold",
-                    warntext      => "cyan on black",
-                    debugtext     => "white on black",
-                    infotext      => "blue on black",
-                    blink         => "blue on black blink",
-                    title         => "yellow on black",
-                     statcolor     => "green on black",
-                  sockcolor     => "cyan on black",
-                  ncolor        => "white on black",
-                  st_frames     => "bright cyan on black",
-                  st_values     => "bright yellow on black",
-                  stderr_bullet => "bright white on red",
-                  stderr_text   => "bright yellow on black",
-                  err_input     => "bright white on red",
-                  help          => "white on black",
-                  help_cmd      => "bright white on black"
-               );
- $vt->create_window(
-       Window_Name => "Nemesis Console",
-  History_Size => 300,
+    my $vt = $_[0];
+    $vt->set_palette(
+        squareb       => "magenta on black",
+        logo          => "red on black bold",
+        warn          => "green on black bold",
+        warntext      => "cyan on black",
+        debugtext     => "white on black",
+        infotext      => "blue on black",
+        blink         => "blue on black blink",
+        title         => "yellow on black",
+        statcolor     => "green on black",
+        sockcolor     => "cyan on black",
+        ncolor        => "white on black",
+        st_frames     => "bright cyan on black",
+        st_values     => "bright yellow on black",
+        stderr_bullet => "bright white on red",
+        stderr_text   => "bright yellow on black",
+        err_input     => "bright white on red",
+        help          => "white on black",
+        help_cmd      => "bright white on black"
+    );
+    $vt->create_window(
+        Window_Name  => "Nemesis Console",
+        History_Size => 300,
         Common_Input => 1,
-       Status => { 0 =>
-                   { format => 
-                               "\0(warn)" .
-                               "%8.8s" 
-                            ,
-                     fields => [qw( time )] },
-                 1 => {
-                    format => "%s",
-                    fields => [qw( name )]},
-                },
+        Status       => {
+            0 => {
+                format => "\0(warn)" . "%8.8s",
+                fields => [qw( time )]
+            },
+            1 => {
+                format => "%s",
+                fields => [qw( name )]
+            },
+        },
 
-       Buffer_Size => 1000,
-       History_Size => 5000,
-       Tab_Complete => sub(){
-        my $left=shift;
-        my $right=shift;
-        my @Res = ();
-        foreach my $current($Init->getModuleLoader()->export_public_methods()){
-           push(@Res,$current." ") if($current=~/^$left/i);
-        }
-        my %uniq;
+        Buffer_Size  => 1000,
+        History_Size => 5000,
+        Tab_Complete => sub() {
+            my $left  = shift;
+            my $right = shift;
+            my @Res   = ();
+            foreach my $current (
+                $Init->getModuleLoader()->export_public_methods() )
+            {
+                push( @Res, $current . " " ) if ( $current =~ /^$left/i );
+            }
+            my %uniq;
             return sort grep { !$uniq{$_}++ } @Res;
         },
-    #   Input_Prompt => "\$" ,
-       Title => "Nemesis Framework Command Line"  );
- 
-       $self->{'vt'}=$vt;
-       return $self->{'vt'};
+
+        #   Input_Prompt => "\$" ,
+        Title => "Nemesis Framework Command Line"
+    );
+
+    $self->{'vt'} = $vt;
+    return $self->{'vt'};
 }
 
 sub premutate {
+
 # -----------------------------------------------------------------------------
     my $str = shift;
-    my $re = '\A';
-    for (0 .. length $str) {
+    my $re  = '\A';
+    for ( 0 .. length $str ) {
         $re .= '(?:' . substr $str, $_, 1;
     }
-    for (0 .. length $str) {
+    for ( 0 .. length $str ) {
         $re .= ')?';
     }
     return qr/$re/i;
 }
+
 sub get_prompt_out {
     my $self = shift;
 
+    #return "\|";
+    if ( exists( $self->{'vt'} ) ) {
 
+        return
+              "\0(warn)Nemesis\0(logo)\@\0(warntext)"
+            . $Init->getSession()->getName()
+            . "\0(blink)>#";    #For now, we have to change Term::ReadLine
 
-#return "\|";
-    if(exists($self->{'vt'})){
+    }
+    else {
 
-       return "\0(warn)Nemesis\0(logo)\@\0(warntext)".$Init->getSession()->getName()."\0(blink)>#"; #For now, we have to change Term::ReadLine
-
- }else {
-
-
-  return
-        colored( "Nemesis", "green on_black" )
-      . colored( "\@",                           "white on_black" )
-      . colored( $Init->getSession()->getName(), "cyan on_black" )
-      . colored( ">",                            "white on_black" )
-      . colored( "# ",                           "blue on_black blink" )
-     ;
-}
+        return
+              colored( "Nemesis", "green on_black" )
+            . colored( "\@",                           "white on_black" )
+            . colored( $Init->getSession()->getName(), "cyan on_black" )
+            . colored( ">",                            "white on_black" )
+            . colored( "# ", "blue on_black blink" );
+    }
 }
 
 sub print_ascii {
@@ -176,15 +183,18 @@ sub print_ascii_fh {
     my $self  = shift;
     my $FH    = $_[0];
     my $COLOR = $_[1];
-    if(exists($self->{'vt'})){
-                while ( my $line = <$FH> ) {
-
-        $self->{'vt'}->print($self->{'vt'}->current_window(),"\0($COLOR)$line");
-    }
-    } else {
+    if ( exists( $self->{'vt'} ) ) {
         while ( my $line = <$FH> ) {
-           print colored( $line, $COLOR );
-         #  print "\0($COLOR)$line";
+
+            $self->{'vt'}
+                ->print( $self->{'vt'}->current_window(), "\0($COLOR)$line" );
+        }
+    }
+    else {
+        while ( my $line = <$FH> ) {
+            print colored( $line, $COLOR );
+
+            #  print "\0($COLOR)$line";
         }
     }
     return $OUT;
@@ -197,15 +207,18 @@ sub set_public_methods() {
 
 sub print_alert() {
     my $self = shift;
-        if(exists($self->{'vt'})){
-             $self->{'vt'}->print($self->{'vt'}->current_window(),"\0(squareb)[\0(warn)Warn\0(squareb)]\t\0(warntext)".join(" ",@_));
-        } else {
-            print colored( "[",    "magenta on_black bold" )
-                . colored( "Warn", "green on_black bold" )
-                . colored( "]\t",  "magenta on_black bold" )
-                . colored( $_[0],  "cyan on_black" ) . "\n";
+    if ( exists( $self->{'vt'} ) ) {
+        $self->{'vt'}->print( $self->{'vt'}->current_window(),
+            "\0(squareb)[\0(warn)Warn\0(squareb)]\t\0(warntext)"
+                . join( " ", @_ ) );
+    }
+    else {
+        print colored( "[",    "magenta on_black bold" )
+            . colored( "Warn", "green on_black bold" )
+            . colored( "]\t",  "magenta on_black bold" )
+            . colored( $_[0],  "cyan on_black" ) . "\n";
 
-        }
+    }
 
 }
 
@@ -213,7 +226,8 @@ sub print_verbose() {
     my $self = shift;
     my $text = $_[0];
     if ( $self->{'verbose'} == 1 ) {
-       # print "[! Nemesis Verbose !]\t" . $text . "\n";
+
+        # print "[! Nemesis Verbose !]\t" . $text . "\n";
     }
 }
 
@@ -223,119 +237,136 @@ sub debug() {
         and $self->{'debug'} == 1 )
     {
 
-     if(exists($self->{'vt'})){
-            if(defined($_[1])){
-                $self->{'vt'}->print
-                (
-                    $self->{'vt'}->current_window(),
-                    "\0(squareb) -> \0(warntext) ".
-                    $_[1].
-                    " \0(squareb)<- "."\0(squareb)(\0(warn)".
-                    $Init->getEnv()->time_seconds().
-                    "\0(squareb)) \0(squareb)[\0(logo)Debug\0(squareb)]\0(debugtext) "
-                    .$_[0]
-                );
+        if ( exists( $self->{'vt'} ) ) {
+            if ( defined( $_[1] ) ) {
+                $self->{'vt'}->print( $self->{'vt'}->current_window(),
+                          "\0(squareb) -> \0(warntext) "
+                        . $_[1]
+                        . " \0(squareb)<- "
+                        . "\0(squareb)(\0(warn)"
+                        . $Init->getEnv()->time_seconds()
+                        . "\0(squareb)) \0(squareb)[\0(logo)Debug\0(squareb)]\0(debugtext) "
+                        . $_[0] );
 
-             }else {
-               $self->{'vt'}->print(
-                $self->{'vt'}->current_window(),
-                "\0(squareb)(\0(warn)".
-                $Init->getEnv()->time_seconds().
-                "\0(squareb)) \0(squareb)[\0(logo)Debug\0(squareb)] \0(debugtext) ".
-                $_[0]);
-  
             }
-        } else {
+            else {
+                $self->{'vt'}->print( $self->{'vt'}->current_window(),
+                          "\0(squareb)(\0(warn)"
+                        . $Init->getEnv()->time_seconds()
+                        . "\0(squareb)) \0(squareb)[\0(logo)Debug\0(squareb)] \0(debugtext) "
+                        . $_[0] );
 
-        print colored( " (",    "magenta on_black bold" )
-            . colored( $Init->getEnv()->time_seconds(),
-            "bold on_black green" )
-            . colored( ")",  "magenta on_black bold" );
+            }
+        }
+        else {
 
-        print colored( " ->","magenta on_black bold") . 
-            colored( $_[1],"cyan on_black bold")
-            .colored("<- ","magenta on_black bold") if($_[1]);
-        print colored( "[",     "magenta on_black bold" )
-            . colored( "Debug", "red on_black bold" )
-            . colored( "] ",     "magenta on_black bold" )
-          
-            . colored( $_[0], "white on_black bold" ) . "\n";
+            print colored( " (", "magenta on_black bold" )
+                . colored( $Init->getEnv()->time_seconds(),
+                "bold on_black green" )
+                . colored( ")", "magenta on_black bold" );
+
+            print colored( " ->", "magenta on_black bold" )
+                . colored( $_[1], "cyan on_black bold" )
+                . colored( "<- ", "magenta on_black bold" )
+                if ( $_[1] );
+            print colored( "[",     "magenta on_black bold" )
+                . colored( "Debug", "red on_black bold" )
+                . colored( "] ",    "magenta on_black bold" )
+
+                . colored( $_[0], "white on_black bold" ) . "\n";
         }
     }
 }
 
 sub print_info() {
     my $self = shift;
-    if(exists($self->{'vt'})){
-             $self->{'vt'}->print($self->{'vt'}->current_window(),"\0(squareb)[\0(warn)**\0(squareb)] \0(squareb)(\0(warn)".$Init->getEnv()->time_seconds()."\0(squareb))\0(infotext) ".join(" ",@_));
-        } else {
-    print colored( "[",                             "magenta on_black bold" )
-        . colored( "**",                            "green on_black bold" )
-        . colored( "]",                             "magenta on_black bold" )
-        . colored( " (",                            "magenta on_black bold" )
-        . colored( $Init->getEnv()->time_seconds(), "bold on_black cyan" )
-        . colored( ") ",                            "magenta on_black bold" )
-        . colored( $_[0], "blue on_black bold" ) . "\n";
+    if ( exists( $self->{'vt'} ) ) {
+        $self->{'vt'}->print( $self->{'vt'}->current_window(),
+                  "\0(squareb)[\0(warn)**\0(squareb)] \0(squareb)(\0(warn)"
+                . $Init->getEnv()->time_seconds()
+                . "\0(squareb))\0(infotext) "
+                . join( " ", @_ ) );
+    }
+    else {
+        print colored( "[",  "magenta on_black bold" )
+            . colored( "**", "green on_black bold" )
+            . colored( "]",  "magenta on_black bold" )
+            . colored( " (", "magenta on_black bold" )
+            . colored( $Init->getEnv()->time_seconds(), "bold on_black cyan" )
+            . colored( ") ",  "magenta on_black bold" )
+            . colored( $_[0], "blue on_black bold" ) . "\n";
     }
 }
 
-sub info(){
-    my $self=shift;
+sub info() {
+    my $self = shift;
     $self->print_info(@_);
 }
 
-sub error(){
-    my $self=shift;
+sub error() {
+    my $self = shift;
     $self->print_error(@_);
 }
-sub alert(){
-    my $self=shift;
+
+sub alert() {
+    my $self = shift;
     $self->print_alert(@_);
 }
-sub tabbed(){
-    my $self=shift;
+
+sub tabbed() {
+    my $self = shift;
     $self->print_tabbed(@_);
 }
+
 sub print_error() {
     my $self = shift;
-           if(exists($self->{'vt'})){
-         $self->{'vt'}->print($self->{'vt'}->current_window(),"\0(squareb)[\0(logo)Err\0(squareb)] \0(squareb)(\0(warn)".$Init->getEnv()->time_seconds()."\0(squareb))\0(warntext) ".join(" ",@_));
+    if ( exists( $self->{'vt'} ) ) {
+        $self->{'vt'}->print( $self->{'vt'}->current_window(),
+                  "\0(squareb)[\0(logo)Err\0(squareb)] \0(squareb)(\0(warn)"
+                . $Init->getEnv()->time_seconds()
+                . "\0(squareb))\0(warntext) "
+                . join( " ", @_ ) );
 
-        } else {
-    print colored( "[",                             "magenta on_black bold" )
-        . colored( "Err",                           "red on_black bold blink" )
-        . colored( "]",                             "magenta on_black bold" )
-        . colored( " (",                            "magenta on_black bold" )
-        . colored( $Init->getEnv()->time_seconds(), "bold on_black red" )
-        . colored( ") ",                            "magenta on_black bold" )
-        . colored( $_[0],                           "cyan on_black" ) . "\n";
+    }
+    else {
+        print colored( "[",   "magenta on_black bold" )
+            . colored( "Err", "red on_black bold blink" )
+            . colored( "]",   "magenta on_black bold" )
+            . colored( " (",  "magenta on_black bold" )
+            . colored( $Init->getEnv()->time_seconds(), "bold on_black red" )
+            . colored( ") ",  "magenta on_black bold" )
+            . colored( $_[0], "cyan on_black" ) . "\n";
     }
 }
 
 sub print_tabbed {
     my $self = shift;
 
-    $num = $_[scalar(@_)] || 1;
+    $num = $_[ scalar(@_) ] || 1;
 
-               if(exists($self->{'vt'})){
-                 $self->{'vt'}->print($self->{'vt'}->current_window(),"\0(warn)".("\t" x $num)."~> \0(infotext)".$_[0]);
-                }else {
+    if ( exists( $self->{'vt'} ) ) {
+        $self->{'vt'}->print( $self->{'vt'}->current_window(),
+            "\0(warn)" . ( "\t" x $num ) . "~> \0(infotext)" . $_[0] );
+    }
+    else {
 
-    print( colored( ( "\t" x $num ) . "~> ", "green on_black bold" ),
-        colored( $_[0], "blue on_black bold" ), "\n" );
+        print( colored( ( "\t" x $num ) . "~> ", "green on_black bold" ),
+            colored( $_[0], "blue on_black bold" ), "\n" );
     }
 }
 
 sub print_title {
     my $self = shift;
     my ($msg) = @_;
-      if(exists($self->{'vt'})){
-                 $self->{'vt'}->print($self->{'vt'}->current_window(),"\n\0(title)".$msg."\n".("=" x length($msg) )."\n");
-                 } else{
-    printf "\n" . colored( $msg, "yellow on_black bold" ) . "\n";
-    printf colored( "=" x length($msg), "white on_yellow" );
-    printf "\n\n";
-}
+    if ( exists( $self->{'vt'} ) ) {
+        $self->{'vt'}->print( $self->{'vt'}->current_window(),
+            "\n\0(title)" . $msg . "\n" . ( "=" x length($msg) ) . "\n" );
+    }
+    else {
+        printf "\n" . colored( $msg, "yellow on_black bold" ) . "\n";
+        printf colored( "=" x length($msg), "white on_yellow" );
+        printf "\n\n";
+    }
 }
 
 sub process_status {
@@ -408,11 +439,12 @@ sub set_debug() {
 
 sub debug_dumper() {
     my $self = shift;
-    my $Arg=$_[0];
-   # my $LogFile=$_[1] if($_[1]);
-    $self->debug( Dumper($Arg),__PACKAGE__ );
-  ##  if(defined($LogFile)){
-   #     open my $Log, ">".$LogFile;
+    my $Arg  = $_[0];
+
+    # my $LogFile=$_[1] if($_[1]);
+    $self->debug( Dumper($Arg), __PACKAGE__ );
+    ##  if(defined($LogFile)){
+    #     open my $Log, ">".$LogFile;
     #    print $Log Dumper($Arg);
     ##    close $Log;
     #}
@@ -423,7 +455,8 @@ sub unici {
     my @unici = ();
     my %visti = ();
     foreach my $elemento (@_) {
-     #   $elemento =~ s/\/+/\//g;
+
+        #   $elemento =~ s/\/+/\//g;
         next if $visti{$elemento}++;
         push @unici, $elemento;
     }
@@ -444,7 +477,7 @@ sub generate_command() {
     my $command = $_[0];
     my $env     = $Init->getEnv();
     my @path    = $env->path();
-    if ( $command =~/\s+/) {
+    if ( $command =~ /\s+/ ) {
         my @tmp_c = split( / /, $command );
         my $pp;
 

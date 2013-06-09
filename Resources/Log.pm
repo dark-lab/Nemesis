@@ -1,1 +1,1 @@
-has attachments (obj)
+has attachments(obj)

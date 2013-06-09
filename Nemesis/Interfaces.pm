@@ -155,18 +155,20 @@ sub read_interface() {
     }
 }
 
-sub interfaces(){
-    my $self=shift;
+sub interfaces() {
+    my $self = shift;
     my @Interfaces;
-    @Interfaces= ( keys %{ $self->{'devices'} } ) ;
+    @Interfaces = ( keys %{ $self->{'devices'} } );
     return @Interfaces;
 }
 
-sub ips(){
+sub ips() {
     my $self = shift;
     my @Ips;
     foreach my $dev ( keys %{ $self->{'devices'} } ) {
-        push(@Ips,$self->{'devices'}->{$dev}->{'IPV4_ADDRESS'}) if exists($self->{'devices'}->{$dev}->{'IPV4_ADDRESS'}) and $self->{'devices'}->{$dev}->{'IPV4_ADDRESS'} ne '127.0.0.1' ;
+        push( @Ips, $self->{'devices'}->{$dev}->{'IPV4_ADDRESS'} )
+            if exists( $self->{'devices'}->{$dev}->{'IPV4_ADDRESS'} )
+            and $self->{'devices'}->{$dev}->{'IPV4_ADDRESS'} ne '127.0.0.1';
     }
     return @Ips;
 }
