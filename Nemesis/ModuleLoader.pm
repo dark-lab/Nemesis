@@ -1,14 +1,15 @@
 package Nemesis::ModuleLoader;
 {
-    no warnings 'redefine';
+   # no warnings 'redefine';
    # use Try::Tiny;
    # use TryCatch;
+   use Module::Loaded;
     use LWP::Simple;
     use Regexp::Common qw /URI/;
     use File::Find::Object;
 
     #external modules
-    my @MODULES_PATH = ( 'Plugin', 'Resources' );
+    my @MODULES_PATH = ('Plugin','Resources','MiddleWare');
     our @SystemCommands=("reload","exit");#Exported by defaultxh
 
     ###### The::Net hack
@@ -145,6 +146,7 @@ package Nemesis::ModuleLoader;
                     $object2=~s/.*?inc\:lib\://g;
                     return $object2;
         }
+        chomp($object);
         return $object;
     }
 
@@ -152,20 +154,21 @@ package Nemesis::ModuleLoader;
         my $self   = shift;
         my $module = $_[0];
         if($_[1]){
-        my %args = $_[1];
+        my %args = %{$_[1]};
         }
         my $IO     = $Init->getIO();
-        $object=$self->resolvObj($module);
+        my $object=$self->resolvObj($module);
 
-
+       if(!is_loaded($object)){
         $Init->getIO()
-            ->debug("loading plugin $object",__PACKAGE__  );
+            ->debug("loading plugin $object ",__PACKAGE__  );
             eval("use $object");
             if($@){
                 $Init->getIO()
                 ->print_error("Something went wrong loading $object: $@");
                 return ();
             }
+        }
         if(%args){
             eval {
                 $object = $object->new( Init => $Init, %args );
@@ -180,7 +183,8 @@ package Nemesis::ModuleLoader;
                 ->print_error("Something went wrong loading $object: $@");
                 return ();
         } 
-        $object->prepare if ( eval { $object->can("prepare") } );
+        eval {  $Init->io->debug("Preparing $object");$object->prepare(); } if ( eval { $object->can("prepare") } );
+        $Init->getIO->debug("$object provides: ".join(" ",$object->export_public_methods)) if eval{ $object->can("export_public_methods")};
         $Init->getIO()->debug("Module $module correctly loaded",__PACKAGE__ );
         return $object;
     }
@@ -199,8 +203,8 @@ package Nemesis::ModuleLoader;
         foreach my $module ( sort( keys %{ $self->{'modules'} } ) ) {
             my $Mod=$self->{'modules'}->{$module};
                if(eval{$Mod->can($Can);}){
-                push(@{$self->{'can'}->{$Can}},$module);
-          #      $Init->getIO->debug("$module cached");
+                 push(@{$self->{'can'}->{$Can}},$module);
+                 #$Init->getIO->debug("$module cached");
                }
         }
        # $Init->getIO->debug("Who can $Can? ".join(" ",@{$self->{'can'}->{$Can}})." \n");
@@ -401,21 +405,23 @@ package Nemesis::ModuleLoader;
                 }
                if ( $self->isModule($Library)) {
 
-                   # $Init->getIO()->debug( $Library . " is a module!",__PACKAGE__ );
+                   $Init->getIO()->debug( $Library . " is a module!",__PACKAGE__ );
                     
                     $self->{'modules'}->{$name} = $self->loadmodule($name);
                     if ( exists( $self->{'modules'}->{$name} )  and $self->{'modules'}->{$name} ne "") {
                         $mods++;
-                        $Init->getIO->print_info("Module $name ($Library) correctly loaded.")
+                        $Init->getIO->print_info("Module $name ($Library) correctly loaded.");
+
                     }
+
                 }
                 elsif ($self->isResource($Library)) {
                     #$Init->getIO()->debug("$Library ($name) is a Nemesis Resource",__PACKAGE__ );
                     $Init->getIO->print_info("Resource $name ($Library) detected");
                 }
                 else {
-                    #    $Init->getIO()
-                    #    ->debug("$Library it's nothing to me",__PACKAGE__ );
+                        $Init->getIO()
+                       ->debug("$Library it's nothing to me",__PACKAGE__ );
                 }
 
             };

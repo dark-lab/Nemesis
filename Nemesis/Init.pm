@@ -41,7 +41,7 @@ package Nemesis::Init;
             #	$self->{'Session'}->save();
         }
         $self->{'ModuleLoader'}->execute_on_all("clear");
-        exit;
+        exit 0;
     }
 
     sub getIO {

@@ -36,16 +36,22 @@ use Scalar::Util 'reftype';
         }
         else {
             if ( $self->{'CONFIG'}->{'type'} eq 'daemon' ) {
+                $Init->getIO()->debug("Starting syscall.. ",__PACKAGE__);
+
                 $state = $self->daemon();
             }
             elsif ( $self->{'CONFIG'}->{'type'} eq 'thread' ) {
+                $Init->getIO()->debug("Starting job.. ",__PACKAGE__);
+
                 $self->thread();
+
             }
             else {
+               $Init->getIO()->debug("Starting fork.. ",__PACKAGE__);
+
                 $state = $self->fork();
             }
         }
-        $Init->getIO()->debug("Job started");
         return $state ? $self->get_id() : ();
     }
 
@@ -121,6 +127,7 @@ use Scalar::Util 'reftype';
     sub stop() {
         my $self = shift;
         if ( exists( $self->{'INSTANCE'} ) ) {
+        $Init->io->debug("Stopping instance ".$self->{'INSTANCE'},__PACKAGE__);
 
             #$self->{'INSTANCE'}->cancel();
             $self->{'INSTANCE'}->kill("TERM");
@@ -128,6 +135,8 @@ use Scalar::Util 'reftype';
             delete( $self->{'INSTANCE'} );
         }
         if ( $self->get_pid() ) {
+            $Init->io->debug("Stopping pid ".$self->get_pid(),__PACKAGE__);
+
             kill 9 => $self->get_pid();
             kill( 9, $self->get_pid() );
         }
@@ -145,6 +154,13 @@ use Scalar::Util 'reftype';
         unlink(   $Init->getEnv()->tmp_dir() . "/"
                 . $self->{'CONFIG'}->{'INDEX'}
                 . ".pid" );
+        $Init->io->debug("Deleted: ".join("\t",  $Init->getEnv()->tmp_dir() . "/"
+                . $self->{'CONFIG'}->{'INDEX'}
+                . ".lock" ,$Init->getEnv()->tmp_dir() . "/"
+                . $self->{'CONFIG'}->{'INDEX'}
+                . ".out" , $Init->getEnv()->tmp_dir() . "/"
+                . $self->{'CONFIG'}->{'INDEX'}
+                . ".pid" ),__PACKAGE__);
     }
 
     sub is_running() {

@@ -6,7 +6,6 @@ use Moose;
 use PAR::Packer      ();
 use PAR              ();
 use Module::ScanDeps;
-
     use Nemesis::Inject;
     use namespace::autoclean;
     use App::Packer::PAR;
@@ -14,7 +13,6 @@ use Module::ScanDeps;
     our $AUTHOR  = "mudler";
     our $MODULE  = "This is an interface to the Packer library";
     our $INFO    = "<www.dark-lab.net>";
-
     our @PUBLIC_FUNCTIONS = qw(export exportCli exportWrap);
     has 'What' => (is=>"rw");
     has 'Where' => (is=>"rw");
@@ -62,7 +60,6 @@ use Module::ScanDeps;
     my $path = $self->Init->getEnv()->getPathBin();
         $self->export( $path . "/wrapper.pl", $self->Where );
     }
-
 
 
     sub pack() {

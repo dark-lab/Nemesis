@@ -1,0 +1,52 @@
+#!/usr/bin/perl
+
+
+use Nemesis;
+
+#NOTE:
+#http://search.cpan.org/~flora/Devel-Declare-0.006006/lib/Devel/Declare.pm
+#http://search.cpan.org/~flora/B-Hooks-Parser-0.09/lib/B/Hooks/Parser.pm
+#http://perlbrew.pl/
+
+#TODO: Valutare Net:Interface ?
+#use strict;
+#TODO: Valutare l'inclusione di http://search.cpan.org/~reedfish/Net-FullAuto-0.999944/lib/Net/FullAuto.pm
+#Net:Route
+#ANN, SVM, DecisionTree?
+#Dunque KiokuDB per i moduli moose KiokuX::Model e Search::GIN ? KiokuDB::LiveObjects?
+#XXX:https://metacpan.org/module/KiokuDB
+#https://metacpan.org/module/KiokuDB::Tutorial
+#Websploit? dsniff?
+#!/usr/bin/perl -W
+
+
+my $Init = new Nemesis::Init();
+$SIG{'INT'} = sub { $Init->sighandler(); };
+
+use Getopt::Long qw( GetOptions );
+
+GetOptions(
+	"s=s"      => \my $SessionName,        # Session start
+	"w=s"       => \my $Wrap,          # Wrap an execution script
+	"debug"    => \my $DebugCli,       # Debug modality
+
+);
+
+ 
+if(defined($DebugCli)){
+my $Interface=$Init->ml->loadmodule("Resources::Terminterface");
+$Interface->run();
+
+} elsif(defined($Wrap)){
+
+
+} elsif(defined($SessionName)){
+
+
+
+} else { #VT
+
+	my $Interface=$Init->ml->loadmodule("Resources::VTinterface");
+$Interface->run();
+
+}
