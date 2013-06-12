@@ -18,6 +18,8 @@ has 'attachments' => (
     lazy    => 1,
     default => sub { set() }
 );
-has 'suspect' => ( is => 'rw' );
+has 'suspect' => ( is => 'rw', default=> 0);
+has 'nemesis_node' => (is=>'rw' ,default=>0);
+has 'nemesis_supernode' => (is=>'rw',default=>0);
 
 1;

@@ -17,7 +17,13 @@ sub new {
     }
     $Init = $package->{'Init'};
     $package->{"ProgramPath"} = $Bin;
+    $package->{"ID"} = &generateID;
     return $package;
+}
+
+sub generateID(){
+
+    return int(rand(10000));
 }
 
 sub getPathBin() {

@@ -10,7 +10,14 @@ use Fcntl qw(:DEFAULT :flock);
 use Resources::Snap;
 nemesis_resource;
 
-has 'BackEnd' => ( is => "rw" );
+has 'BackEnd'    => ( is => "rw" );
+has 'Dispatcher' => ( is => "rw" );
+
+sub prepare() {
+    my $self       = shift;
+    my $Dispatcher = $Init->ml->loadmodule("Dispatcher");
+    $self->Dispatcher($Dispatcher);
+}
 
 sub lookup() {
     my $self = shift;
@@ -22,35 +29,35 @@ sub add () {
     my $self = shift;
 
     # create a scope
-    my $Obj = shift;
-    my $s   = $self->BackEnd->new_scope;
+    # my $Obj = shift;
+    my @Objs = @_;
+
+    #my $s   = $self->BackEnd->new_scope;
 
     # takes a snapshot of $some_object
-    $self->BackEnd->txn_do(
+    $self->BackEnd->scoped_txn(
         sub {
-            &signalObj( $Init->session->new_file(".ids"),
-                $self->BackEnd->store($Obj), $Obj );
+            $self->BackEnd->insert(@Objs);
         }
     );
-    return $Obj;
-}
+    foreach my $Obj (@Objs) {
+        my ($ModuleName) = $Obj =~ /(.*?)\=/;
 
-sub signalObj() {
-    my $File      = shift;
-    my @PrintLine = @_;
-    my $printLine = join( "||||", @PrintLine );
-    open FH, ">>$File";
-    flock( FH, 1 );
-    print FH $printLine . "\n";
-    close FH;
+        #$Init->io->debug("Now dispatcher seek for event_ $ModuleName");
+        $self->Dispatcher->match( "event_" . $ModuleName, $Obj )
+            ;    #Not Async for now.
+
+    }
+    return @Objs;
 }
 
 sub update() {
     my $self = shift;
     my $Obj  = shift;
     my $s    = $self->BackEnd->new_scope;
-    $self->BackEnd->txn_do(sub {
-        $self->delete($Obj);
+    $self->BackEnd->txn_do(
+        sub {
+            $self->delete($Obj);
             $self->add($Obj);
         }
     );
@@ -68,8 +75,9 @@ sub swap() {
     my $s         = $self->BackEnd->new_scope;
     my $Snap = Resources::Snap->new( was => $oldObject, now => $newObject );
     $self->Init->getIO->debug( "Snap created at " . $Snap->date );
-    $self->BackEnd->txn_do(sub {
-        $self->delete($oldObject);
+    $self->BackEnd->txn_do(
+        sub {
+            $self->delete($oldObject);
             $self->add($newObject);
             $self->add($Snap);
         }
@@ -86,19 +94,48 @@ sub delete() {
 }
 
 sub connect() {
-    my $self    = shift;
-    my $BackEnd = shift;
+    my $self = shift;
+    my $BackEnd;
+
+    if ( @_ != 0 ) {
+        $BackEnd = shift;
+    }
     if ( defined($BackEnd) ) {
         $self->BackEnd($BackEnd);
         return $self;
     }
     else {
+        # $BackEnd = KiokuDB->connect(
+
+        #     ###DBD HANGS ON EXIT.
+        #     ### DBI WOULD BE BETTER.
+        #
+        #     "bdb-gin:dir=" . $self->Init->getSession()->getSessionPath,
+        #     create  => 1,
+        #            # serializer => "yaml", # defaults to storable
+
+        #    # log_auto_remove => 1,
+        #    extract => Search::GIN::Extract::Class->new
+        # ) or $Init->io->error("Error loading BackEnd");
+
         $BackEnd = KiokuDB->connect(
-            "bdi:dir=" . $self->Init->getSession()->getSessionPath,
-            create  => 1,
-            log_auto_remove => 1,
-            extract => Search::GIN::Extract::Class->new
-        );
+            "bdb-gin:dir=" . $self->Init->getSession()->getSessionPath,
+            create       => 1,
+            extract      => Search::GIN::Extract::Class->new,
+            live_objects => {
+                clear_leaks  => 1,
+                leak_tracker => sub {
+                    my @leaked = @_;
+
+                    warn "leaked " . scalar(@leaked) . " objects";
+
+                    # try to mop up.
+                    use Data::Structure::Util qw(circular_off);
+                    circular_off($_) for @leaked;
+                    }
+            }
+        ) or $Init->io->error("ERROR");
+
         $self->BackEnd($BackEnd);
     }
     $Init->io->debug( "Connected", __PACKAGE__ );
@@ -118,8 +155,17 @@ sub list_obj() {
 }
 
 sub search() {
-    my $self   = shift;
-    my %Search = shift;
+    my $self = shift;
+    my %Search;
+
+    if ( @_ != 0 ) {
+        my $ref = shift;
+        %Search = %{$ref};
+
+    }
+    else {
+        return;
+    }
     my $results;
     if ( $Search{'class'} ) {
 
@@ -146,8 +192,17 @@ sub search() {
 }
 
 sub searchRegex() {
-    my $self   = shift;
-    my %Search = shift;
+    my $self = shift;
+    my %Search;
+
+    if ( @_ != 0 ) {
+        my $ref = shift;
+        %Search = %{$ref};
+
+    }
+    else {
+        return;
+    }
     my @Result;
     if ( !exists( $Search{'class'} ) ) {
         $self->Init->getIO->print_alert("You must supply a class");

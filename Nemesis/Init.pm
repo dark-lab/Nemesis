@@ -35,7 +35,7 @@ package Nemesis::Init;
     sub on_exit() {
         my $self = shift;
         $self->{'ModuleLoader'}->execute_on_all("clear");
-        exit 0;
+        exit;
     }
 
     sub getIO {

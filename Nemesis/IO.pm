@@ -14,7 +14,7 @@ sub new {
 
     #open STDIN, '/dev/null'   or die "Can't read /dev/null: $!";
     # open STDOUT, '>>/dev/null';
-    open STDERR, '>>/tmp/nemesis_log.txt';
+   # open STDERR, '>>/tmp/nemesis_log.txt';
     umask 0;
     return $package;
 }
@@ -269,7 +269,7 @@ sub debug() {
                 . colored( $_[1], "cyan on_black bold" )
                 . colored( "<- ", "magenta on_black bold" )
                 if ( $_[1] );
-            print colored( "[",     "magenta on_black bold" )
+            print colored( " [",     "magenta on_black bold" )
                 . colored( "Debug", "red on_black bold" )
                 . colored( "] ",    "magenta on_black bold" )
 

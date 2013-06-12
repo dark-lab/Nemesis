@@ -1,4 +1,3 @@
-
 package Resources::Dispatcher;
 use Moose;
 use Nemesis::Inject;
@@ -30,14 +29,43 @@ sub dispatch_packet() {
     }
 }
 
+sub job() {
+    my $self    = shift;
+    my $event   = shift;
+    my $object  = shift;
+    my $Process = $Init->ml->loadmodule("Process");
+    $Process->set(
+        type => "thread",
+        code => sub {
+
+            # threads->detach;
+            #      $self->match($event,$object);
+            # threads->exit;
+            $Init->io->debug("ok");
+            }
+
+    );
+    $Process->start;
+
+    #  $Process->detach;
+    $Process->join();
+
+    #$self->Process($Process);
+
+}
+
 sub match() {
     my $self    = shift;
     my @Args    = @_;
     my $Command = shift(@Args);
-    foreach my $Module ( $self->Init->getModuleLoader->canModule($Command) ) {
-        my $Instance = $self->Init->getModuleLoader->getInstance($Module);
+    if ( $Command =~ /\:\:/ ) {
+        $Command =~ s/\:\:/\_\_/g;
+    }
+    $Init->io->debug("Searching $Command");
+    foreach my $Module ( $Init->getModuleLoader->canModule($Command) ) {
+        my $Instance = $Init->getModuleLoader->getInstance($Module);
 
-        #$self->Init->getIO()->print_info("I can do that $Instance");
+        $self->Init->getIO()->print_info("I can do that $Instance");
         eval { $Instance->$Command(@Args); };
     }
 }

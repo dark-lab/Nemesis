@@ -1,7 +1,8 @@
 package Nemesis::Process;
 {
     use forks;
-
+   # use forks::shared;
+#    share($Init);
     #TODO: Add tags to processes!  For analyzer.
     #TODO: Have a look to IPC::Run and IPC::Open3
     use Carp qw( croak );
@@ -63,6 +64,7 @@ package Nemesis::Process;
 
     sub thread() {
         my $self = shift;
+        $Init->io->debug("Starting the thread",__PACKAGE__);
 
         if ( exists( $self->{'CONFIG'}->{'instance'} ) ) {
             my $instance = $self->{'CONFIG'}->{'instance'};
@@ -77,7 +79,11 @@ package Nemesis::Process;
 
         }
         elsif ( exists( $self->{'CONFIG'}->{'code'} ) ) {
+
+
+
             if ( reftype( $self->{'CONFIG'}->{'code'} ) eq "CODE" ) {
+                
                 my $code = $self->{'CONFIG'}->{'code'};
                 $self->{'INSTANCE'} = threads->new( \&$code );
             }
@@ -123,15 +129,34 @@ package Nemesis::Process;
         }
     }
 
+    sub detach(){
+        my $self=shift;
+        if(exists($self->{'INSTANCE'})){
+            $Init->io->debug("Detaching",$self->{'CONFIG'}->{'INDEX'});
+            $self->{'INSTANCE'}->detach();
+        }
+    }
+    sub join(){
+        my $self=shift;
+        if(exists($self->{'INSTANCE'})){
+            $Init->io->debug("Joining",$self->{'CONFIG'}->{'INDEX'});
+            $self->{'INSTANCE'}->join();
+        }
+    }
     sub stop() {
         my $self = shift;
         if ( exists( $self->{'INSTANCE'} ) ) {
-            $Init->io->debug( "Stopping instance " . $self->{'INSTANCE'},
-                __PACKAGE__ );
+            $Init->io->debug( "Stopping instance " . $self->{'INSTANCE'},$self->{'CONFIG'}->{'INDEX'});
+
 
             #$self->{'INSTANCE'}->cancel();
             $self->{'INSTANCE'}->kill("TERM");
-            $self->{'INSTANCE'}->detach();
+
+                   $Init->io->debug( "waiting for instance " . $self->{'INSTANCE'}." to join",
+                     __PACKAGE__ );
+    $self->join();  
+                   $Init->io->debug( "exit: " . $self->{'INSTANCE'},
+                     __PACKAGE__ );
             delete( $self->{'INSTANCE'} );
         }
         if ( $self->get_pid() ) {
@@ -157,7 +182,7 @@ package Nemesis::Process;
                 . ".pid" );
         $Init->io->debug(
             "Deleted: "
-                . join( "\t",
+                . CORE::join( "\t",
                 $Init->getEnv()->tmp_dir() . "/"
                     . $self->{'CONFIG'}->{'INDEX'} . ".lock",
                 $Init->getEnv()->tmp_dir() . "/"
@@ -391,13 +416,16 @@ package Nemesis::Process;
 
     sub get_pid() {
         my $self = shift;
-        open FILE,
+        if(open FILE,
               "<"
             . $Init->getEnv()->tmp_dir() . "/"
-            . $self->{'CONFIG'}->{'INDEX'} . ".pid";
-        my @pid = <FILE>;
+            . $self->{'CONFIG'}->{'INDEX'} . ".pid"){
+                my @pid = <FILE>;
         close FILE;
-        return $pid[0] if ( $pid[0] );
+        return $pid[0];
+        }
+        return ();
+    
     }
 
     sub get_output_file() {

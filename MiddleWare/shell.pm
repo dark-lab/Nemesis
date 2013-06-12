@@ -39,8 +39,5 @@ sub run() {
 
 }
 
-sub clear(){
-    1;
-}
 
 1;

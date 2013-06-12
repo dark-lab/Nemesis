@@ -48,9 +48,7 @@ sub help() {                                   #NECESSARY
     }
 }
 
-sub clear {    #NECESSARY - CALLED ON EXIT
- 
-}
+
 
 sub mitm {
     my $self       = shift;

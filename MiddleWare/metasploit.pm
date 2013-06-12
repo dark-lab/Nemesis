@@ -23,8 +23,12 @@ has 'DB'     => ( is => "rw" );
 
 sub prepare() {
     my $self = shift;
+           $self->MSFRPC( $Init->getModuleLoader->loadmodule("MSFRPC") )
+        ;    #Carico la risorsa MSFRPC
+
     $self->DB( $Init->getModuleLoader->loadmodule("DB")->connect )
         ;    #Lo userò spesso.
+     
 }
 
 sub start() {
@@ -33,8 +37,6 @@ sub start() {
 
     my $Io = $self->Init->getIO();
 
-    $self->MSFRPC( $Init->getModuleLoader->loadmodule("MSFRPC") )
-        ;    #Carico la risorsa MSFRPC
 
     my $processString =
           'msfrpcd -U '
@@ -49,7 +51,7 @@ sub start() {
         type => 'daemon',         # tipologia demone
         code => $processString    # linea di comando...
     );
-    $Process->start();            #Avvio
+    if($Process->start()){         #Avvio
     $self->Process($Process)
         ;    #Nell'attributo processo del plugin ci inserisco il processo
     if ( $Process->is_running ) {
@@ -59,6 +61,7 @@ sub start() {
         $Io->print_alert(
             "Now you have to give some time to metasploit to be up and running.."
         );
+    }
     }
 
 }
@@ -96,10 +99,16 @@ sub LaunchExploitOnNode() {
 
 }
 
+sub event_Resources__Exploit{
+    my $self=shift;
+    $Init->io->debug("Exploit generated correctly!");
+}
+
 sub generate() {
     my $self = shift;
-    $self->start if ( !$self->Process or !$self->Process->is_running );
-
+ #  $self->start if ( !$self->Process or !$self->Process->is_running );
+$self->DB( $Init->getModuleLoader->loadmodule("DB")->connect )
+        ;    #Lo userò spesso.
     my $response = $self->MSFRPC->call('module.exploits');
     if ( !exists( $response->{'modules'} ) ) {
         $self->Init->getIO->print_alert("Cannot sync with meta");
@@ -112,7 +121,7 @@ sub generate() {
     $self->Init->getIO()
         ->print_info(
         "There are " . scalar(@EXPL_LIST) . " exploits in metasploit" );
-    my $result = $self->DB->search( class => "Resources::Exploit" );
+    my $result = $self->DB->search({ class => "Resources::Exploit" });
     my $Counter = 0;
     while ( my $block = $result->next ) {
         foreach my $item (@$block) {
@@ -129,7 +138,7 @@ sub generate() {
         my $Options = $self->MSFRPC->options( "exploits", $exploit );
         $self->MSFRPC->parse_result;
 
-        my $result = $self->DB->search( module => $exploit );
+        my $result = $self->DB->search( { module => $exploit} );
         my $AlreadyThere = 0;
         while ( my $block = $result->next ) {
             foreach my $item (@$block) {

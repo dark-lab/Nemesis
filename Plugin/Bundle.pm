@@ -47,7 +47,7 @@ sub exportCli() {
         $self->Where($Where);
     }
     my $path = $self->Init->getEnv()->getPathBin();
-    $self->export( $path . "/cli.pl", $self->Where );
+    $self->export( $path . "/nemesis", $self->Where );
 
 }
 

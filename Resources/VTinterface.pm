@@ -1,7 +1,10 @@
 package Resources::VTinterface;
 
-#!/usr/bin/perl
 #use Term::ReadLine;
+use Carp;
+use POE;
+use Term::Visual;
+use Resources::Logo;
 use Nemesis::Inject;
 nemesis_resource;
 
@@ -20,11 +23,6 @@ nemesis_resource;
 #https://metacpan.org/module/KiokuDB::Tutorial
 #Websploit? dsniff?
 #!/usr/bin/perl -W
-
-use Carp;
-use POE;
-use Term::Visual;
-use Resources::Logo;
 
 sub run() {
     my $self = shift;

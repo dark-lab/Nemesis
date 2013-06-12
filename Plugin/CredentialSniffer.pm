@@ -17,7 +17,7 @@ has 'DB' => ( is => "rw" );
 
 sub prepare() {    #Method called during module loading
     my $self = shift;
-    $self->DB( $Init->getModuleLoader->loadmodule("DB")->connect )
+    $self->DB( $Init->getModuleLoader->loadmodule("DB")->connect() )
         ;          #load the DB at startup
 }
 

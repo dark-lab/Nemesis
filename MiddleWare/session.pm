@@ -78,7 +78,5 @@ sub stash {
     $Init->ml->execute_on_all("prepare");
 }
 
-sub clear() {    #NECESSARY - CALLED ON EXIT
-    1;
-}
+
 1;

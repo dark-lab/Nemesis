@@ -235,15 +235,18 @@ use File::Path;
         my $ModuleLoader = $Init->getModuleLoader();
         my $IO           = $Init->getIO();
         my $COMMAND_LOG;
+        my @FLOW ;
         if ($File) {
             open $COMMAND_LOG, "<", $File;
+            @FLOW = <$COMMAND_LOG>;
         }
         else {
             open $COMMAND_LOG, "<",
                 $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/"
                 . $CONF->{'VARS'}->{'FLOWFILE'};
+                @FLOW = <$COMMAND_LOG>;
         }
-        my @FLOW = <$COMMAND_LOG>;
+
         close $COMMAND_LOG;
 
         # @FLOW = $IO->unici(@FLOW);
