@@ -1,8 +1,0 @@
-39:	final indentation level: 1
-
-Final nesting depth of '('s is 1
-The most recent un-matched '(' is on line 16
-16: set ignoreRegex(
-                   ^
-39:	hit EOF seeking end of quote/pattern starting at line 17 ending in ?
-39:	To save a full .LOG file rerun with -g
