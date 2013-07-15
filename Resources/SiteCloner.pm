@@ -5,7 +5,9 @@ package Resources::SiteCloner;
     use Nemesis::Inject;    #Esporta $Init nella webApp
     use Data::Dumper;       #Esporta Dumper (per usarlo nei print)
     use WWW::Mechanize;     #Abilita l'uso di mechanizer
-    nemesis_resource_mojo;
+    nemesis mojo {
+        $Init->io->info("Im'here");
+    }
 
     get '/' => sub {
         my $self = shift;

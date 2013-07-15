@@ -1,8 +1,11 @@
 package Resources::Terminterface;
-
+use Term::ReadLine;
 use Resources::Logo;
 use Nemesis::Inject;
-nemesis_resource;
+
+nemesis resource {
+
+};
 
 sub run() {
 

@@ -1,5 +1,4 @@
 package Plugin::NetManipulator;
-use warnings;
 use Nemesis::Inject;
 use Nemesis::Process;
 my $VERSION = '0.1a';
@@ -11,7 +10,8 @@ my $INFO    = "<www.dark-lab.net>";
 
 my @PUBLIC_FUNCTIONS =
     qw(video_redirect restart start stop cud_regex);    #NECESSARY
-nemesis_module;
+
+nemesis module { 1; }
 
 sub help() {                                            #NECESSARY
     my $self    = shift;

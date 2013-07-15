@@ -1,18 +1,22 @@
 package MiddleWare::metasploit;
 use Moose;
-use Nemesis::Inject;
 use Resources::Exploit;
 use Resources::Node;
+use Nemesis::Inject;
 
-my $VERSION = '0.1a';
-my $AUTHOR  = "mudler";
-my $MODULE  = "Metasploit Module";
-my $INFO    = "<www.dark-lab.net>";
+our $VERSION = '0.1a';
+our $AUTHOR  = "mudler";
+our $MODULE  = "Metasploit Module";
+our $INFO    = "<www.dark-lab.net>";
 
 #Funzioni che fornisco.
-my @PUBLIC_FUNCTIONS =
+our @PUBLIC_FUNCTIONS =
     qw(start clear sessionlist call test generate matchExpl);    #NECESSARY
-nemesis_module;
+
+nemesis module {
+    $self->MSFRPC( $Init->getModuleLoader->loadmodule("MSFRPC") );
+    $self->DB( $Init->getModuleLoader->loadmodule("DB")->connect );
+}
 
 #Attributo Processo del demone MSFRPC
 has 'Process' => ( is => "rw" );
@@ -21,22 +25,11 @@ has 'Process' => ( is => "rw" );
 has 'MSFRPC' => ( is => "rw" );
 has 'DB'     => ( is => "rw" );
 
-sub prepare() {
-    my $self = shift;
-           $self->MSFRPC( $Init->getModuleLoader->loadmodule("MSFRPC") )
-        ;    #Carico la risorsa MSFRPC
-
-    $self->DB( $Init->getModuleLoader->loadmodule("DB")->connect )
-        ;    #Lo userò spesso.
-     
-}
-
 sub start() {
     my $self = shift;
     return 1 if ( $self->Process && $self->Process->is_running );
 
     my $Io = $self->Init->getIO();
-
 
     my $processString =
           'msfrpcd -U '
@@ -51,17 +44,17 @@ sub start() {
         type => 'daemon',         # tipologia demone
         code => $processString    # linea di comando...
     );
-    if($Process->start()){         #Avvio
-    $self->Process($Process)
-        ;    #Nell'attributo processo del plugin ci inserisco il processo
-    if ( $Process->is_running ) {
-        $Io->print_info("Service msfrcpd started")
-            ;    #Controllo se si è avviato
-        $Io->process_status($Process);    #Stampo lo status
-        $Io->print_alert(
-            "Now you have to give some time to metasploit to be up and running.."
-        );
-    }
+    if ( $Process->start() ) {    #Avvio
+        $self->Process($Process)
+            ;    #Nell'attributo processo del plugin ci inserisco il processo
+        if ( $Process->is_running ) {
+            $Io->print_info("Service msfrcpd started")
+                ;    #Controllo se si è avviato
+            $Io->process_status($Process);    #Stampo lo status
+            $Io->print_alert(
+                "Now you have to give some time to metasploit to be up and running.."
+            );
+        }
     }
 
 }
@@ -99,15 +92,16 @@ sub LaunchExploitOnNode() {
 
 }
 
-sub event_Resources__Exploit{
-    my $self=shift;
+sub event_Resources__Exploit {
+    my $self = shift;
     $Init->io->debug("Exploit generated correctly!");
 }
 
 sub generate() {
     my $self = shift;
- #  $self->start if ( !$self->Process or !$self->Process->is_running );
-$self->DB( $Init->getModuleLoader->loadmodule("DB")->connect )
+
+    #  $self->start if ( !$self->Process or !$self->Process->is_running );
+    $self->DB( $Init->getModuleLoader->loadmodule("DB")->connect )
         ;    #Lo userò spesso.
     my $response = $self->MSFRPC->call('module.exploits');
     if ( !exists( $response->{'modules'} ) ) {
@@ -121,7 +115,7 @@ $self->DB( $Init->getModuleLoader->loadmodule("DB")->connect )
     $self->Init->getIO()
         ->print_info(
         "There are " . scalar(@EXPL_LIST) . " exploits in metasploit" );
-    my $result = $self->DB->search({ class => "Resources::Exploit" });
+    my $result = $self->DB->search( { class => "Resources::Exploit" } );
     my $Counter = 0;
     while ( my $block = $result->next ) {
         foreach my $item (@$block) {
@@ -138,7 +132,7 @@ $self->DB( $Init->getModuleLoader->loadmodule("DB")->connect )
         my $Options = $self->MSFRPC->options( "exploits", $exploit );
         $self->MSFRPC->parse_result;
 
-        my $result = $self->DB->search( { module => $exploit} );
+        my $result = $self->DB->search( { module => $exploit } );
         my $AlreadyThere = 0;
         while ( my $block = $result->next ) {
             foreach my $item (@$block) {

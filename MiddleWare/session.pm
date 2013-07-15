@@ -1,15 +1,15 @@
 package MiddleWare::session;
-use warnings;
 use Carp qw( croak );
-use Nemesis::Inject;
 use Data::Dumper;
+use Nemesis::Inject;
+nemesis module { 1; }
+
 my $VERSION = '0.1a';
 my $AUTHOR  = "mudler";
 my $MODULE  = __PACKAGE__;
 my $INFO    = "<www.dark-lab.net>";
 my @PUBLIC_FUNCTIONS =
     qw(list wrap spawn stash);    #Public exported functions NECESSARY
-nemesis_module;
 
 sub help() {                      #NECESSARY
     my $self    = shift;
@@ -77,6 +77,5 @@ sub stash {
     $Init->getSession()->stash();
     $Init->ml->execute_on_all("prepare");
 }
-
 
 1;

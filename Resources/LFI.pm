@@ -1,4 +1,5 @@
 package Resources::LFI;
+
 use Moose;
 use Nemesis::Inject;
 
@@ -8,8 +9,7 @@ has 'Test'    => ( is => "rw", default => "/proc/self/environ" );
 has 'TestRegex' =>
     ( is => "rw", default => "DOCUMENT_ROOT=\/|HTTP_USER_AGENT" );
 
-nemesis_resource;
-use LWP::Simple;
+nemesis resource { 1; } use LWP::Simple;
 
 sub test() {
     my $self = shift;

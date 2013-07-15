@@ -1,6 +1,7 @@
 package Plugin::sniffer;
-use warnings;
+
 use Carp qw( croak );
+
 use Nemesis::Inject;
 my $VERSION = '0.1a';
 my $AUTHOR  = "mudler";
@@ -10,7 +11,7 @@ my $INFO    = "<www.dark-lab.net>";
 #Public exported functions
 my @PUBLIC_FUNCTIONS =
     qw(status stop sniff spoof strip mitm);    #NECESSARY for cli
-nemesis_module;
+nemesis module { 1; }
 
 sub help() {                                   #NECESSARY
     my $self    = shift;
@@ -47,8 +48,6 @@ sub help() {                                   #NECESSARY
         $IO->print_tabbed("where (dev) is required and can be an interface");
     }
 }
-
-
 
 sub mitm {
     my $self       = shift;

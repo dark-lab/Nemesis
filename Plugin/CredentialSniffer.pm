@@ -1,48 +1,30 @@
 package Plugin::CredentialSniffer;
 
-use Moose;
-
 use Nemesis::Inject;
 
-our $VERSION = '0.1a';
-our $AUTHOR  = "luca9010";
-our $MODULE  = "CredentialSniffer plugin";
-our $INFO    = "<www.dark-lab.net>";
+our $VERSION          = '0.1a';
+our $AUTHOR           = "luca9010";
+our $MODULE           = "CredentialSniffer plugin";
+our $INFO             = "<www.dark-lab.net>";
+our @PUBLIC_FUNCTIONS = qw();
 
-our @PUBLIC_FUNCTIONS = qw(start stop);
+nemesis module {
 
-nemesis_module;
 
-has 'DB' => ( is => "rw" );
+    $self->DB( $self->Init()->ml()->loadmodule("DB")->connect() );
+ 
 
-sub prepare() {    #Method called during module loading
-    my $self = shift;
-    $self->DB( $Init->getModuleLoader->loadmodule("DB")->connect() )
-        ;          #load the DB at startup
 }
 
-sub start() {
-    my $self = shift;
+got 'DB' => ( default => "", is => "rw" );
 
-    if ( $self->Init->checkroot() ) {
-        $self->Init->getIO()
-            ->print_alert(
-            "You need root permission to do this; otherwise you wouldn't see anything"
-            );
-    }
-    my $LiveSniffer = $Init->ml->getInstance("LiveSniffer");
-    $LiveSniffer->start();
-}
+
 
 sub clear() {
     my $self = shift;
     $self->stop();
 }
 
-sub stop() {
-
-    #$self->Sniffer()->destroy() if($self->Sniffer);
-}
 
 sub event_tcp() {
     my $self  = shift;

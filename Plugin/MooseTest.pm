@@ -12,7 +12,16 @@ our $INFO    = "<www.dark-lab.net>";
 
 our @PUBLIC_FUNCTIONS = qw(test);
 
-nemesis_module;
+#Declare::Devel::Lexer it's a little buggy, so you may encounter some problems inside the
+#nemesis block here are few ints:
+#       *  No comments inside nemesis block{}
+#       *  Somethimes (i didn't have time to track that bug) you need to close your block in one line (so your graph must be at the endofline )
+
+nemesis module {
+
+    init()->io->info("my test :)");
+
+}
 
 has 'Process' => ( is => 'rw' );
 
@@ -30,11 +39,13 @@ sub test() {
 # $self->Process($Process);
 # my $MSFRPC=$self->Init->getModuleLoader->loadmodule("MSFRPC");
 # $MSFRPC->Username("Cane");
-#   my $DB=$self->Init->getModuleLoader->loadmodule("DB");
-#   $DB->connect();
-#  #$DB->add($MSFRPC);
-# #  my $Data_Bulk=$DB->list_obj(); Lista tutti gli oggetti
-#   $self->Init->getIO->print_info("test 1:  ricerca classe di tipo Resources::Node");
+    my $DB = $self->Init->getModuleLoader->loadmodule("DB");
+    $DB->connect();
+
+    #$DB->add($MSFRPC);
+    my $Data_Bulk = $DB->list_obj();
+    Lista tutti gli oggetti $self->Init->getIO->print_info(
+        "test 1:  ricerca classe di tipo Resources::Node");
 
     #   my $results=$DB->search(class => "Resources::Node");
 
@@ -45,14 +56,6 @@ sub test() {
 
     #           }
     #       }
-
-    my $Process = $self->Init->getModuleLoader->loadmodule("Process");
-    $Process->set(
-        type => "system",
-        code => "websorrow -host \"http://google.it\" -S"
-    );
-    $Process->start();
-    $self->Process($Process);
 
 }
 

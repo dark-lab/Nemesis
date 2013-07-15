@@ -2,7 +2,9 @@ package Resources::Dispatcher;
 use Moose;
 use Nemesis::Inject;
 
-nemesis_resource;
+nemesis resource {
+    1;
+};
 
 sub dispatch_packet() {
     my $self  = shift;

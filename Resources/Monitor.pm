@@ -2,9 +2,10 @@ package Resources::Monitor;
 
 use Moose;
 
-use Nemesis::Inject;
 use Net::Frame::Simple;
 use Net::Frame::Dump::Online;
+use Nemesis::Inject;
+nemesis resource { 1; }
 
 has 'Device'      => ( is => "rw", default => "wlan0" );
 has 'Filter'      => ( is => "rw", default => "" );
@@ -13,7 +14,6 @@ has 'Dispatcher'  => ( is => "rw" );
 has 'File'        => ( is => "rw", default => undef );
 has 'SnifferInstance' => ( is => "rw" );
 has 'Dispatcher'      => ( is => "rw" );
-nemesis_resource;
 
 $SIG{'TERM'} = sub { exit; };
 

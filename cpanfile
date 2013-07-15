@@ -1,9 +1,12 @@
+requires 'Alt::Crypt::RSA::BigInt';
 requires 'AnyEvent';
 requires 'AnyEvent::Filesys::Notify';
 requires 'App::Packer::PAR';
 requires 'B::Hooks::EndOfScope';
 requires 'B::Hooks::OP::PPAddr';
+requires 'Crypt::CBC';
 requires 'Data::MessagePack';
+requires 'Data::Structure::Util';
 requires 'DateTime';
 requires 'Devel::Declare';
 requires 'Devel::Declare::Context::Simple';

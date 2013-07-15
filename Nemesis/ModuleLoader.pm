@@ -76,7 +76,7 @@ package Nemesis::ModuleLoader;
         my $met     = shift @_;
         my @command = @_;
         foreach my $module ( sort( keys %{ $self->{'modules'} } ) ) {
-            $Init->io->debug("Executing $met on $module",__PACKAGE__);
+            $Init->io->debug( "Executing $met on $module", __PACKAGE__ );
             $self->execute( $module, $met, @command );
         }
     }
@@ -183,13 +183,12 @@ package Nemesis::ModuleLoader;
                 ->print_error("Something went wrong loading $object: $@");
             return ();
         }
-        eval { $Init->io->debug("Preparing $object"); $object->prepare(); }
-            if ( eval { $object->can("prepare") } );
+
         $Init->getIO->debug( "$object provides: "
                 . join( " ", $object->export_public_methods ) )
             if eval { $object->can("export_public_methods") };
-        $Init->getIO()
-            ->debug( "Module $module correctly loaded", __PACKAGE__ );
+        $Init->io->debug("Preparing $object") and $object->prepare()
+            if ( eval { $object->can("prepare") } );
         return $object;
     }
 
@@ -397,8 +396,10 @@ package Nemesis::ModuleLoader;
         my $IO   = $Init->getIO();
         my @Libs = $self->getLibs;
         my $modules;
-        my $mods = 0;
-        my $Path = $Init->getEnv()->getPathBin;
+        my $mods         = 0;
+        my $res          = 0;
+        my $unknown_data = 0;
+        my $Path         = $Init->getEnv()->getPathBin;
         @{ $self->{'LibraryList'} } = @Libs;
 
         foreach my $Library (@Libs) {
@@ -420,7 +421,7 @@ package Nemesis::ModuleLoader;
 
                     $self->{'modules'}->{$name} = $self->loadmodule($name);
                     if ( exists( $self->{'modules'}->{$name} )
-                        and $self->{'modules'}->{$name} ne "" )
+                        and eval { $self->{'modules'}->{$name}->can("new") } )
                     {
                         $mods++;
                         $Init->getIO->print_info(
@@ -430,12 +431,14 @@ package Nemesis::ModuleLoader;
 
                 }
                 elsif ( $self->isResource($Library) ) {
+                    $res++;
 
 #$Init->getIO()->debug("$Library ($name) is a Nemesis Resource",__PACKAGE__ );
                     $Init->getIO->print_info(
                         "Resource $name ($Library) detected");
                 }
                 else {
+                    $unknown_data++;
                     $Init->getIO()
                         ->debug( "$Library it's nothing to me", __PACKAGE__ );
                 }
@@ -447,7 +450,9 @@ package Nemesis::ModuleLoader;
                 return 0;
             }
         }
-        $IO->print_info(" $mods modules available. Double tab to see them");
+        $IO->print_info(
+            " $mods modules, $res resources and $unknown_data unknown data are available. Double tab to see them"
+        );
 
         #delete $self->{'modules'};
         return 1;
@@ -460,11 +465,11 @@ package Nemesis::ModuleLoader;
             or $Init->getIO()->print_alert("$module can't be opened");
         my @MOD = <MODULE>;
         close MODULE;
+        my $f = 0;
         foreach my $rigo (@MOD) {
-            if ( $rigo
-                =~ /(?<![#|#.*|.?#])(nemesis_module|nemesis_moose_module|nemesis_moosex_module)/
-                )
-            {
+
+            if ( $rigo =~ /(?<![#|#.*|.?#])nemesis\s+module/ ) {
+
                 return 1;
             }
         }
@@ -478,12 +483,12 @@ package Nemesis::ModuleLoader;
             or $Init->getIO()->print_alert("$module can't be opened");
         my @MOD = <MODULE>;
         close MODULE;
+        my $f = 0;
+
         foreach my $rigo (@MOD) {
-            if ( $rigo
-                =~ /(?<![#|#.*|.?#])(nemesis_resource|nemesis_moose_resource|nemesis_moosex_resource)/
-                )
-            {
+            if ( $rigo =~ /(?<![#|#.*|.?#])nemesis\s+(resource|mojo)/ ) {
                 return 1;
+
             }
         }
         return 0;

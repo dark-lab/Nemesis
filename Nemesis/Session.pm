@@ -42,9 +42,10 @@ use File::Path;
     }
 
     sub new_file {
-        my $self    = shift;
-        my $name    = $_[0];
-        my $Package = $_[1];
+        my $self = shift;
+        my $name = $_[0];
+
+        my $Package = caller;
         croak 'No name defined'
             if ( !exists( $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'} ) );
 
@@ -235,7 +236,7 @@ use File::Path;
         my $ModuleLoader = $Init->getModuleLoader();
         my $IO           = $Init->getIO();
         my $COMMAND_LOG;
-        my @FLOW ;
+        my @FLOW;
         if ($File) {
             open $COMMAND_LOG, "<", $File;
             @FLOW = <$COMMAND_LOG>;
@@ -244,7 +245,7 @@ use File::Path;
             open $COMMAND_LOG, "<",
                 $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/"
                 . $CONF->{'VARS'}->{'FLOWFILE'};
-                @FLOW = <$COMMAND_LOG>;
+            @FLOW = <$COMMAND_LOG>;
         }
 
         close $COMMAND_LOG;

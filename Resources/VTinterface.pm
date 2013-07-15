@@ -22,7 +22,6 @@ nemesis_resource;
 #XXX:https://metacpan.org/module/KiokuDB
 #https://metacpan.org/module/KiokuDB::Tutorial
 #Websploit? dsniff?
-#!/usr/bin/perl -W
 
 sub run() {
     my $self = shift;

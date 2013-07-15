@@ -1,15 +1,13 @@
 package MiddleWare::shell;
-
-use Nemesis::Inject;    #Requested to have your injection
 use Try::Tiny;          #I really need that? :)
+use Nemesis::Inject;    #Requested to have your injection
 
 #@PUBLIC_FUNCTION will contain the function(s) that i want to need public to other modules (or by the cli) ?
-my @PUBLIC_FUNCTIONS = qw(run);
+our @PUBLIC_FUNCTIONS = qw(run);
 
-#Nemesis module declaration
-nemesis_module;
+nemesis module { 
+ init()->io()->info("test passed ;)");}
 
-# run() will execute something in our machine
 
 sub run() {
     my $self = shift;
@@ -38,6 +36,5 @@ sub run() {
     }
 
 }
-
 
 1;

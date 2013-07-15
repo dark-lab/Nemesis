@@ -25,16 +25,13 @@ has 'DB' => (
     documentation => "Database "
 );
 
-nemesis_module;
-
-sub prepare() {
-    my $self = shift;
-
+nemesis module {
     $self->DB( $Init->ml->loadmodule("DB")->connect );
+
+}
 
 #my $DBConnection = $Init->getModuleLoader->loadmodule("Resources::DB")->connect();
 #   $self->DB(\$DBConnection);
-}
 
 sub test() {
     my $self         = shift;

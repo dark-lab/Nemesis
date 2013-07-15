@@ -3,7 +3,7 @@ package Resources::UI::WebApp;
 {
     use Mojolicious::Lite;
     use Nemesis::Inject;
-    nemesis_resource_mojo;
+    nemesis mojo{}
 
  
 

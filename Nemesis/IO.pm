@@ -14,7 +14,7 @@ sub new {
 
     #open STDIN, '/dev/null'   or die "Can't read /dev/null: $!";
     # open STDOUT, '>>/dev/null';
-   # open STDERR, '>>/tmp/nemesis_log.txt';
+    # open STDERR, '>>/tmp/nemesis_log.txt';
     umask 0;
     return $package;
 }
@@ -232,16 +232,18 @@ sub print_verbose() {
 }
 
 sub debug() {
-    my $self = shift;
+    my $self   = shift;
+    my $caller = caller();
+
     if ( exists( $self->{'debug'} )
         and $self->{'debug'} == 1 )
     {
 
         if ( exists( $self->{'vt'} ) ) {
-            if ( defined( $_[1] ) ) {
+            if ( defined($caller) ) {
                 $self->{'vt'}->print( $self->{'vt'}->current_window(),
                           "\0(squareb) -> \0(warntext) "
-                        . $_[1]
+                        . $caller
                         . " \0(squareb)<- "
                         . "\0(squareb)(\0(warn)"
                         . $Init->getEnv()->time_seconds()
@@ -264,18 +266,19 @@ sub debug() {
                 . colored( $Init->getEnv()->time_seconds(),
                 "bold on_black green" )
                 . colored( ")", "magenta on_black bold" );
-
-            print colored( " ->", "magenta on_black bold" )
-                . colored( $_[1], "cyan on_black bold" )
-                . colored( "<- ", "magenta on_black bold" )
-                if ( $_[1] );
-            print colored( " [",     "magenta on_black bold" )
+            print colored( " ->",   "magenta on_black bold" )
+                . colored( $caller, "cyan on_black bold" )
+                . colored( "<- ",   "magenta on_black bold" )
+                if ($caller);
+            print colored( " [",    "magenta on_black bold" )
                 . colored( "Debug", "red on_black bold" )
                 . colored( "] ",    "magenta on_black bold" )
 
                 . colored( $_[0], "white on_black bold" ) . "\n";
         }
+
     }
+
 }
 
 sub print_info() {
@@ -442,7 +445,7 @@ sub debug_dumper() {
     my $Arg  = $_[0];
 
     # my $LogFile=$_[1] if($_[1]);
-    $self->debug( Dumper($Arg), __PACKAGE__ );
+    $self->debug( Dumper($Arg) );
     ##  if(defined($LogFile)){
     #     open my $Log, ">".$LogFile;
     #    print $Log Dumper($Arg);

@@ -15,15 +15,15 @@ sub new {
     if ( !-d $package->{'workspace'} . "/tmp" ) {
         mkdir( $package->{'workspace'} . "/tmp" );
     }
-    $Init = $package->{'Init'};
+    $Init                     = $package->{'Init'};
     $package->{"ProgramPath"} = $Bin;
-    $package->{"ID"} = &generateID;
+    $package->{"ID"}          = &generateID;
     return $package;
 }
 
-sub generateID(){
+sub generateID() {
 
-    return int(rand(10000));
+    return int( rand(10000) );
 }
 
 sub getPathBin() {

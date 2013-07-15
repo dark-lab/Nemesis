@@ -1,23 +1,21 @@
 package Resources::DB;
 
 use Moose;
-use Nemesis::Inject;
 use KiokuDB;
 use Search::GIN::Extract::Class;
 use Search::GIN::Query::Manual;
 use Search::GIN::Query::Class;
 use Fcntl qw(:DEFAULT :flock);
 use Resources::Snap;
-nemesis_resource;
+use Nemesis::Inject;
 
-has 'BackEnd'    => ( is => "rw" );
-has 'Dispatcher' => ( is => "rw" );
-
-sub prepare() {
-    my $self       = shift;
+nemesis resource {
     my $Dispatcher = $Init->ml->loadmodule("Dispatcher");
     $self->Dispatcher($Dispatcher);
 }
+
+has 'BackEnd'    => ( is => "rw" );
+has 'Dispatcher' => ( is => "rw" );
 
 sub lookup() {
     my $self = shift;

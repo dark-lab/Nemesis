@@ -1,22 +1,26 @@
 package Plugin::Bundle;
 
-use Moose;
-
-use PAR::Packer ();
-use PAR         ();
-use Module::ScanDeps;
 use Nemesis::Inject;
-use namespace::autoclean;
-use App::Packer::PAR;
+
+got 'What'  => ( default => " " );
+got 'Where' => ( default => " " );
+
 our $VERSION          = '0.1a';
 our $AUTHOR           = "mudler";
 our $MODULE           = "This is an interface to the Packer library";
 our $INFO             = "<www.dark-lab.net>";
 our @PUBLIC_FUNCTIONS = qw(export exportCli exportWrap);
-has 'What'  => ( is => "rw" );
-has 'Where' => ( is => "rw" );
 
-nemesis_module;
+nemesis module {
+    init()->io->info("test");
+}
+
+#use PAR::Packer ();
+#use PAR         ();
+use Module::ScanDeps;
+use namespace::autoclean;
+
+#use App::Packer::PAR;
 
 sub export( ) {
     my $self = shift;
@@ -139,13 +143,14 @@ sub pack() {
             $opt{a} = \@Additional_files;
             $opt{M} = \@LOADED_PLUGINS;
             $opt{l} = \@LIBPATH;
-            App::Packer::PAR->new(
-                frontend  => 'Module::ScanDeps',    #NO BAREWORD cazz
-                backend   => 'PAR::Packer',
-                frontopts => \%opt,
-                backopts  => \%opt,
-                args      => \@OPTS
-            )->go;
+
+            # App::Packer::PAR->new(
+            #      frontend  => 'Module::ScanDeps',    #NO BAREWORD cazz
+            #     backend   => 'PAR::Packer',
+            #     frontopts => \%opt,
+            #      backopts  => \%opt,
+            #     args      => \@OPTS
+            #  )->go;
 
         }
     );

@@ -9,7 +9,9 @@ our $MODULE           = "LiveSniffer plugin";
 our $INFO             = "<www.dark-lab.net>";
 our @PUBLIC_FUNCTIONS = qw(start stop);
 
-nemesis_module;
+nemesis module {
+    $self->Init->io->debug("ok");
+}
 
 has 'Sniffer' => ( is => 'rw' );
 
