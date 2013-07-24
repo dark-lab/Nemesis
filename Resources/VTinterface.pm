@@ -6,7 +6,7 @@ use POE;
 use Term::Visual;
 use Resources::Logo;
 use Nemesis::Inject;
-nemesis_resource;
+nemesis resource{ 1; }
 
 #NOTE:
 #http://search.cpan.org/~flora/Devel-Declare-0.006006/lib/Devel/Declare.pm

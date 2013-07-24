@@ -22,6 +22,19 @@ use namespace::autoclean;
 
 #use App::Packer::PAR;
 
+
+use App::FatPacker;
+
+#new App::FatPacker;
+#  my @modules = split /\r?\n/, $self->trace(args => $args, use=> @Additional_modules);
+  # my @packlists = $self->packlists_containing(\@modules);
+ 
+  # my $base = catdir(cwd, 'fatlib');
+  # $self->packlists_to_tree($base, \@packlists);
+ 
+  # my $file = shift @$args;
+  # print $self->fatpack_file($file);
+
 sub export( ) {
     my $self = shift;
     my $What;
@@ -39,7 +52,8 @@ sub export( ) {
 
     $self->Init->getIO()
         ->print_info( "Packing " . $self->What . "in " . $self->Where );
-    $self->pack();
+    $self->fatpack();
+    #$self->pack(); commented due to par errors
     $self->Init->getIO()->print_info("Packing done");
 
 }
@@ -63,6 +77,30 @@ sub exportWrap() {
     }
     my $path = $self->Init->getEnv()->getPathBin();
     $self->export( $path . "/wrapper.pl", $self->Where );
+}
+
+sub fatpack(){
+    my $self=shift;
+    my $Packer=new App::FatPacker;
+    my @args=($self->What,">".$self->Where);
+
+ my @modules = split /\r?\n/, $self->trace(args => \@args, use=> @Additional_modules);
+  my @packlists = $self->packlists_containing(\@modules);
+ 
+  my $base = catdir(cwd, 'fatlib');
+  $self->packlists_to_tree($base, \@packlists);
+ 
+  my $file = shift @args;
+  $self->write($self->fatpack_file($file));
+
+
+}
+
+sub write(){
+    my $self=shift;
+    open FILE,">".$self->Where();
+    print FILE @_;
+    close FILE;
 }
 
 sub pack() {

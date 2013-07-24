@@ -84,7 +84,8 @@ sub LaunchExploitOnNode() {
     my $Node    = shift;
     my $Exploit = shift;
     my @OPTIONS = ( "exploits", $Exploit->module, );
-
+#Posso usare le promises, oppure
+#master polling ogni 10 minuti.
     my $Options = $self->MSFRPC->options( "exploits", $Exploit->module );
     my $Payloads = $self->MSFRPC->payloads( $Exploit->module );
     $Init->getIO->debug_dumper( \$Options );

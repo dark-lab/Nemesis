@@ -154,6 +154,11 @@ package Nemesis::ModuleLoader;
         return $object;
     }
 
+    sub load(){
+        my $self=shift;
+        $self->loadmodule(@_);
+    }
+
     sub loadmodule() {
         my $self   = shift;
         my $module = $_[0];

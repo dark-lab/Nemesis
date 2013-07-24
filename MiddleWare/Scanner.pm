@@ -26,25 +26,30 @@ has 'DB' => (
 );
 
 nemesis module {
-    $self->DB( $Init->ml->loadmodule("DB")->connect );
+    $self->DB( $Init->ml->load("DB")->connect );
 
 }
 
-#my $DBConnection = $Init->getModuleLoader->loadmodule("Resources::DB")->connect();
-#   $self->DB(\$DBConnection);
 
 sub test() {
     my $self         = shift;
     my $SearchString = shift;
     my $Exploit      = shift;
-    my $Crawler      = $self->Init->getModuleLoader()->loadmodule("Crawler");
+    my $Crawler      = $self->Init->ml()->load("Crawler");
     $Crawler->search($SearchString);
     $Crawler->fetchNext();
-    my $LFI = $self->Init->getModuleLoader()->loadmodule("LFI");
-    $LFI->Bug($Exploit)
-        ; #Can be post or otherwise, so should implement the api with HTTP::Request object.
-    $LFI->Crawler($Crawler);
-    $LFI->test();
+    my @TESTS= qw (LFI RFI);
+    foreach my $test(@TESTS){
+        my $Test=$self->Init->ml->load($test);
+        $Test->Bug($Exploit)
+            ; #Can be post or otherwise, so should implement the api with HTTP::Request object.
+        $Test->Crawler($Crawler);
+        if($Test->test()){
+            #return true, attack succeed
+        } else {
+            #false, no luck
+        }
+    }
 }
 
 sub nmap() {
