@@ -6,7 +6,7 @@ use Nemesis::Inject;    #Requested to have your injection
 our @PUBLIC_FUNCTIONS = qw(run);
 
 nemesis module { 
- init()->io()->info("test passed ;)");}
+ init()->io()->info("test passed ;)");};
 
 
 sub run() {

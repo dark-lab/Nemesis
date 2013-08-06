@@ -25,10 +25,7 @@ has 'DB' => (
     documentation => "Database "
 );
 
-nemesis module {
-    $self->DB( $Init->ml->load("DB")->connect );
-
-}
+nemesis module { $self->DB( $Init->ml->load("DB")->connect );}
 
 
 sub test() {

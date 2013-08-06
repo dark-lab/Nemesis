@@ -87,7 +87,7 @@ sub fatpack(){
  my @modules = split /\r?\n/, $self->trace(args => \@args, use=> @Additional_modules);
   my @packlists = $self->packlists_containing(\@modules);
  
-  my $base = catdir(cwd, 'fatlib');
+  my $base = catdir($Init->env->getPathBin(), 'fatlib');
   $self->packlists_to_tree($base, \@packlists);
  
   my $file = shift @args;
