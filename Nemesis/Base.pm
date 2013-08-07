@@ -1,4 +1,4 @@
-package Nemesis::Base; #it's Object::Simple
+package Nemesis::Base; #it's Object::Simple see metacpan for info
 
  
 our $VERSION = '3.09';
@@ -42,7 +42,7 @@ sub import {
   else {
    
     # Exports
-    my %exports = map { $_ => 1 } qw/new attr class_attr dual_attr/;
+    my %exports = map { $_ => 1 } qw/new attr/;
      
     # Export methods
     for my $method (@methods) {
