@@ -13,10 +13,8 @@ our $INFO    = "<www.dark-lab.net>";
 our @PUBLIC_FUNCTIONS =
     qw(start clear sessionlist call test generate matchExpl);    #NECESSARY
 
-nemesis module {
-    $self->MSFRPC( $Init->getModuleLoader->loadmodule("MSFRPC") );
-    $self->DB( $Init->getModuleLoader->loadmodule("DB")->connect );
-}
+
+nemesis module { $self->MSFRPC( $Init->getModuleLoader->loadmodule("MSFRPC") );}
 
 #Attributo Processo del demone MSFRPC
 has 'Process' => ( is => "rw" );
@@ -27,7 +25,7 @@ has 'DB'     => ( is => "rw" );
 
 sub start() {
     my $self = shift;
-    return 1 if ( $self->Process && $self->Process->is_running );
+    #return 1 if ( $self->Process && $self->Process->is_running );
 
     my $Io = $self->Init->getIO();
 
@@ -38,7 +36,7 @@ sub start() {
         . $self->MSFRPC->Port . ' -S';
     $Io->print_info("Starting msfrpcd service.")
         ;    #AVVIO il demone msfrpc con le configurazioni della risorsa
-    my $Process = $Init->getModuleLoader->loadmodule('Process')
+    my $Process = $self->Init->ml->loadmodule('Process')
         ;    ##Carico il modulo process
     $Process->set(
         type => 'daemon',         # tipologia demone
@@ -101,39 +99,71 @@ sub event_Resources__Exploit {
 sub generate() {
     my $self = shift;
 
-    #  $self->start if ( !$self->Process or !$self->Process->is_running );
-    $self->DB( $Init->getModuleLoader->loadmodule("DB")->connect )
-        ;    #Lo userò spesso.
-    my $response = $self->MSFRPC->call('module.exploits');
-    if ( !exists( $response->{'modules'} ) ) {
-        $self->Init->getIO->print_alert("Cannot sync with meta");
-        return;
+for(1..10){
+
+ if($self->is_up){
+       $self->populateDB;
+       last;
+ }
+    sleep 2;
+    $self->Init->io->info("waiting for meta");
+}
+    $self->Init->io->error("meta failed to start");
+
+
+
+    #   $self->safe_database;
+
+}
+
+sub is_up(){
+    my $self=shift;
+    my $MSFRPC=$self->MSFRPC;
+            my $response = $MSFRPC->call('module.exploits');
+    if ( exists( $response->{'modules'} ) ) {
+        return 1;
     }
+    return 0;
+
+}
+
+
+sub populateDB() {
+    my $self=shift;
+    my $MSFRPC=$self->MSFRPC;
+    my $DB=$self->Init->ml->getInstance("Database");
+    my $IO=$self->Init->io;
+        #  $self->start if ( !$self->Process or !$self->Process->is_running );
+
+    if ( !$self->is_up) {
+        $IO->print_alert("Cannot sync with meta");
+    }
+        my $response = $MSFRPC->call('module.exploits');
+
     my @EXPL_LIST = @{ $response->{'modules'} };
 
-    $self->Init->getIO()
+    $IO
         ->print_alert("Syncing db with msf exploits, this can take a while");
-    $self->Init->getIO()
+    $IO
         ->print_info(
         "There are " . scalar(@EXPL_LIST) . " exploits in metasploit" );
-    my $result = $self->DB->search( { class => "Resources::Exploit" } );
+    my $result = $DB->search( { class => "Resources::Exploit" } );
     my $Counter = 0;
     while ( my $block = $result->next ) {
         foreach my $item (@$block) {
             $Counter++;
         }
     }
-    $self->Init->getIO()
-        ->print_info("$Counter of them already are in the database ");
+    $IO->print_info("$Counter of them already are in the database ");
 
     $Counter = 0;
     foreach my $exploit (@EXPL_LIST) {
 
-        my $Information = $self->MSFRPC->info( "exploits", $exploit );
-        my $Options = $self->MSFRPC->options( "exploits", $exploit );
-        $self->MSFRPC->parse_result;
+        my $Information = $MSFRPC->info( "exploits", $exploit );
+        my $Options = $MSFRPC->options( "exploits", $exploit );
+        $MSFRPC->parse_result;
 
-        my $result = $self->DB->search( { module => $exploit } );
+        my $result = $DB->search( { module => $exploit } );
         my $AlreadyThere = 0;
         while ( my $block = $result->next ) {
             foreach my $item (@$block) {
@@ -142,11 +172,11 @@ sub generate() {
             }
         }
         if ( $AlreadyThere == 0 ) {
-            $self->Init->getIO()->debug("Adding $exploit to Exploit DB");
+            $IO->debug("Adding $exploit to Exploit DB");
             my @Targets = values %{ $Information->{'targets'} };
             my @References = map { $_ = join( "|", @{$_} ); }
                 @{ $Information->{'references'} };
-            $self->Init->getIO()->debug( join( " ", @Targets ) . " targets" );
+            $IO->debug( join( " ", @Targets ) . " targets" );
             my $Expla = Resources::Exploit->new(
                 type          => "exploits",
                 module        => $exploit,
@@ -157,14 +187,11 @@ sub generate() {
                 references    => \@References,
                 default_rport => $Options->{'RPORT'}->{'default'}
             );
-            $self->DB->add($Expla);
+            $DB->add($Expla);
             $Counter++;
         }
     }
-    $self->Init->getIO()->print_info(" $Counter added");
-
-    #   $self->safe_database;
-
+    $IO->print_info(" $Counter added");
 }
 
 sub test() {
