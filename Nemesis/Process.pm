@@ -7,6 +7,12 @@ package Nemesis::Process;
     #TODO: Add tags to processes!  For analyzer.
     #TODO: Have a look to IPC::Run and IPC::Open3
     use Carp qw( croak );
+    ###### Major change api
+    ### now that we have two separate branch, one for master
+    ### and one for minimal (so we now can assume that you have good resources on master and more dependency) we can switch to open ipc3 
+    ### developer happines :)
+    use IPC::Open3;
+
     use Unix::PID;
     use Data::Dumper;
     use Scalar::Util 'reftype';
@@ -49,7 +55,6 @@ package Nemesis::Process;
             }
             else {
                 $Init->getIO()->debug("Starting fork.. ");
-
                 $state = $self->fork();
             }
         }
@@ -74,8 +79,9 @@ package Nemesis::Process;
 
             $self->{'INSTANCE'} = threads->new(
                 sub {
+                    my $instance=shift;
                     $instance->run();
-                }
+                },$self->{'CONFIG'}->{'instance'}
             );
 
         }
@@ -84,14 +90,14 @@ package Nemesis::Process;
             if ( reftype( $self->{'CONFIG'}->{'code'} ) eq "CODE" ) {
 
                 my $code = $self->{'CONFIG'}->{'code'};
-                $self->{'INSTANCE'} = threads->new( \&$code );
+                $self->{'INSTANCE'} = threads->new( \&$code, $self->{'args'} );
             }
             else {
 
                 $self->{'INSTANCE'} = threads->new(
                     sub {
                         eval( $self->{'CONFIG'}->{'code'} );
-                    }
+                    },  $self->{'args'} 
                 );
             }
         }
@@ -120,7 +126,7 @@ package Nemesis::Process;
                             my $instance =
                                 $Init->getModuleLoader()->loadmodule($Module);
                             $instance->run();
-                        }
+                        },[$Init]
                     );
 
                 }
@@ -236,6 +242,8 @@ package Nemesis::Process;
     sub load {
         my $self = shift;
         my $id   = $_[0];
+        if($id){
+            $self->{'CONFIG'}->{'INDEX'}=$id;
         open FILE, "<" . $Init->getEnv()->tmp_dir() . "/" . $id . ".lock";
         my @FILE = <FILE>;
         close FILE;
@@ -243,6 +251,10 @@ package Nemesis::Process;
         foreach my $rigo (@FILE) {
             my ( $key, $value ) = split( /:/, $rigo );
             $self->{'CONFIG'}->{$key} = $value;
+        }
+        return $self;
+        } else {
+            $Init->io->warn("No id given");
         }
     }
 
@@ -262,30 +274,31 @@ package Nemesis::Process;
         $Init->getIO()->debug($cmd);
 
         #$Init->getIO()->set_debug(1);
-        if ( system($cmd) == 0 ) {
+ my ( $wtr, $rdr, $err );
+    use Symbol 'gensym';
+    $err = gensym;
+     
             $Init->getIO()
                 ->debug("Daemon released me, now i try to search for $cmd");
-            if ( $p = $self->pidof( $self->{'CONFIG'}->{'code'} ) ) {
+            if ( $p = open3( $wtr, $rdr, $err, $cmd ) ) {
                 $self->save_pid($p);
+                while(<$rdr>){
+                  $self->save($_);
+
+                }
                 $self->save("Daemon mode\n");
                 return 1;
             }
             else {
                 $Init->getIO()
                     ->print_error(
-                    "PID Cannnot be found destroying the process, look at your process activity and kill manually: "
+                    "Error! $err "
                         . $self->{'CONFIG'}->{'code'} );
                 $self->destroy();
                 return ();
             }
-        }
-        else {
-            $Init->getIO()
-                ->print_error("Something went wrong, i'm destroying myself");
-            $self->destroy();
-            return ();
-        }
-
+        
+ 
         #$Init->getIO()->set_debug(0);
     }
 
