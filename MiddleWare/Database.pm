@@ -26,6 +26,10 @@ nemesis module {
 got 'DB' => ( is => "rw" );
 got 'Dispatcher' => (is => "rw");
 
+sub search(){
+    my $self=shift;
+
+}
 
 
 sub start() {
@@ -42,7 +46,7 @@ sub start() {
 sub run() {
 
     ############
-    ######
+    ######      Saving new ids on a file
     my $self = shift;
     while ( sleep 1 ) {
         my $WriteFile = $Init->session->new_file(".ids");
@@ -54,7 +58,7 @@ sub run() {
                     chomp(@Content);
                     close FH;
                     open( FH, "> " . $WriteFile );
-                    flock( FH, 1 );
+                    flock( FH, 1 );#Flock!
                     close FH;
                 }
             }
@@ -70,5 +74,41 @@ sub run() {
         }
     }
 }
+
+sub AUTOLOAD {
+    my $self = shift or return undef;
+
+    # Get the called method name and trim off the fully-qualified part
+    ( my $method = $AUTOLOAD ) =~ s{.*::}{};
+
+
+
+        ### Create a closure that will become the new accessor method
+        my $alias = sub {
+            my $closureSelf = shift;
+
+            if ( @_ ) {
+               return $closureSelf->$method(@_);
+            }
+
+            return undef;
+        };
+
+        # Assign the closure to the symbol table at the place where the real
+        # method should be. We need to turn off strict refs, as we'll be mucking
+            # with the symbol table.
+      SYMBOL_TABLE_HACQUERY: {
+            no strict qw{refs};
+            *$AUTOLOAD = $alias;
+        }
+
+        # Turn the call back into a method call by sticking the self-reference
+        # back onto the arglist
+        unshift @_, $self;
+
+        # Jump to the newly-created method with magic goto
+        goto &$AUTOLOAD;
+}
+
 
 1;
