@@ -207,6 +207,7 @@ sub set_public_methods() {
 
 sub print_alert() {
     my $self = shift;
+    my $caller=caller();
     if ( exists( $self->{'vt'} ) ) {
         $self->{'vt'}->print( $self->{'vt'}->current_window(),
             "\0(squareb)[\0(warn)Warn\0(squareb)]\t\0(warntext)"
@@ -216,6 +217,9 @@ sub print_alert() {
         print colored( "[",    "magenta on_black bold" )
             . colored( "Warn", "green on_black bold" )
             . colored( "]\t",  "magenta on_black bold" )
+          .  colored( "[",    "magenta on_black bold" )
+           . colored( $caller, "green on_black bold" )
+            . colored( "]",  "magenta on_black bold" )
             . colored( $_[0],  "cyan on_black" ) . "\n";
 
     }
@@ -283,6 +287,7 @@ sub debug() {
 
 sub print_info() {
     my $self = shift;
+    my $caller= caller();
     if ( exists( $self->{'vt'} ) ) {
         $self->{'vt'}->print( $self->{'vt'}->current_window(),
                   "\0(squareb)[\0(warn)**\0(squareb)] \0(squareb)(\0(warn)"
@@ -293,6 +298,9 @@ sub print_info() {
     else {
         print colored( "[",  "magenta on_black bold" )
             . colored( "**", "green on_black bold" )
+            . colored( "]",  "magenta on_black bold" )
+            .  colored( "[",    "magenta on_black bold" )
+           . colored( $caller, "green on_black bold" )
             . colored( "]",  "magenta on_black bold" )
             . colored( " (", "magenta on_black bold" )
             . colored( $Init->getEnv()->time_seconds(), "bold on_black cyan" )
@@ -323,6 +331,7 @@ sub tabbed() {
 
 sub print_error() {
     my $self = shift;
+    my $caller=caller();
     if ( exists( $self->{'vt'} ) ) {
         $self->{'vt'}->print( $self->{'vt'}->current_window(),
                   "\0(squareb)[\0(logo)Err\0(squareb)] \0(squareb)(\0(warn)"
@@ -335,6 +344,9 @@ sub print_error() {
         print colored( "[",   "magenta on_black bold" )
             . colored( "Err", "red on_black bold blink" )
             . colored( "]",   "magenta on_black bold" )
+            .  colored( "[",    "magenta on_black bold" )
+           . colored( $caller, "green on_black bold" )
+            . colored( "]",  "magenta on_black bold" )
             . colored( " (",  "magenta on_black bold" )
             . colored( $Init->getEnv()->time_seconds(), "bold on_black red" )
             . colored( ") ",  "magenta on_black bold" )
