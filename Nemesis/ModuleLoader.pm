@@ -154,11 +154,6 @@ package Nemesis::ModuleLoader;
         return $object;
     }
 
-    sub load(){
-        my $self=shift;
-        $self->loadmodule(@_);
-    }
-
     sub loadmodule() {
         my $self   = shift;
         my $module = $_[0];
@@ -353,8 +348,8 @@ package Nemesis::ModuleLoader;
                 #         }
                 #         grep( !/^\.\.?$/, readdir(DIR) )
                 # );
-                my $tree =
-                    File::Find::Object->new( {}, $Path . "/" . $Library );
+                my $tree
+                    = File::Find::Object->new( {}, $Path . "/" . $Library );
                 while ( my $r = $tree->next_obj() ) {
                     push( @Libs, $r->path() ) if $r->is_file;
                 }
@@ -497,6 +492,22 @@ package Nemesis::ModuleLoader;
             }
         }
         return 0;
+    }
+
+    ############# ALIASES #############
+    sub instance() {
+        my $self = shift;
+        $self->getInstance( $_[0] );
+    }
+
+    sub atom(){
+        my $self = shift;
+        $self->loadmodule(@_);
+    }
+
+    sub load() {
+        my $self = shift;
+        $self->loadmodule(@_);
     }
 
 }
