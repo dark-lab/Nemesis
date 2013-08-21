@@ -9,7 +9,7 @@ package Nemesis::Process;
     use Carp qw( croak );
     ###### Major change api
     ### now that we have two separate branch, one for master
-    ### and one for minimal (so we now can assume that you have good resources on master and more dependency) we can switch to open ipc3 
+    ### and one for minimal (so we now can assume that you have good resources on master and more dependency) we can switch to open ipc3
     ### developer happines :)
     use IPC::Open3;
 
@@ -54,6 +54,8 @@ package Nemesis::Process;
 
             }
             else {
+                ##Daemon now replaces forks legacy functionality ;)
+                # in future will be removed
                 $Init->getIO()->debug("Starting fork.. ");
                 $state = $self->fork();
             }
@@ -73,36 +75,34 @@ package Nemesis::Process;
         $Init->io->debug("Starting the thread");
 
         if ( exists( $self->{'CONFIG'}->{'instance'} ) ) {
-            my $instance = $self->{'CONFIG'}->{'instance'};
-
-            $Init->getIO()->debug("got that $instance.");
-
+            $Init->getIO()->debug("Starting a thread for ".$self->{'CONFIG'}->{'instance'});
             $self->{'INSTANCE'} = threads->new(
                 sub {
-                    my $instance=shift;
+                    my $instance = shift;
                     $instance->run();
-                },$self->{'CONFIG'}->{'instance'}
+                },
+                $self->{'CONFIG'}->{'instance'}
             );
-
         }
         elsif ( exists( $self->{'CONFIG'}->{'code'} ) ) {
 
             if ( reftype( $self->{'CONFIG'}->{'code'} ) eq "CODE" ) {
 
                 my $code = $self->{'CONFIG'}->{'code'};
-                $self->{'INSTANCE'} = threads->new( \&$code, $self->{'args'} );
+                $self->{'INSTANCE'}
+                    = threads->new( \&$code, $self->{'args'} );
             }
             else {
 
                 $self->{'INSTANCE'} = threads->new(
                     sub {
                         eval( $self->{'CONFIG'}->{'code'} );
-                    },  $self->{'args'} 
+                    },
+                    $self->{'args'}
                 );
             }
         }
         elsif ( exists( $self->{'CONFIG'}->{'module'} ) ) {
-            $Init->getIO()->debug("I'm here... i hope.");
 
             #TODO: Will even start?
             $self->{'CONFIG'}->{'module'} =~ s/\:\:/\//g;
@@ -123,10 +123,11 @@ package Nemesis::Process;
                     # $Module =~ s/\//\:\:/g;
                     $self->{'INSTANCE'} = threads->new(
                         sub {
-                            my $instance =
-                                $Init->getModuleLoader()->loadmodule($Module);
+                            my $instance = $Init->getModuleLoader()
+                                ->loadmodule($Module);
                             $instance->run();
-                        },[$Init]
+                        },
+                        [$Init]
                     );
 
                 }
@@ -161,7 +162,8 @@ package Nemesis::Process;
 
             $Init->io->debug(
                 "waiting for instance " . $self->{'INSTANCE'} . " to join" );
-            $self->join();
+            #$self->join();
+            $self->detach();
             $Init->io->debug( "exit: " . $self->{'INSTANCE'} );
             delete( $self->{'INSTANCE'} );
         }
@@ -170,6 +172,7 @@ package Nemesis::Process;
 
             kill 9 => $self->get_pid();
             kill( 9, $self->get_pid() );
+            waitpid($self->get_pid(),0);#to clean defuncts
         }
     }
 
@@ -242,18 +245,19 @@ package Nemesis::Process;
     sub load {
         my $self = shift;
         my $id   = $_[0];
-        if($id){
-            $self->{'CONFIG'}->{'INDEX'}=$id;
-        open FILE, "<" . $Init->getEnv()->tmp_dir() . "/" . $id . ".lock";
-        my @FILE = <FILE>;
-        close FILE;
-        chomp(@FILE);
-        foreach my $rigo (@FILE) {
-            my ( $key, $value ) = split( /:/, $rigo );
-            $self->{'CONFIG'}->{$key} = $value;
+        if ($id) {
+            $self->{'CONFIG'}->{'INDEX'} = $id;
+            open FILE, "<" . $Init->getEnv()->tmp_dir() . "/" . $id . ".lock";
+            my @FILE = <FILE>;
+            close FILE;
+            chomp(@FILE);
+            foreach my $rigo (@FILE) {
+                my ( $key, $value ) = split( /:/, $rigo );
+                $self->{'CONFIG'}->{$key} = $value;
+            }
+            return $self;
         }
-        return $self;
-        } else {
+        else {
             $Init->io->warn("No id given");
         }
     }
@@ -269,120 +273,35 @@ package Nemesis::Process;
             if !exists( $self->{'CONFIG'}->{'INDEX'} );
         my $this_pid = Unix::PID->new();
         my $p;
-        my $cmd =
-            $Init->getIO()->generate_command( $self->{'CONFIG'}->{'code'} );
+        my $cmd
+            = $Init->getIO()->generate_command( $self->{'CONFIG'}->{'code'} );
         $Init->getIO()->debug($cmd);
 
         #$Init->getIO()->set_debug(1);
- my ( $wtr, $rdr, $err );
-    use Symbol 'gensym';
-    $err = gensym;
-     
-            $Init->getIO()
-                ->debug("Daemon released me, now i try to search for $cmd");
-            if ( $p = open3( $wtr, $rdr, $err, $cmd ) ) {
-                $self->save_pid($p);
-                while(<$rdr>){
-                  $self->save($_);
+        my ( $wtr, $rdr, $err );
+        use Symbol 'gensym';
+        $err = gensym;
 
-                }
-                $self->save("Daemon mode\n");
-                return 1;
+        if ( $p = open3( $wtr, $rdr, $err, $cmd ) ) {
+            $self->save_pid($p);
+            while (<$rdr>) {
+                $self->save($_);
+
             }
-            else {
-                $Init->getIO()
-                    ->print_error(
-                    "Error! $err "
-                        . $self->{'CONFIG'}->{'code'} );
-                $self->destroy();
-                return ();
-            }
-        
- 
+            $self->save("Daemon mode\n");
+            return 1;
+        }
+        else {
+            $Init->getIO()
+                ->print_error( "Error! $err " . $self->{'CONFIG'}->{'code'} );
+            $self->destroy();
+            return ();
+        }
+
         #$Init->getIO()->set_debug(0);
     }
 
-    sub fork {
-        my $self = shift;
-        my $p;
-        croak "You have not run start..\n"
-            if !exists( $self->{'CONFIG'}->{'INDEX'} );
-        if ( my $pid = fork ) {
-            waitpid( $pid, 0 );
-        }
-        else {
-            if (fork) {
-                exit;
-            }
-            else {
-                open STDIN, '/dev/null' or die "Can't read /dev/null: $!";
-                my $this_pid = Unix::PID->new();
-                my $cmd =
-                    $Init->getIO()
-                    ->generate_command( $self->{'CONFIG'}->{'code'} );
-                open( $handle, "$cmd |" )
-                    or
-                    $Init->debug( "Failed to open pipeline $!", __PACKAGE__ );
-                if ( $p = $self->pidof($cmd) ) {
-                    $self->save_pid($p);
-                    while (<$handle>) {
-                        $self->save($_);
-                    }
-                    $self->remove_lock();
-                }
-                else {
-                    $Init->getIO()
-                        ->print_alert("Can't get pid of the forked process");
-                    $self->destroy();
-                    close($handle);
-                }
-            }
-            exit;
-        }
-    }
 
-    sub pidof($) {
-        my $self     = shift;
-        my @PIECES   = split( /\s+/, shift );
-        my $this_pid = Unix::PID->new();
-        my $p;
-        my %matr;
-        my $current_time = $Init->getEnv()->time_pid();
-        $Init->getIO()->debug( "getting the pid of: " . $PIECES[0] );
-        my $I = 0
-            ; #We set a variable to 0, to be the index for the array we are visiting
-
-        foreach my $piece (@PIECES) {
-            my @FOUND_PIDS = $this_pid->get_pidof($piece);
-            my $first = 0;    #another index for the PIDS FOUND FOR THE PIECE
-            foreach my $found_pid (@FOUND_PIDS) {
-                my @PID_INFO = $this_pid->pid_info($found_pid);
-                $matr{$found_pid}++ if ( $PID_INFO[8] eq $current_time );
-                $matr{$found_pid}++ if ( $PID_INFO[9] =~ /0\:/ );
-
-     #So, every pid it's important, but the first is the most among the others
-     #Maybe i have to check the time of creation, will be better instead!
-     #				$Init->getIO()->debug("$piece found $found_pid");
-     #				if ( $matr{$found_pid} )
-     #				{
-     #					$matr{$found_pid} -= $first;
-     #				} else
-     #				{
-     #					$matr{$found_pid} = $first;
-     #				}
-                $first++;
-            }
-            $I++;
-        }
-        my @SORTED_PIDS = sort { $matr{$b} <=> $matr{$a} } ( keys(%matr) );
-        {
-            $p = shift(@SORTED_PIDS);
-
-            #$Init->getIO()->debug("popped $last_pid, shifted $first_pid");
-        }    # end-foreach
-        $Init->getIO()->debug( "MAX PID " . $p );
-        return ($p);
-    }
 
     sub save_pid {
         my $self = shift;
@@ -507,6 +426,88 @@ package Nemesis::Process;
     sub set() {
         my $self = shift;
         %{ $self->{'CONFIG'} } = @_;
+    }
+
+    ## fork and pidof WILL BE REMOVED IN FUTURE VERSIONS 
+    sub fork {
+        my $self = shift;
+        my $p;
+        croak "You have not run start..\n"
+            if !exists( $self->{'CONFIG'}->{'INDEX'} );
+        if ( my $pid = fork ) {
+            waitpid( $pid, 0 );
+        }
+        else {
+            if (fork) {
+                exit;
+            }
+            else {
+                open STDIN, '/dev/null' or die "Can't read /dev/null: $!";
+                my $this_pid = Unix::PID->new();
+                my $cmd      = $Init->getIO()
+                    ->generate_command( $self->{'CONFIG'}->{'code'} );
+                open( $handle, "$cmd |" )
+                    or
+                    $Init->debug( "Failed to open pipeline $!", __PACKAGE__ );
+                if ( $p = $self->pidof($cmd) ) {
+                    $self->save_pid($p);
+                    while (<$handle>) {
+                        $self->save($_);
+                    }
+                    $self->remove_lock();
+                }
+                else {
+                    $Init->getIO()
+                        ->print_alert("Can't get pid of the forked process");
+                    $self->destroy();
+                    close($handle);
+                }
+            }
+            exit;
+        }
+    }
+
+    sub pidof($) {
+        my $self     = shift;
+        my @PIECES   = split( /\s+/, shift );
+        my $this_pid = Unix::PID->new();
+        my $p;
+        my %matr;
+        my $current_time = $Init->getEnv()->time_pid();
+        $Init->getIO()->debug( "getting the pid of: " . $PIECES[0] );
+        my $I = 0
+            ; #We set a variable to 0, to be the index for the array we are visiting
+
+        foreach my $piece (@PIECES) {
+            my @FOUND_PIDS = $this_pid->get_pidof($piece);
+            my $first = 0;    #another index for the PIDS FOUND FOR THE PIECE
+            foreach my $found_pid (@FOUND_PIDS) {
+                my @PID_INFO = $this_pid->pid_info($found_pid);
+                $matr{$found_pid}++ if ( $PID_INFO[8] eq $current_time );
+                $matr{$found_pid}++ if ( $PID_INFO[9] =~ /0\:/ );
+
+     #So, every pid it's important, but the first is the most among the others
+     #Maybe i have to check the time of creation, will be better instead!
+     #              $Init->getIO()->debug("$piece found $found_pid");
+     #              if ( $matr{$found_pid} )
+     #              {
+     #                  $matr{$found_pid} -= $first;
+     #              } else
+     #              {
+     #                  $matr{$found_pid} = $first;
+     #              }
+                $first++;
+            }
+            $I++;
+        }
+        my @SORTED_PIDS = sort { $matr{$b} <=> $matr{$a} } ( keys(%matr) );
+        {
+            $p = shift(@SORTED_PIDS);
+
+            #$Init->getIO()->debug("popped $last_pid, shifted $first_pid");
+        }    # end-foreach
+        $Init->getIO()->debug( "MAX PID " . $p );
+        return ($p);
     }
 }
 1;
