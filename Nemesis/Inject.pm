@@ -335,7 +335,7 @@ BEGIN {
                                                     [   _block(
                                                             [   _statement(
                                                                     [   _bareword(
-                                                                            '$Init->getIO()->print_tabbed("__PACKAGE__ $MODULE v$VERSION ~ $AUTHOR ~ $INFO",2)'
+                                                                            '$Init->getIO()->print_tabbed(__PACKAGE__." $MODULE v$VERSION ~ $AUTHOR ~ $INFO",2)'
                                                                         )
                                                                     ]
                                                                 )

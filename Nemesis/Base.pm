@@ -22,7 +22,7 @@ sub import {
     no strict 'refs';
     no warnings 'redefine';
     *{"${caller}::has"} = sub { attr($caller, @_) };
-     
+     attr($caller,{'Init'}); # XXX: da testare
     # Inheritance
     if (my $module = $methods[1]) {
       $module =~ s/::|'/\//g;
@@ -56,6 +56,18 @@ sub import {
       *{"${caller}::$method"} = \&{"$method"};
     }
   }
+
+# *{"${class}::Init"} = *{"${class}::init"} = sub {
+#   if (@_ == 1) {
+#     return \$_[0]{'$attr'} if exists \$_[0]{'$attr'};
+#   }
+#   $_[0]{'$attr'} = $_[1];
+
+# }
+
+
+
+
 }
  
 sub new {

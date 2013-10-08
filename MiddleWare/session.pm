@@ -2,7 +2,6 @@ package MiddleWare::session;
 use Carp qw( croak );
 use Data::Dumper;
 use Nemesis::Inject;
-nemesis module { 1; }
 
 my $VERSION = '0.1a';
 my $AUTHOR  = "mudler";
@@ -10,6 +9,7 @@ my $MODULE  = __PACKAGE__;
 my $INFO    = "<www.dark-lab.net>";
 my @PUBLIC_FUNCTIONS =
     qw(list wrap spawn stash);    #Public exported functions NECESSARY
+nemesis module { 1; }
 
 sub help() {                      #NECESSARY
     my $self    = shift;
