@@ -8,6 +8,7 @@ package Nemesis::Init;
         $package->{'Session'} = new Nemesis::Session( Init => $package );
         $package->{'ModuleLoader'} =
             new Nemesis::ModuleLoader( Init => $package );
+            $package->{'ModuleLoader'}->getLibs();
         if ( $package->{'Session'}->exists("default_session") ) {
             $package->{'Session'}->restore("default_session");
         }

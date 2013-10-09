@@ -6,7 +6,7 @@ package Nemesis::ModuleLoader;
     use Module::Loaded;
     use LWP::Simple;
     use Regexp::Common qw /URI/;
-    use File::Find::Object;
+    use File::Find;
 
     #external modules
     my @MODULES_PATH = ( 'Plugin', 'Resources', 'MiddleWare' );
@@ -221,15 +221,17 @@ package Nemesis::ModuleLoader;
     }
 
     sub _findLib() {
+
         my $self    = shift;
         my $LibName = $_[0];
         #
+
         foreach my $Library ( $self->getLoadedLib ) {
             my $Path  = $Init->getEnv()->getPathBin;
             my $Match = $Library;
             $Match =~ s/$Path\/?//g;
             #
-            # $Init->getIO()->debug("Lib $Match for $LibName",__PACKAGE__);
+            $Init->getIO()->debug( "Lib $Match for $LibName", __PACKAGE__ );
             my @I = @INC;
             my $c = 0;
             foreach my $a (@I) {
@@ -309,6 +311,7 @@ package Nemesis::ModuleLoader;
     }
 
     sub getLibs() {
+        my $self = shift;
         my $IO   = $Init->getIO();
         my $Path = $Init->getEnv()->getPathBin;
         my @Libs;
@@ -329,11 +332,10 @@ package Nemesis::ModuleLoader;
                         #     map { $_ = $INCLib . "/" . $Library . "/" . $_ }
                         #     grep( !/^\.\.?$/, readdir(DIR) ) );
                         # closedir(DIR);
-                        my $tree = File::Find::Object->new( {},
-                            $INCLib . "/" . $Library );
-                        while ( my $r = $tree->next_obj() ) {
-                            push( @Libs, $r->path ) if $r->is_file;
-                        }
+
+                        push( @Libs,
+                            $self->traverseDir( $INCLib . "/" . $Library ) );
+
                     }
                 }
             }
@@ -348,16 +350,30 @@ package Nemesis::ModuleLoader;
                 #         }
                 #         grep( !/^\.\.?$/, readdir(DIR) )
                 # );
-                my $tree
-                    = File::Find::Object->new( {}, $Path . "/" . $Library );
-                while ( my $r = $tree->next_obj() ) {
-                    push( @Libs, $r->path() ) if $r->is_file;
-                }
-                closedir(DIR);
+                push( @Libs, $self->traverseDir( $Path . "/" . $Library ) );
+
             }
 
         }
+        $self->{'LibraryList'}=\@Libs;
         return @Libs;
+    }
+
+    sub traverseDir() {
+        my $self = shift;
+        my $dir  = shift;
+        my @Res;
+
+        find(
+            sub {
+                print $File::Find::name."\n" if -f ;
+                push( @Res, $File::Find::name ) if -f;
+            },
+            $dir
+        );
+
+        return @Res;
+
     }
 
     sub unload() {
@@ -500,7 +516,7 @@ package Nemesis::ModuleLoader;
         $self->getInstance( $_[0] );
     }
 
-    sub atom(){
+    sub atom() {
         my $self = shift;
         $self->loadmodule(@_);
     }

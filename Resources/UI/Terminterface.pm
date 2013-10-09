@@ -1,4 +1,4 @@
-package Resources::Terminterface;
+package Resources::UI::Terminterface;
 use Term::ReadLine;
 use Resources::Logo;
 use Nemesis::Inject;

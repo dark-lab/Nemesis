@@ -17,7 +17,7 @@ GetOptions(
 
 if ( defined($DebugCli) ) {
 	$Init->io->set_debug(1);
-    my $Interface = $Init->ml->atom("Resources::Terminterface");
+    my $Interface = $Init->ml->atom("Terminterface");
     $Interface->run();
 
 }
@@ -30,7 +30,7 @@ elsif ( defined($SessionName) ) {
 }
 else {    #VT
 
-    my $Interface = $Init->ml->atom("Resources::VTinterface");
+    my $Interface = $Init->ml->atom("VTinterface");
     $Interface->run();
 
 }
