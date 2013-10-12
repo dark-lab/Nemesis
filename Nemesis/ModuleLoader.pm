@@ -463,7 +463,7 @@ package Nemesis::ModuleLoader;
             if ($@) {
                 $IO->print_error($@);
                 delete $self->{'modules'}->{$name};
-                return 0;
+               # return 0;
             }
         }
         $IO->print_info(
