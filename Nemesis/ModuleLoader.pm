@@ -138,7 +138,7 @@ package Nemesis::ModuleLoader;
             $object = $module;
         }
         elsif ( my $Type = $self->_findLib($module) ) {
-            if ( $Type =~ /\// ) { $Type =~ s/\//\:/g; }
+            if ( $Type =~ /\// ) { $Type =~ s/\//\:\:/g; }
             $object = $Type . "::" . $module;
         }
         else {
