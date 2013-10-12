@@ -231,7 +231,7 @@ package Nemesis::ModuleLoader;
             my $Match = $Library;
             $Match =~ s/$Path\/?//g;
             #
-            $Init->getIO()->debug( "Lib $Match for $LibName", __PACKAGE__ );
+            #$Init->getIO()->debug( "Lib $Match for $LibName", __PACKAGE__ );
             my @I = @INC;
             my $c = 0;
             foreach my $a (@I) {
