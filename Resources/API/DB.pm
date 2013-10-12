@@ -1,4 +1,4 @@
-package Resources::DB;
+package Resources::API::DB;
 
 use Moose;
 use KiokuDB;
