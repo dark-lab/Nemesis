@@ -1,4 +1,4 @@
-package Resource::Connector;
+package Resource::Network::Connector;
 
 use Moose;
 use Alt::Crypt::RSA::BigInt;

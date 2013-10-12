@@ -1,4 +1,4 @@
-package Resources::MSFRPC;
+package Resources::API::MSFRPC;
 use Moose;
 
 use Data::MessagePack;

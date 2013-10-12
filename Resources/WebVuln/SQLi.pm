@@ -1,4 +1,4 @@
-package Resources::SQLi;
+package Resources::WebVuln::SQLi;
 
 use Moose;
 use Nemesis::Inject;

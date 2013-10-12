@@ -1,4 +1,4 @@
-package Resources::Dispatcher;
+package Resources::API::Dispatcher;
 use Moose;
 use Nemesis::Inject;
 

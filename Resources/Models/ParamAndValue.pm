@@ -1,4 +1,4 @@
-package Resources::ParamAndValue;
+package Resources::Models::ParamAndValue;
 
 use Moose;
 

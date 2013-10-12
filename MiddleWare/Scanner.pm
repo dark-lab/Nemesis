@@ -5,7 +5,7 @@ use Nemesis::Inject;
 use HTTP::Request;
 use Net::IP;
 use Nmap::Parser;
-use Resources::Node;
+use Resources::Models::Node;
 use DateTime;
 
 our $VERSION = '0.1a';
@@ -88,7 +88,7 @@ sub nmapscan() {
                 last;
             }
         }
-        my $Node = Resources::Node->new( ip => $host->addr );
+        my $Node = Resources::Models::Node->new( ip => $host->addr );
         my $os = $host->os_sig();
         $self->Init->getIO()->print_info( $host->addr );
         $self->Init->getIO()->print_tabbed( "Status: " . $host->status, 3 );

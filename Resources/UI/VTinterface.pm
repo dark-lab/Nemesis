@@ -1,4 +1,4 @@
-package Resources::VTinterface;
+package Resources::UI::VTinterface;
 
 #use Term::ReadLine;
 use Carp;

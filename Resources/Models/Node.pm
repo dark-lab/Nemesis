@@ -1,4 +1,4 @@
-package Resources::Node;
+package Resources::Models::Node;
 
 use Net::IP;
 use Moose::Util::TypeConstraints;

@@ -1,4 +1,4 @@
-package Resources::RCE;
+package Resources::WebVuln::RCE;
 
 use Moose;
 use Nemesis::Inject;

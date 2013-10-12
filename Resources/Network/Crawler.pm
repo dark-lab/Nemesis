@@ -1,4 +1,4 @@
-package  Resources::Crawler;
+package  Resources::Network::Crawler;
 use Moose;
 
 use Nemesis::Inject;

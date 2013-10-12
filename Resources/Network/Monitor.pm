@@ -1,4 +1,4 @@
-package Resources::Monitor;
+package Resources::Network::Monitor;
 
 use Moose;
 

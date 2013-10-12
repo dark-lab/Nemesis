@@ -1,4 +1,4 @@
-package Resources::RFI;
+package Resources::WebVuln::RFI;
 
 use Moose;
 use Nemesis::Inject;

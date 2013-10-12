@@ -1,4 +1,4 @@
-package Resources::Snap;
+package Resources::Models::Snap;
 use Moose;
 
 use DateTime;

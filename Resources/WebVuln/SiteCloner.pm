@@ -1,4 +1,4 @@
-package Resources::SiteCloner;
+package Resources::WebVuln::SiteCloner;
 {
 
     use Mojolicious::Lite;

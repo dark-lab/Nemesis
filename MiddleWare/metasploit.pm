@@ -1,7 +1,7 @@
 package MiddleWare::metasploit;
 use Moose;
-use Resources::Exploit;
-use Resources::Node;
+use Resources::Models::Exploit;
+use Resources::Models::Node;
 use Nemesis::Inject;
 
 our $VERSION = '0.1a';
@@ -59,7 +59,7 @@ sub start() {
 
 sub safe_database() {
     my $self = shift;
-    my $result = $self->DB->search( class => "Resources::Exploit" );
+    my $result = $self->DB->search( class => "Resources::Models::Exploit" );
 
     while ( my $block = $result->next ) {
         foreach my $item (@$block) {
@@ -147,7 +147,7 @@ sub populateDB() {
     $IO
         ->print_info(
         "There are " . scalar(@EXPL_LIST) . " exploits in metasploit" );
-    my $result = $DB->search( { class => "Resources::Exploit" } );
+    my $result = $DB->search( { class => "Resources::Models::Exploit" } );
     my $Counter = 0;
     while ( my $block = $result->next ) {
         foreach my $item (@$block) {
@@ -177,7 +177,7 @@ sub populateDB() {
             my @References = map { $_ = join( "|", @{$_} ); }
                 @{ $Information->{'references'} };
             $IO->debug( join( " ", @Targets ) . " targets" );
-            my $Expla = Resources::Exploit->new(
+            my $Expla = Resources::Models::Exploit->new(
                 type          => "exploits",
                 module        => $exploit,
                 rank          => $Information->{'rank'},
@@ -198,8 +198,8 @@ sub test() {
     my $self = shift;
 
     $self->LaunchExploitOnNode(
-        Resources::Node->new( ip => "127.0.0.1" ),
-        Resources::Exploit->new(
+        Resources::Models::Node->new( ip => "127.0.0.1" ),
+        Resources::Models::Exploit->new(
             type   => "exploits",
             module => "auxiliary/admin/backupexec/dump"
         )
@@ -211,7 +211,7 @@ sub matchExpl() {
     my $self   = shift;
     my $String = shift;
     my @Objs   = $self->DB->searchRegex(
-        class  => "Resources::Exploit",
+        class  => "Resources::Models::Exploit",
         module => $String
     );
 
