@@ -6,7 +6,7 @@ use Search::GIN::Extract::Class;
 use Search::GIN::Query::Manual;
 use Search::GIN::Query::Class;
 use Fcntl qw(:DEFAULT :flock);
-use Resources::Snap;
+use Resources::Models::Snap;
 use Nemesis::Inject;
 
 nemesis resource {
