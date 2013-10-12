@@ -484,7 +484,7 @@ package Nemesis::ModuleLoader;
         my $f = 0;
         foreach my $rigo (@MOD) {
 
-            if ( $rigo =~ /(?<![#|#.*|.?#])nemesis\s+module/ ) {
+            if ( $rigo =~ /(?<![#|#.*|.?#])nemesis\s+module|(?<![#|#.*|.?#])Nemesis\:\:Base/ ) {
 
                 return 1;
             }
