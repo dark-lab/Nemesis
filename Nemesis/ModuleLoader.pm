@@ -93,7 +93,7 @@ package Nemesis::ModuleLoader;
                 };
                 foreach my $method (@PUBLIC_FUNC) {
                     $method = $module . "." . $method;
-                    $Init->io->debug($method ." is avaible");
+                   # $Init->io->debug($method ." is avaible");
                 }
                 push( @OUT, @PUBLIC_FUNC );
             };
