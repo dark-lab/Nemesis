@@ -1,7 +1,7 @@
 package MiddleWare::Database;
 
 use Fcntl qw(:DEFAULT :flock);
-use Nemesis::Inject;
+use Nemesis::BaseModule -base;
 
 our $VERSION = '0.1a';
 our $AUTHOR  = "mudler";
@@ -9,26 +9,26 @@ our $MODULE  = "Database Manager plugin";
 our $INFO    = "<www.dark-lab.net>";
 my @PUBLIC_FUNCTIONS = qw( start stop list search delete add );
 
-nemesis module {
+has 'DB'        ;
+has 'Dispatcher';
 
-    my $DB = $Init->ml->loadmodule("DB");
+sub prepare {
+    my $self = shift;
+    my $DB   = $self->Init->ml->loadmodule("DB");
     $DB->connect();
     $self->DB($DB);
+    $self->Dispatcher( $self->Init->ml->atom("Dispatcher") );
     $self->start();
 
 }
 
-got 'DB'         => ( is => "rw" );
-got 'Dispatcher' => ( is => "rw" );
-
 sub search() {
     my $self = shift;
-
 }
 
 sub start() {
     my $self    = shift;
-    my $Process = $Init->ml->loadmodule("Process");
+    my $Process = $self->Init->ml->loadmodule("Process");
     $Process->set(
         type     => "thread",
         instance => $self
@@ -43,7 +43,7 @@ sub run() {
     ######      Saving new ids on a file
     my $self = shift;
     while ( sleep 1 ) {
-        my $WriteFile = $Init->session->new_file(".ids");
+        my $WriteFile = $self->Init->session->new_file(".ids");
         my @Content;
         if ( -e $WriteFile ) {
             if ( open( FH, "< " . $WriteFile ) ) {
@@ -68,39 +68,6 @@ sub run() {
                 $self->DB->lookup($uuid) );
         }
     }
-}
-
-sub AUTOLOAD {
-    my $self = shift or return undef;
-
-    # Get the called method name and trim off the fully-qualified part
-    ( my $method = $AUTOLOAD ) =~ s{.*::}{};
-
-    ### Create a closure that will become the new accessor method
-    my $alias = sub {
-        my $closureSelf = shift;
-
-        if (@_) {
-            return $closureSelf->$method(@_);
-        }
-
-        return undef;
-    };
-
-    # Assign the closure to the symbol table at the place where the real
-    # method should be. We need to turn off strict refs, as we'll be mucking
-    # with the symbol table.
-SYMBOL_TABLE_HACQUERY: {
-        no strict qw{refs};
-        *$AUTOLOAD = $alias;
-    }
-
-    # Turn the call back into a method call by sticking the self-reference
-    # back onto the arglist
-    unshift @_, $self;
-
-    # Jump to the newly-created method with magic goto
-    goto &$AUTOLOAD;
 }
 
 1;

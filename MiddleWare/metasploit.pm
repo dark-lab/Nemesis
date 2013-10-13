@@ -1,8 +1,7 @@
 package MiddleWare::metasploit;
-use Moose;
 use Resources::Models::Exploit;
 use Resources::Models::Node;
-use Nemesis::Inject;
+use Nemesis::BaseModule -base;
 
 our $VERSION = '0.1a';
 our $AUTHOR  = "mudler";
@@ -10,39 +9,42 @@ our $MODULE  = "Metasploit Module";
 our $INFO    = "<www.dark-lab.net>";
 
 #Funzioni che fornisco.
-our @PUBLIC_FUNCTIONS =
-    qw(start clear sessionlist call test generate matchExpl);    #NECESSARY
-
-
-nemesis module { $self->MSFRPC( $Init->getModuleLoader->loadmodule("MSFRPC") );}
+our @PUBLIC_FUNCTIONS
+    = qw(start clear sessionlist call test generate matchExpl);    #NECESSARY
 
 #Attributo Processo del demone MSFRPC
-has 'Process' => ( is => "rw" );
+has 'Process';
 
 #Risorsa MSFRPC che mi fornirà il modo di connettermi a MSFRPC
-has 'MSFRPC' => ( is => "rw" );
-has 'DB'     => ( is => "rw" );
+has 'MSFRPC';
+has 'DB';
+
+sub prepare {
+    my $self = shift;
+    $self->MSFRPC( $self->Init->getModuleLoader->loadmodule("MSFRPC") );
+}
 
 sub start() {
     my $self = shift;
+
     #return 1 if ( $self->Process && $self->Process->is_running );
 
     my $Io = $self->Init->getIO();
 
-    my $processString =
-          'msfrpcd -U '
+    my $processString
+        = 'msfrpcd -U '
         . $self->MSFRPC->Username . ' -P '
         . $self->MSFRPC->Password . ' -p '
         . $self->MSFRPC->Port . ' -S';
     $Io->print_info("Starting msfrpcd service.")
         ;    #AVVIO il demone msfrpc con le configurazioni della risorsa
-    my $Process = $self->Init->ml->loadmodule('Process')
-        ;    ##Carico il modulo process
+    my $Process
+        = $self->Init->ml->loadmodule('Process');   ##Carico il modulo process
     $Process->set(
-        type => 'daemon',         # tipologia demone
-        code => $processString    # linea di comando...
+        type => 'daemon',                           # tipologia demone
+        code => $processString                      # linea di comando...
     );
-    if ( $Process->start() ) {    #Avvio
+    if ( $Process->start() ) {                      #Avvio
         $self->Process($Process)
             ;    #Nell'attributo processo del plugin ci inserisco il processo
         if ( $Process->is_running ) {
@@ -68,7 +70,7 @@ sub safe_database() {
                 foreach my $item2 (@$block2) {
                     if ( $item ne $item2 ) {
                         $self->DB->delete($item2);
-                        $Init->getIO->debug("Deleting $item2");
+                        $self->Init->getIO->debug("Deleting $item2");
                     }
                 }
             }
@@ -82,44 +84,43 @@ sub LaunchExploitOnNode() {
     my $Node    = shift;
     my $Exploit = shift;
     my @OPTIONS = ( "exploits", $Exploit->module, );
-#Posso usare le promises, oppure
-#master polling ogni 10 minuti.
+
+    #Posso usare le promises, oppure
+    #master polling ogni 10 minuti.
     my $Options = $self->MSFRPC->options( "exploits", $Exploit->module );
     my $Payloads = $self->MSFRPC->payloads( $Exploit->module );
-    $Init->getIO->debug_dumper( \$Options );
-    $Init->getIO->debug_dumper( \$Payloads );
+    $self->Init->getIO->debug_dumper( \$Options );
+    $self->Init->getIO->debug_dumper( \$Payloads );
 
 }
 
 sub event_Resources__Exploit {
     my $self = shift;
-    $Init->io->debug("Exploit generated correctly!");
+    $self->Init->io->debug("Exploit generated correctly!");
 }
 
 sub generate() {
     my $self = shift;
 
-for(1..10){
+    for ( 1 .. 10 ) {
 
- if($self->is_up){
-       $self->populateDB;
-       last;
- }
-    sleep 2;
-    $self->Init->io->info("waiting for meta");
-}
+        if ( $self->is_up ) {
+            $self->populateDB;
+            last;
+        }
+        sleep 2;
+        $self->Init->io->info("waiting for meta");
+    }
     $self->Init->io->error("meta failed to start");
-
-
 
     #   $self->safe_database;
 
 }
 
-sub is_up(){
-    my $self=shift;
-    my $MSFRPC=$self->MSFRPC;
-            my $response = $MSFRPC->call('module.exploits');
+sub is_up() {
+    my $self     = shift;
+    my $MSFRPC   = $self->MSFRPC;
+    my $response = $MSFRPC->call('module.exploits');
     if ( exists( $response->{'modules'} ) ) {
         return 1;
     }
@@ -127,25 +128,23 @@ sub is_up(){
 
 }
 
-
 sub populateDB() {
-    my $self=shift;
-    my $MSFRPC=$self->MSFRPC;
-    my $DB=$self->Init->ml->getInstance("Database");
-    my $IO=$self->Init->io;
-        #  $self->start if ( !$self->Process or !$self->Process->is_running );
+    my $self   = shift;
+    my $MSFRPC = $self->MSFRPC;
+    my $DB     = $self->Init->ml->getInstance("Database");
+    my $IO     = $self->Init->io;
 
-    if ( !$self->is_up) {
+    #  $self->start if ( !$self->Process or !$self->Process->is_running );
+
+    if ( !$self->is_up ) {
         $IO->print_alert("Cannot sync with meta");
     }
-        my $response = $MSFRPC->call('module.exploits');
+    my $response = $MSFRPC->call('module.exploits');
 
     my @EXPL_LIST = @{ $response->{'modules'} };
 
-    $IO
-        ->print_alert("Syncing db with msf exploits, this can take a while");
-    $IO
-        ->print_info(
+    $IO->print_alert("Syncing db with msf exploits, this can take a while");
+    $IO->print_info(
         "There are " . scalar(@EXPL_LIST) . " exploits in metasploit" );
     my $result = $DB->search( { class => "Resources::Models::Exploit" } );
     my $Counter = 0;

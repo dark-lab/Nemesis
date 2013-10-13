@@ -1,6 +1,5 @@
 package MiddleWare::Jobs;
-use Moose;
-use Nemesis::Inject;
+use Nemesis::BaseModule -base;
 
 our $VERSION = '0.1a';
 our $AUTHOR  = "mudler";
@@ -8,15 +7,11 @@ our $MODULE  = "Metasploit Module";
 our $INFO    = "<www.dark-lab.net>";
 
 #Funzioni che fornisco.
-our @PUBLIC_FUNCTIONS
-    = qw(list kill detach result status test clear);    #NECESSARY
+our @PUBLIC_FUNCTIONS = qw(list kill detach result status  clear);  #NECESSARY
 
-nemesis module { $Init->io->info("test passed :)"); $self->import_jobs(); }
-has 'Processes' => ( is => "rw", default => sub { return [] } );
+has 'Processes';
 
-sub test {
-    $Init->io->info("testing myself");
-}
+sub prepare { my $self = shift; $self->import_jobs(); }
 
 sub add {    #Not avaible from cli, but avaible among Plugins/MiddleWare
     my $self = shift;
@@ -26,7 +21,7 @@ sub add {    #Not avaible from cli, but avaible among Plugins/MiddleWare
 
 sub clear() {
     my $self = shift;
-    $Init->io->info("cleaning not running and pending jobs");
+    $self->Init->io->info("cleaning not running and pending jobs");
     foreach my $Proc ( @{ $self->Processes } ) {
 
         $Proc->destroy() if ( !$Proc->is_running );
@@ -37,24 +32,25 @@ sub clear() {
 
 sub list {
     my $self = shift;
-    $Init->io->print_title("what are your modules?");
+    $self->Init->io->print_title("what are your modules?");
     foreach my $Job ( @{ $self->Processes } ) {
-        $Init->io->process_status($Job);
+        $self->Init->io->process_status($Job);
     }
 }
 
 sub import_jobs() {
     my $self = shift;
-    opendir( DIR, $Init->getEnv()->tmp_dir() ) or $Init->io->error($!);
+    opendir( DIR, $self->Init->getEnv()->tmp_dir() )
+        or $self->Init->io->error($!);
     while ( my $file = readdir(DIR) ) {
         next if $file eq ".." or $file eq ".";
         next if $file !~ /\.lock/;
         $file =~ s/\..*$//g;
-        $Init->io->debug("checking $file");
+        $self->Init->io->debug("checking $file");
         my $found = 0;
         foreach my $Proc ( @{ $self->Processes } ) {
             if ( $Proc->get_id eq $file ) {
-                my $Process = $Init->ml->loadmodule("Process");
+                my $Process = $self->Init->ml->atom("Process");
                 $Process->load($file);
                 push( @{ $self->Processes }, $Process );
                 $found = 1;
@@ -62,7 +58,7 @@ sub import_jobs() {
             }
         }
         if ( $found == 0 ) {
-            my $Process = $Init->ml->loadmodule("Process");
+            my $Process = $self->Init->ml->loadmodule("Process");
             $Process->load($file);
             push( @{ $self->Processes }, $Process );
         }
