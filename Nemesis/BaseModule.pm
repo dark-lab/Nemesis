@@ -7,10 +7,6 @@ use warnings;
 no warnings 'redefine';
 
 use Carp ();
-my $MODULE;
-my $AUTHOR;
-my $INFO;
-my @PUBLIC_FUNCTIONS;
 
 sub import {
     my ( $class, @methods ) = @_;
@@ -34,11 +30,22 @@ sub import {
         *{"${caller}::export_public_methods"} = sub {
             return @{"${caller}::PUBLIC_FUNCTIONS"}, "info";
         };
-
+        *{"${caller}::info"} = sub {
+            my $self = shift;
+            $self->Init->getIO()->print_tabbed(
+                __PACKAGE__ . " "
+                    . ${"${caller}::MODULE"}. " v"
+                    . ${"${caller}::VERSION"} . "~ "
+                    . ${"${caller}::AUTHOR"} . " ~ "
+                    . ${"${caller}::INfO"},
+                2
+            );
+        };
         ###END NEMESIS
         *{"${caller}::has"} = sub { attr( $caller, @_ ) };
         attr( $caller, 'Init' );    # XXX: da testare
                                     # Inheritance
+
         if ( my $module = $methods[1] ) {
             $module =~ s/::|'/\//g;
             require "$module.pm" unless $module->can('new');
@@ -56,7 +63,6 @@ sub import {
 
     # Method export
     else {
-       
 
         # Exports
         my %exports = map { $_ => 1 } qw/new attr/;
@@ -88,13 +94,6 @@ sub import {
 sub new {
     my $class = shift;
     bless @_ ? @_ > 1 ? {@_} : { %{ $_[0] } } : {}, ref $class || $class;
-}
-
-sub info() {
-    my $self = shift;
-    $self->Init->getIO()
-        ->print_tabbed( __PACKAGE__ . " $MODULE v$VERSION ~ $AUTHOR ~ $INFO",
-        2 );
 }
 
 sub attr {

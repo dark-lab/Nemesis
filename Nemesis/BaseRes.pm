@@ -7,9 +7,6 @@ use warnings;
 no warnings 'redefine';
 
 use Carp ();
-my $MODULE;
-my $AUTHOR;
-my $INFO;
 
 sub import {
     my ( $class, @methods ) = @_;
@@ -29,6 +26,17 @@ sub import {
         *{"${caller}::MODULE"}  = "";
         *{"${caller}::VERSION"} = "";
         *{"${caller}::INFO"}    = "";
+        *{"${caller}::info"} = sub {
+            my $self = shift;
+            $self->Init->getIO()->print_tabbed(
+                __PACKAGE__ . " "
+                    . *{"${caller}::MODULE"} . " v"
+                    . *{"${caller}::VERSION"} . "~ "
+                    . *{"${caller}::AUTHOR"} . " ~ "
+                    . *{"${caller}::INFO"},
+                2
+            );
+        };
         ###END NEMESIS
         *{"${caller}::has"} = sub { attr( $caller, @_ ) };
         attr( $caller, 'Init' );    # XXX: da testare
@@ -50,7 +58,6 @@ sub import {
 
     # Method export
     else {
-       
 
         ###END NEMESIS
         # Exports
@@ -84,13 +91,6 @@ sub import {
 sub new {
     my $class = shift;
     bless @_ ? @_ > 1 ? {@_} : { %{ $_[0] } } : {}, ref $class || $class;
-}
-
-sub info() {
-    my $self = shift;
-    $self->Init->getIO()
-        ->print_tabbed( __PACKAGE__ . " $MODULE v$VERSION ~ $AUTHOR ~ $INFO",
-        2 );
 }
 
 sub attr {

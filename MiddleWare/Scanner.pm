@@ -1,7 +1,6 @@
 package MiddleWare::Scanner;
 
-use Moose;
-use Nemesis::Inject;
+use Nemesis::BaseModule -base;
 use HTTP::Request;
 use Net::IP;
 use Nmap::Parser;
@@ -13,37 +12,35 @@ our $AUTHOR  = "mudler";
 our $MODULE  = "Scanner plugin";
 our $INFO    = "<www.dark-lab.net>";
 
-my @PUBLIC_FUNCTIONS = qw(test nmap);
+my @PUBLIC_FUNCTIONS = qw(webtest nmap);
 
-has 'Arguments' => (
-    is            => "rw",
-    default       => "-sS -sV -O -A -P0",
-    documentation => "Nmap arguments"
-);
-has 'DB' => (
-    is            => "rw",
-    documentation => "Database "
-);
+has 'Arguments';
+has 'DB';
 
-nemesis module { $self->DB( $Init->ml->load("DB")->connect );}
+sub prepare {
+    my $self = shift;
+    $self->DB( $self->Init->ml->atom("DB")->connect );
+    $self->Arguments("-sS -sV -O -A -P0");
+}
 
-
-sub test() {
+sub webtest() {
     my $self         = shift;
     my $SearchString = shift;
     my $Exploit      = shift;
     my $Crawler      = $self->Init->ml()->load("Crawler");
     $Crawler->search($SearchString);
     $Crawler->fetchNext();
-    my @TESTS= qw (LFI RFI);
-    foreach my $test(@TESTS){
-        my $Test=$self->Init->ml->load($test);
+    my @TESTS = qw (LFI RFI);
+    foreach my $test (@TESTS) {
+        my $Test = $self->Init->ml->load($test);
         $Test->Bug($Exploit)
             ; #Can be post or otherwise, so should implement the api with HTTP::Request object.
         $Test->Crawler($Crawler);
-        if($Test->test()){
+        if ( $Test->test() ) {
+
             #return true, attack succeed
-        } else {
+        }
+        else {
             #false, no luck
         }
     }

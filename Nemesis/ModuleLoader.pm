@@ -93,7 +93,8 @@ package Nemesis::ModuleLoader;
                 };
                 foreach my $method (@PUBLIC_FUNC) {
                     $method = $module . "." . $method;
-                   # $Init->io->debug($method ." is avaible");
+
+                    # $Init->io->debug($method ." is avaible");
                 }
                 push( @OUT, @PUBLIC_FUNC );
             };
@@ -356,7 +357,7 @@ package Nemesis::ModuleLoader;
             }
 
         }
-        $self->{'LibraryList'}=\@Libs;
+        $self->{'LibraryList'} = \@Libs;
         return @Libs;
     }
 
@@ -367,7 +368,6 @@ package Nemesis::ModuleLoader;
 
         find(
             sub {
-                print $File::Find::name."\n" if -f ;
                 push( @Res, $File::Find::name ) if -f;
             },
             $dir
@@ -464,7 +464,8 @@ package Nemesis::ModuleLoader;
             if ($@) {
                 $IO->print_error($@);
                 delete $self->{'modules'}->{$name};
-               # return 0;
+
+                # return 0;
             }
         }
         $IO->print_info(
@@ -485,7 +486,10 @@ package Nemesis::ModuleLoader;
         my $f = 0;
         foreach my $rigo (@MOD) {
 
-            if ( $rigo =~ /(?<![#|#.*|.?#])nemesis\s+module|(?<![#|#.*|.?#])Nemesis\:\:BaseModule/ ) {
+            if ( $rigo
+                =~ /(?<![#|#.*|.?#])nemesis\s+module|(?<![#|#.*|.?#])Nemesis\:\:BaseModule/
+                )
+            {
 
                 return 1;
             }
@@ -503,7 +507,10 @@ package Nemesis::ModuleLoader;
         my $f = 0;
 
         foreach my $rigo (@MOD) {
-            if ( $rigo =~ /(?<![#|#.*|.?#])nemesis\s+(resource|mojo)|(?<![#|#.*|.?#])Nemesis\:\:BaseRes/ ) {
+            if ( $rigo
+                =~ /(?<![#|#.*|.?#])nemesis\s+(resource|mojo)|(?<![#|#.*|.?#])Nemesis\:\:BaseRes/
+                )
+            {
                 return 1;
 
             }

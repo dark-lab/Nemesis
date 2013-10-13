@@ -3,10 +3,10 @@ use Resources::Models::Exploit;
 use Resources::Models::Node;
 use Nemesis::BaseModule -base;
 
-our $VERSION = '0.1a';
-our $AUTHOR  = "mudler";
-our $MODULE  = "Metasploit Module";
-our $INFO    = "<www.dark-lab.net>";
+my $VERSION = '0.1a';
+my $AUTHOR  = "mudler";
+my $MODULE  = "Metasploit Module";
+my $INFO    = "<www.dark-lab.net>";
 
 #Funzioni che fornisco.
 our @PUBLIC_FUNCTIONS
