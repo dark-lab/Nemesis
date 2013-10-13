@@ -8,21 +8,36 @@ use warnings;
 no warnings 'redefine';
  
 use Carp ();
+my $MODULE;
+my $AUTHOR;
+my $INFO;
+my @PUBLIC_FUNCTIONS;
+
  
 sub import {
   my ($class, @methods) = @_;
  
   # Caller
   my $caller = caller;
-   
+
+
   # Base
   if ((my $flag = $methods[0] || '') eq '-base') {
  
     # Can haz?
     no strict 'refs';
     no warnings 'redefine';
+
+    ###NEMESIS 
+    @{"${caller}::PUBLIC_FUNCTIONS"} =();
+    *{"${caller}::AUTHOR"} ="";
+    *{"${caller}::MODULE"} ="";
+    *{"${caller}::VERSION"} ="";
+    *{"${caller}::INFO"} ="";
+
+    ###END NEMESIS
     *{"${caller}::has"} = sub { attr($caller, @_) };
-     attr($caller,{'Init'}); # XXX: da testare
+     attr($caller,'Init'); # XXX: da testare
     # Inheritance
     if (my $module = $methods[1]) {
       $module =~ s/::|'/\//g;
@@ -42,7 +57,7 @@ sub import {
   else {
    
     # Exports
-    my %exports = map { $_ => 1 } qw/new attr/;
+    my %exports = map { $_ => 1 } qw/new attr export_public_methods info/; ##added
      
     # Export methods
     for my $method (@methods) {
@@ -55,6 +70,7 @@ sub import {
       no strict 'refs';
       *{"${caller}::$method"} = \&{"$method"};
     }
+     attr($caller,'Init'); # XXX: da testare
   }
 
 # *{"${class}::Init"} = *{"${class}::init"} = sub {
@@ -74,7 +90,17 @@ sub new {
   my $class = shift;
   bless @_ ? @_ > 1 ? {@_} : {%{$_[0]}} : {}, ref $class || $class;
 }
- 
+
+sub export_public_methods() {   
+  my $self = shift; 
+  return @PUBLIC_FUNCTIONS,"info";
+}
+
+sub info(){
+ my $self=shift;         
+    $self->Init->getIO()->print_tabbed(__PACKAGE__ ." $MODULE v$VERSION ~ $AUTHOR ~ $INFO",2); 
+}
+
 sub attr {
   my ($self, @args) = @_;
    
@@ -129,3 +155,4 @@ sub attr {
     }
   }
 }
+1;
