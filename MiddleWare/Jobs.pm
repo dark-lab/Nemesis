@@ -9,13 +9,13 @@ our $INFO    = "<www.dark-lab.net>";
 #Funzioni che fornisco.
 our @PUBLIC_FUNCTIONS = qw(list kill detach result status  clear);  #NECESSARY
 
-has 'Processes';
+has 'Processes' => sub{[]};
 
 sub prepare { my $self = shift; $self->import_jobs(); }
 
 sub add {    #Not avaible from cli, but avaible among Plugins/MiddleWare
     my $self = shift;
-    push( @{ $self->Processes }, $_ );
+    push( @{ $self->Processes }, $_[0] );
     return $self;
 }
 

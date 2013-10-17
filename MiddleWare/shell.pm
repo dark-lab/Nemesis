@@ -1,13 +1,8 @@
 package MiddleWare::shell;
-use Try::Tiny;          #I really need that? :)
-use Nemesis::Inject;    #Requested to have your injection
+use Nemesis::BaseModule -base;
 
 #@PUBLIC_FUNCTION will contain the function(s) that i want to need public to other modules (or by the cli) ?
 our @PUBLIC_FUNCTIONS = qw(run);
-
-nemesis module { 
- init()->io()->info("test passed ;)");};
-
 
 sub run() {
     my $self = shift;
@@ -16,24 +11,16 @@ sub run() {
     my @ARGS = @_;
 
     #That's not really needed but it can be pleasant to have a shortcut
-    my $IO = $Init->getIO();
+    my $IO = $self->Init->getIO();
 
 #In $Init there are a lot of useful things, i'm taking here the interface to IO
 
     #joining all ARGS
     my $command = join( " ", @ARGS );
 
-    try {
-#Trying to execute my command (With IO it's safe to execute command because is also safe to your session directory)
-        my @RESULT = $IO->exec($command);
-
-        #Taking the result of command in @RESULT
-        $IO->print_info( "\n" . join( "\n", @RESULT ) );
-    }
-    catch {
-#Printing the error (also if it's difficult to believe that there will be one)
-        $IO->print_error("Error executing command $command! $_");
-    }
+    my @RESULT = $IO->exec($command);
+    #Taking the result of command in @RESULT
+    $IO->print_info( "\n" . join( "\n", @RESULT ) );
 
 }
 

@@ -8,23 +8,12 @@ our $MODULE           = "CredentialSniffer plugin";
 our $INFO             = "<www.dark-lab.net>";
 our @PUBLIC_FUNCTIONS = qw();
 
-nemesis module {
+nemesis module { 1; }
 
-
-    $self->DB( $self->Init()->ml()->loadmodule("DB")->connect() );
- 
-
-}
-
-got 'DB' => ( default => "", is => "rw" );
-
-
-
-sub clear() {
+    sub clear() {
     my $self = shift;
     $self->stop();
 }
-
 
 sub event_tcp() {
     my $self  = shift;
@@ -52,7 +41,8 @@ sub event_tcp() {
 
             # if it's private, have sense parse the packet
             if ( $SrcType eq "PRIVATE" ) {
-                my $results = $self->DB->search( ip => $Ip->src )
+                my $results = $self->Init->getInstance("Database")
+                    ->search( ip => $Ip->src )
                     ;    # search for the node in the DB
                 my $DBHost;
                 while ( my $chunk = $results->next ) {
@@ -77,11 +67,13 @@ sub event_tcp() {
                 $Node->attachments->insert($ParamAndValue);
 
                 if ( !defined($DBHost) ) {
-                    $self->DB->add($Node);
+                    $self->Init->getInstance("Database")->add($Node);
                 }
                 else {
-                    $self->DB->swap( $DBHost, $Node )
-                        ; #This automatically generate a Resources::Snap db object to track the change
+                    $self->Init->getInstance("Database")
+                        ->swap( $DBHost, $Node );
+
+                    ; #This automatically generate a Resources::Snap db object to track the change
                 }
 
 #print $fh_out $parameter.": ".$value."\n---------------------------------\n";

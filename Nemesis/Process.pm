@@ -60,6 +60,12 @@ package Nemesis::Process;
                 $state = $self->fork();
             }
         }
+        if($state){
+            if(my $Job = $Init->ml->getInstance("Jobs")){
+                $Job->list();
+                $Job->add($self);
+            }
+        }
         return $state ? $self->get_id() : ();
     }
 
@@ -75,7 +81,9 @@ package Nemesis::Process;
         $Init->io->debug("Starting the thread");
 
         if ( exists( $self->{'CONFIG'}->{'instance'} ) ) {
-            $Init->getIO()->debug("Starting a thread for ".$self->{'CONFIG'}->{'instance'});
+            $Init->getIO()
+                ->debug(
+                "Starting a thread for " . $self->{'CONFIG'}->{'instance'} );
             $self->{'INSTANCE'} = threads->new(
                 sub {
                     my $instance = shift;
@@ -162,6 +170,7 @@ package Nemesis::Process;
 
             $Init->io->debug(
                 "waiting for instance " . $self->{'INSTANCE'} . " to join" );
+
             #$self->join();
             $self->detach();
             $Init->io->debug( "exit: " . $self->{'INSTANCE'} );
@@ -172,7 +181,7 @@ package Nemesis::Process;
 
             kill 9 => $self->get_pid();
             kill( 9, $self->get_pid() );
-            waitpid($self->get_pid(),0);#to clean defuncts
+            waitpid( $self->get_pid(), 0 );    #to clean defuncts
         }
     }
 
@@ -284,10 +293,15 @@ package Nemesis::Process;
 
         if ( $p = open3( $wtr, $rdr, $err, $cmd ) ) {
             $self->save_pid($p);
-            while (<$rdr>) {
-                $self->save($_);
 
-            }
+
+                while (<$rdr>) {
+                    $self->save($_);
+
+                }
+
+            
+
             $self->save("Daemon mode\n");
             return 1;
         }
@@ -300,8 +314,6 @@ package Nemesis::Process;
 
         #$Init->getIO()->set_debug(0);
     }
-
-
 
     sub save_pid {
         my $self = shift;
@@ -428,7 +440,7 @@ package Nemesis::Process;
         %{ $self->{'CONFIG'} } = @_;
     }
 
-    ## fork and pidof WILL BE REMOVED IN FUTURE VERSIONS 
+    ## fork and pidof WILL BE REMOVED IN FUTURE VERSIONS
     sub fork {
         my $self = shift;
         my $p;

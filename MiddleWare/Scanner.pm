@@ -19,7 +19,7 @@ has 'DB';
 
 sub prepare {
     my $self = shift;
-    $self->DB( $self->Init->ml->atom("DB")->connect );
+  #  $self->DB( $self->Init->ml->atom("DB")->connect );
     $self->Arguments("-sS -sV -O -A -P0");
 }
 
@@ -77,7 +77,7 @@ sub nmapscan() {
     $self->Init->getIO()->print_info( "Session:" . $Session->scan_args );
     foreach my $host ( $Np->all_hosts() ) {
         next if ( $host->status ne "up" );
-        my $results = $self->DB->search( ip => $host->addr );
+        my $results = $self->Init->ml->getInstance("Database")->search( ip => $host->addr );
         my $DBHost;
         while ( my $chunk = $results->next ) {
             for my $foundhost (@$chunk) {
@@ -124,10 +124,10 @@ sub nmapscan() {
         $Node->ports( \@Found_Ports );
         $Node = $Meta->matchNode($Node);
         if ( !defined($DBHost) ) {
-            $self->DB->add($Node);
+            $self->Init->ml->getInstance("Database")->add($Node);
         }
         else {
-            $self->DB->swap( $DBHost, $Node )
+            $self->Init->ml->getInstance("Database")->swap( $DBHost, $Node )
                 ; #This automatically generate a Resources::Snap db object to track the change
         }
     }

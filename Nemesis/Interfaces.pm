@@ -1,7 +1,6 @@
 package Nemesis::Interfaces;
 use warnings;
 use Net::Ping;
-
 use vars qw($VERSION);
 $VERSION = '0.01';
 use Socket;
@@ -22,10 +21,10 @@ sub new {
 
 sub scan_avaible_devices() {
 
-#	function: scan_avaible_devices
-#	@params:none
-#	@return:none
-#	Cerca le interfacce di rete collegate al computer tramite la variabile d'ambiente acquisita dall'altro modulo
+#   function: scan_avaible_devices
+#   @params:none
+#   @return:none
+#   Cerca le interfacce di rete collegate al computer tramite la variabile d'ambiente acquisita dall'altro modulo
     my $self = shift;
     my $IO   = $Init->getIO();
     my %tmp;
@@ -39,9 +38,11 @@ sub scan_avaible_devices() {
         if ( exists( $self->{'devices'}->{$dev}->{'WIRELESS'} )
             && $self->{'devices'}->{$dev}->{'WIRELESS'} == 1 )
         {
+            $self->wifi_enum($dev);
             $self->parse_config( "iwconfig", $dev );
         }
     }
+    $Init->io->debug_dumper( \$self );
 
     #Locating default gateway-
     @output = $IO->exec("ip route");
@@ -74,7 +75,8 @@ sub info_device() {
     if ( exists( $self->{'devices'}->{$device}->{'WIRELESS'} )
         and $self->{'devices'}->{$device}->{'WIRELESS'} == 1 )
     {
-        $IO->print_verbose( $device . " is a wireless device!" );
+        $IO->info( $device . " is a wireless device!" );
+        $IO->debug_dumper( \$self->{'devices'}->{$device} );
         if ( exists( $self->{'devices'}->{$device}->{'AP'} ) ) {
             $IO->print_verbose(
                 $device . " ap: " . $self->{'devices'}->{$device}->{'AP'} );
@@ -162,6 +164,19 @@ sub interfaces() {
     return @Interfaces;
 }
 
+sub getAPs {
+    my $self = shift;
+    my %Aps;
+
+    foreach my $dev ( keys %{ $self->{'devices'} } ) {
+        if(exists($self->{'devices'}->{$dev}->{'WIRELESS'}) and $self->{'devices'}->{$dev}->{'WIRELESS'} eq 1){
+            $Aps{$dev}=$self->{'devices'}->{$dev}->{aps};
+        }
+
+    }
+    return %Aps;
+}
+
 sub ips() {
     my $self = shift;
     my @Ips;
@@ -204,12 +219,12 @@ sub parse_config() {
         foreach my $piece (@pieces) {
             my $progressive = $counter + 1;
             if ( $piece eq "inet" ) {
-                $self->{'devices'}->{$dev}->{'IPV4_ADDRESS'} =
-                    $pieces[$progressive];
+                $self->{'devices'}->{$dev}->{'IPV4_ADDRESS'}
+                    = $pieces[$progressive];
             }
             if ( $piece =~ /inet6/i ) {
-                $self->{'devices'}->{$dev}->{'IPV6_ADDRESS'} =
-                    $pieces[$progressive];
+                $self->{'devices'}->{$dev}->{'IPV6_ADDRESS'}
+                    = $pieces[$progressive];
             }
             if ( $piece =~ /ESSID:(.*)/i ) {
                 $self->{'devices'}->{$dev}->{'ESSID'} = $1;
@@ -219,5 +234,56 @@ sub parse_config() {
         }
     }
 }
+
+sub wifi_enum {
+    my $self   = shift;
+    my $Device = $_[0];
+    my @Result = $Init->io->exec("iw dev $Device scan");
+    my $current;
+    foreach my $line (@Result) {
+        if ( $line =~ /BSS\s+(.*)\(/ ) {
+
+            $self->{'devices'}->{$Device}->{aps}->{$1} = {};
+            $current = $1;
+        }
+        if ( $line =~ /SSID:\s+(.*)$/ ) {
+            $self->{'devices'}->{$Device}->{aps}->{$current}->{"SSID"} = $1;
+        }
+
+        if ( $line =~ /signal:\s+(.*)$/ ) {
+            $self->{'devices'}->{$Device}->{aps}->{$current}->{"signal"} = $1;
+
+        }
+
+        if ( $line =~ /WPS/ ) {
+            $self->{'devices'}->{$Device}->{aps}->{$current}->{"security"}
+                .= " WPS ";
+
+        }
+        if ( $line =~ /WEP/ ) {
+            $self->{'devices'}->{$Device}->{aps}->{$current}->{"security"}
+                .= " WEP ";
+
+        }
+        if ( $line =~ /WPA/ ) {
+            $self->{'devices'}->{$Device}->{aps}->{$current}->{"security"}
+                .= " WPA ";
+
+        }
+        if ( $line =~ /PSK/ ) {
+            $self->{'devices'}->{$Device}->{aps}->{$current}->{"security"}
+                .= " PSK ";
+
+        }
+        if ( $line =~ /TKIP/ ) {
+            $self->{'devices'}->{$Device}->{aps}->{$current}->{"security"}
+                .= " TKIP ";
+
+        }
+
+    }
+
+}
+
 1;
 __END__

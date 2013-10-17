@@ -11,7 +11,7 @@ has 'Device'      => ( is => "rw", default => "wlan0" );
 has 'Filter'      => ( is => "rw", default => "" );
 has 'Promiscuous' => ( is => "rw", default => "1" );
 has 'Dispatcher'  => ( is => "rw" );
-has 'File'        => ( is => "rw", default => undef );
+has 'File'        => ( is => "rw", default => "session.pcap" );
 has 'SnifferInstance' => ( is => "rw" );
 has 'Dispatcher'      => ( is => "rw" );
 
