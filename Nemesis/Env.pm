@@ -115,6 +115,19 @@ sub whereis {
     return;
 }
 
+sub is_installed() {
+    my $self = shift;
+    my $sw   = shift;
+    if ( my $res = $Init->env->whereis($sw) ) {
+        $Init->io->info( $sw . " detected in " . $res );
+        return 1;
+    }
+    else {
+        $Init->io->alert( $sw . " not detected:(" );
+        return 0;
+    }
+}
+
 sub wherepath {
     my $self       = shift;
     my $dependency = $_[0];

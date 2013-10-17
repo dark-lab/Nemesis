@@ -5,11 +5,22 @@ our $VERSION          = '0.1a';
 our $AUTHOR           = "mudler";
 our $MODULE           = "LiveSniffer plugin";
 our $INFO             = "<www.dark-lab.net>";
-our @PUBLIC_FUNCTIONS = qw(test wps);
+our @PUBLIC_FUNCTIONS = qw(test wps rogue);
+
+has 'process';
+
+
+sub rogue {    #associate every probe
+    my $self    = shift;
+    my $device  = shift;
+    my $Aircrack=$self->Init->ml->atom("Aircrack");   
+    $Aircrack->device($device);
+    $Aircrack->airbase;
+}
 
 sub wps {
     my $self   = shift;
-    my $Target = $_[0];            #Mac address or essid
+    my $Target = $_[0];                  #Mac address or essid
     my %Aps    = $self->Int->getAPs();
 
     if ( $Target =~ /\:/ ) {
@@ -20,7 +31,7 @@ sub wps {
     else {
 
         foreach my $interface ( keys %Aps ) {
-            if($Aps{$interface}{"SSID"}=~/$Target/i){
+            if ( $Aps{$interface}{"SSID"} =~ /$Target/i ) {
                 $self->Init->io->info("We have a match");
             }
         }
