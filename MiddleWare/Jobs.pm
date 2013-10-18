@@ -9,7 +9,7 @@ our $INFO    = "<www.dark-lab.net>";
 #Funzioni che fornisco.
 our @PUBLIC_FUNCTIONS = qw(list kill detach result status  clear);  #NECESSARY
 
-has 'Processes' => sub{[]};
+has 'Processes' => sub { [] };
 
 sub prepare { my $self = shift; $self->import_jobs(); }
 
@@ -24,8 +24,8 @@ sub clear() {
     $self->Init->io->info("cleaning not running and pending jobs");
     foreach my $Proc ( @{ $self->Processes } ) {
 
-        $Proc->destroy() if ( !$Proc->is_running );
-
+        #  $Proc->destroy() if ( $Proc->is_running );
+        $Proc->destroy();
     }
 
 }

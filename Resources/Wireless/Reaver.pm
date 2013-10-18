@@ -12,7 +12,10 @@ has 'sessionfile';
 has 'auto';
 has 'verbosity';
 has 'fixed';
-has 'process';
+
+has 'device';
+has 'Process';
+
 
 sub _generateCommand {
     my $self = shift;

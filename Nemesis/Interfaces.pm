@@ -42,7 +42,8 @@ sub scan_avaible_devices() {
             $self->parse_config( "iwconfig", $dev );
         }
     }
-    $Init->io->debug_dumper( \$self );
+
+    #  $Init->io->debug_dumper( \$self );
 
     #Locating default gateway-
     @output = $IO->exec("ip route");
@@ -50,6 +51,19 @@ sub scan_avaible_devices() {
         if ( $o =~ /default/ ) {
             my @res = split( / /, $o );
             $self->{'GATEWAY'} = $res[2];
+        }
+    }
+}
+
+sub wifi_scan() {
+    my $self = shift;
+    foreach my $dev ( keys %{ $self->{'devices'} } ) {
+        $self->parse_config( "ifconfig", $dev );
+        if ( exists( $self->{'devices'}->{$dev}->{'WIRELESS'} )
+            && $self->{'devices'}->{$dev}->{'WIRELESS'} == 1 )
+        {
+            $self->wifi_enum($dev);
+            $self->parse_config( "iwconfig", $dev );
         }
     }
 }
@@ -76,7 +90,8 @@ sub info_device() {
         and $self->{'devices'}->{$device}->{'WIRELESS'} == 1 )
     {
         $IO->info( $device . " is a wireless device!" );
-        $IO->debug_dumper( \$self->{'devices'}->{$device} );
+
+        #$IO->debug_dumper( \$self->{'devices'} );
         if ( exists( $self->{'devices'}->{$device}->{'AP'} ) ) {
             $IO->print_verbose(
                 $device . " ap: " . $self->{'devices'}->{$device}->{'AP'} );
@@ -166,15 +181,35 @@ sub interfaces() {
 
 sub getAPs {
     my $self = shift;
-    my %Aps;
+    my $Aps;
 
-    foreach my $dev ( keys %{ $self->{'devices'} } ) {
-        if(exists($self->{'devices'}->{$dev}->{'WIRELESS'}) and $self->{'devices'}->{$dev}->{'WIRELESS'} eq 1){
-            $Aps{$dev}=$self->{'devices'}->{$dev}->{aps};
+    my $device = shift || "all";
+
+    if ( $device eq "all" ) {
+
+        foreach my $dev ( keys %{ $self->{'devices'} } ) {
+            if ( exists( $self->{'devices'}->{$dev}->{'WIRELESS'} )
+                and $self->{'devices'}->{$dev}->{'WIRELESS'} eq 1 )
+            {
+                $Aps->{$dev} = $self->{'devices'}->{$dev}->{aps};
+            }
+
         }
 
     }
-    return %Aps;
+    else {
+        if ( exists( $self->{'devices'}->{$device} )
+            and $self->{'devices'}->{$device}->{'WIRELESS'} eq 1 )
+        {
+
+            $Aps = $self->{'devices'}->{$device}->{aps};
+
+            #  $Init->io->debug_dumper(\%Aps);
+
+        }
+    }
+
+    return %$Aps;
 }
 
 sub ips() {
