@@ -7,23 +7,64 @@ our $VERSION = '0.1a';
 our $AUTHOR  = "mudler";
 our $MODULE  = "Database Manager plugin";
 our $INFO    = "<www.dark-lab.net>";
-my @PUBLIC_FUNCTIONS = qw( start stop list search delete add );
+my @PUBLIC_FUNCTIONS = qw( start stop list search);
 
-has 'DB'        ;
 has 'Dispatcher';
+has 'DB';
 
-sub prepare {
+sub add() {
+    my $self  = shift;
+    my @stuff = @_;
+    my $DB    = $self->DB || $self->Init->ml->atom("DB");
+    $DB->connect();
+    return 1 if $DB->add(@stuff);
+}
+
+sub search () {
+    my $self    = shift;
+    my $Options = shift;
+    my $DB      = $self->DB || $self->Init->ml->atom("DB");
+    $DB->connect();
+    return $DB->search($Options);
+}
+
+sub rsearch() {    #Regex search
+    my $self    = shift;
+    my $Options = shift;
+    my $DB      = $self->DB || $self->Init->ml->atom("DB");
+    $DB->connect();
+    return $DB->searchRegex($Options);
+}
+
+sub remove() {
     my $self = shift;
-  #  my $DB   = $self->Init->ml->loadmodule("DB");
-   # $DB->connect();
-  #  $self->DB($DB);
-    $self->Dispatcher( $self->Init->ml->atom("Dispatcher") );
-    $self->start();
+    my $obj  = shift;
+    my $DB   = $self->DB || $self->Init->ml->atom("DB");
+    $DB->connect();
+    return $DB->delete($obj);
 
 }
 
-sub search() {
+sub update() {
+    my $self   = shift;
+    my $Object = shift;
+    my $DB     = $self->DB || $self->Init->ml->atom("DB");
+    $DB->connect();
+    my $id  = $DB->object_to_id($Object);
+    my $Old = $DB->lookup($id);
+    return $DB->swap( $Old, $Object );
+
+}
+
+sub prepare {
     my $self = shift;
+
+    #  my $DB   = $self->Init->ml->loadmodule("DB");
+    # $DB->connect();
+    #  $self->DB($DB);
+    $self->Dispatcher( $self->Init->ml->atom("Dispatcher") );
+    $self->start();
+
 }
 
 sub start() {
@@ -38,7 +79,6 @@ sub start() {
 }
 
 sub run() {
-
     ############
     ######      Saving new ids on a file
     my $self = shift;

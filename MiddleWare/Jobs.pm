@@ -7,7 +7,7 @@ our $MODULE  = "Metasploit Module";
 our $INFO    = "<www.dark-lab.net>";
 
 #Funzioni che fornisco.
-our @PUBLIC_FUNCTIONS = qw(list kill detach result status  clear);  #NECESSARY
+our @PUBLIC_FUNCTIONS = qw(list kill detach result status clear);  #NECESSARY
 
 has 'Processes' => sub { [] };
 

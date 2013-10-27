@@ -22,6 +22,7 @@ has 'DB';
 sub prepare {
     my $self = shift;
     $self->MSFRPC( $self->Init->getModuleLoader->loadmodule("MSFRPC") );
+    $self->DB( $self->Init->ml->getInstance("Database") );
 }
 
 sub start() {
@@ -62,7 +63,6 @@ sub start() {
 sub safe_database() {
     my $self = shift;
     my $result = $self->DB->search( class => "Resources::Models::Exploit" );
-
     while ( my $block = $result->next ) {
         foreach my $item (@$block) {
             my $result2 = $self->DB->search( module => $item->module );
@@ -84,7 +84,6 @@ sub LaunchExploitOnNode() {
     my $Node    = shift;
     my $Exploit = shift;
     my @OPTIONS = ( "exploits", $Exploit->module, );
-
     #Posso usare le promises, oppure
     #master polling ogni 10 minuti.
     my $Options = $self->MSFRPC->options( "exploits", $Exploit->module );
@@ -209,7 +208,7 @@ sub test() {
 sub matchExpl() {
     my $self   = shift;
     my $String = shift;
-    my @Objs   = $self->DB->searchRegex(
+    my @Objs   = $self->DB->rsearch(
         class  => "Resources::Models::Exploit",
         module => $String
     );
@@ -237,7 +236,6 @@ sub matchNode() {
         {
             $self->Init->getIO->print_info(
                 "Exploit targets: " . join( " ", @{ $expl->targets } ) );
-
             foreach my $target ( @{ $expl->targets } ) {
                 my $os = $Node->os;
                 if ( $Node->os =~ /embedded/ ) {

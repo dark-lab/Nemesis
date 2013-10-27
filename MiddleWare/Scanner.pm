@@ -27,10 +27,10 @@ sub webtest() {
     my $self         = shift;
     my $SearchString = shift;
     my $Exploit      = shift;
-    my $Crawler      = $self->Init->ml()->load("Crawler");
+    my $Crawler      = $self->Init->ml()->atom("Crawler");
     $Crawler->search($SearchString);
     $Crawler->fetchNext();
-    my @TESTS = qw (LFI RFI);
+    my @TESTS = qw (LFI RFI RCE AFU SQLi);
     foreach my $test (@TESTS) {
         my $Test = $self->Init->ml->load($test);
         $Test->Bug($Exploit)
