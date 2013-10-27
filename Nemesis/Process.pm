@@ -1,6 +1,6 @@
 package Nemesis::Process;
 {
-    use forks;
+    
 
     # use forks::shared;
     #    share($Init);
@@ -79,6 +79,11 @@ package Nemesis::Process;
     sub thread() {
         my $self = shift;
         $Init->io->debug("Starting the thread");
+
+
+        if(exists $self->{'CONFIG'}->{'natural'} and $self->{'CONFIG'}->{'natural'} != 1 ){
+ use forks;
+        }
 
         if ( exists( $self->{'CONFIG'}->{'instance'} ) ) {
             $Init->getIO()
