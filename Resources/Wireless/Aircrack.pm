@@ -43,7 +43,7 @@ sub airbase {
 
 }
 
-sub monitor {
+sub monitor { # accetta il parametro mode : 1/0 disabilita abilita monitor mode sulla device definita nell'attributo
     my $self = shift;
     my $mode = shift || 0;
     my $sw   = "airmon-ng";

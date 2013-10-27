@@ -1,18 +1,16 @@
 package  Resources::Network::Crawler;
 use Moose;
 
-use Nemesis::Inject;
+use Nemesis::BaseRes -base;
 
-nemesis resource {
-    1;
-}
-has 'Proxy' => ( is => "rw" );
-has 'Result' => ( is => "rw", isa => "ArrayRef", default => sub { [] } );
-has 'FieldName' => ( is => "rw", default => "q" );
-has 'SearchURL' => ( is => "rw", default => "http://www.google.com" );
-has 'PageRegex' => ( is => "rw", default => 'start' );
-has 'Pages' => ( is => "rw", isa => "ArrayRef", default => sub { [] } );
-has 'MechanizeRequest' => ( is => "rw" );
+has 'Proxy';
+has 'Result' =>  sub { [] };
+has 'FieldName' => sub { 'q'} ;
+has 'SearchURL' =>  sub { "http://www.google.com" };
+has 'PageRegex' =>  sub {  'start' };
+has 'Pages' => sub { [] } ;
+has 'UA'    => sub {'Windows IE 6'};
+has 'MechanizeRequest';
 
 use WWW::Mechanize;
 use Regexp::Common qw /URI/;

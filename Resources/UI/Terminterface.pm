@@ -1,15 +1,14 @@
 package Resources::UI::Terminterface;
 use Term::ReadLine;
 use Resources::Logo;
-use Nemesis::Inject;
-
-nemesis resource {
-
-};
-
+use Nemesis::BaseRes -base;
+our @PUBLIC_LIST=();
 sub run() {
+    my $self = shift;
 
-    my $output = $Init->getIO();
+    my $output = $self->Init->getIO();
+    my $Init   = $self->Init;
+    no strict;
     $output->print_ascii_fh( Resources::Logo::DATA, "red on_black bold" );
     $Init->{'Interfaces'}->print_devices();
     $Init->checkroot();
