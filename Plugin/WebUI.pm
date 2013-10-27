@@ -1,5 +1,6 @@
 package Plugin::WebUI;
-use Moose;
+use Nemesis::BaseModule -base;
+
 use Mojo::Server::Daemon;
 use Mojo::IOLoop;
 use Nemesis::Inject;
@@ -11,9 +12,7 @@ our $INFO    = "<www.dark-lab.net>";
 
 our @PUBLIC_FUNCTIONS = qw(test run);
 
-nemesis module {}
-
-    has 'Port' => ( is => "rw", default => "8080" );
+has 'Port' => sub { return 8080 };
 
 sub test() {
     my $self = shift;

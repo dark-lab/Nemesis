@@ -1,7 +1,8 @@
 package Plugin::DNSSniffer;
 use Moose;
 
-use Nemesis::Inject;
+use Nemesis::BaseModule -base;
+
 our $VERSION = '0.1a';
 our $AUTHOR  = "luca9010";
 our $MODULE  = "DNSSniffer plugin";
@@ -9,7 +10,6 @@ our $INFO    = "<www.dark-lab.net>";
 
 our @PUBLIC_FUNCTIONS = qw(start stop);
 
-nemesis module { 1; }
 
 # moduli per la gestione dei pacchetti
 use Net::Frame;
@@ -31,7 +31,7 @@ sub start() {
             "You need root permission to do this; otherwise you wouldn't see anything"
             );
     }
-    my $LiveSniffer = $Init->ml->getInstance("LiveSniffer");
+    my $LiveSniffer = $self->Init->ml->getInstance("LiveSniffer");
     $LiveSniffer->start();
 }
 
@@ -51,7 +51,7 @@ sub event_udp() {
     my $self   = shift;
     my $Packet = shift;
 
-    my $IO = $Init->io;
+    my $IO = $self->Init->io;
 
     #$Init->io->info(__PACKAGE__." Received a UDP package");
 

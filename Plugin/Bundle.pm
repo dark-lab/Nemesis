@@ -1,19 +1,15 @@
 package Plugin::Bundle;
 
-use Nemesis::Inject;
+use Nemesis::BaseModule -base;
 
-got 'What'  => ( default => " " );
-got 'Where' => ( default => " " );
+has 'What';
+has 'Where';
 
 our $VERSION          = '0.1a';
 our $AUTHOR           = "mudler";
 our $MODULE           = "This is an interface to the Packer library";
 our $INFO             = "<www.dark-lab.net>";
 our @PUBLIC_FUNCTIONS = qw(export exportCli exportWrap);
-
-nemesis module {
-    init()->io->info("test");
-}
 
 #use PAR::Packer ();
 #use PAR         ();
@@ -22,18 +18,17 @@ use namespace::autoclean;
 
 #use App::Packer::PAR;
 
-
 use App::FatPacker;
 
 #new App::FatPacker;
 #  my @modules = split /\r?\n/, $self->trace(args => $args, use=> @Additional_modules);
-  # my @packlists = $self->packlists_containing(\@modules);
- 
-  # my $base = catdir(cwd, 'fatlib');
-  # $self->packlists_to_tree($base, \@packlists);
- 
-  # my $file = shift @$args;
-  # print $self->fatpack_file($file);
+# my @packlists = $self->packlists_containing(\@modules);
+
+# my $base = catdir(cwd, 'fatlib');
+# $self->packlists_to_tree($base, \@packlists);
+
+# my $file = shift @$args;
+# print $self->fatpack_file($file);
 
 sub export( ) {
     my $self = shift;
@@ -53,6 +48,7 @@ sub export( ) {
     $self->Init->getIO()
         ->print_info( "Packing " . $self->What . "in " . $self->Where );
     $self->fatpack();
+
     #$self->pack(); commented due to par errors
     $self->Init->getIO()->print_info("Packing done");
 
@@ -79,26 +75,26 @@ sub exportWrap() {
     $self->export( $path . "/wrapper.pl", $self->Where );
 }
 
-sub fatpack(){
-    my $self=shift;
-    my $Packer=new App::FatPacker;
-    my @args=($self->What,">".$self->Where);
+sub fatpack() {
+    my $self   = shift;
+    my $Packer = new App::FatPacker;
+    my @args   = ( $self->What, ">" . $self->Where );
 
- my @modules = split /\r?\n/, $self->trace(args => \@args, use=> @Additional_modules);
-  my @packlists = $self->packlists_containing(\@modules);
- 
-  my $base = catdir($Init->env->getPathBin(), 'fatlib');
-  $self->packlists_to_tree($base, \@packlists);
- 
-  my $file = shift @args;
-  $self->write($self->fatpack_file($file));
+    my @modules = split /\r?\n/,
+        $self->trace( args => \@args, use => @Additional_modules );
+    my @packlists = $self->packlists_containing( \@modules );
 
+    my $base = catdir( $Init->env->getPathBin(), 'fatlib' );
+    $self->packlists_to_tree( $base, \@packlists );
+
+    my $file = shift @args;
+    $self->write( $self->fatpack_file($file) );
 
 }
 
-sub write(){
-    my $self=shift;
-    open FILE,">".$self->Where();
+sub write() {
+    my $self = shift;
+    open FILE, ">" . $self->Where();
     print FILE @_;
     close FILE;
 }
@@ -116,8 +112,7 @@ sub pack() {
             my @LOADED_PLUGINS = grep /./i, map {
                 my ($Name) = $_ =~ m/([^\.|^\/]+)\.pm$/;
                 if ($Name) {
-                    $_ =
-                          $Init->getModuleLoader()->_findLib($Name) . "/"
+                    $_ = $Init->getModuleLoader()->_findLib($Name) . "/"
                         . $Name . ".pm";
                 }
                 else {

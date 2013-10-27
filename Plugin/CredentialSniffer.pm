@@ -1,6 +1,6 @@
 package Plugin::CredentialSniffer;
 
-use Nemesis::Inject;
+use Nemesis::BaseModule -base;
 
 our $VERSION          = '0.1a';
 our $AUTHOR           = "luca9010";
@@ -8,9 +8,7 @@ our $MODULE           = "CredentialSniffer plugin";
 our $INFO             = "<www.dark-lab.net>";
 our @PUBLIC_FUNCTIONS = qw();
 
-nemesis module { 1; }
-
-    sub clear() {
+sub clear() {
     my $self = shift;
     $self->stop();
 }
