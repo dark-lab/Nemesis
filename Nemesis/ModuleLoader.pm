@@ -14,7 +14,8 @@ package Nemesis::ModuleLoader;
 
     ###### The::Net hack
     push @INC => sub {
-        require LWP::Simple;
+    #    require LWP::Simple;
+        require Resources::Network::HTTPInterface;
         require IO::File;
         require Fcntl;
 
@@ -22,8 +23,11 @@ package Nemesis::ModuleLoader;
 
         return unless $url =~ m{^\w+://};
 
-        my $document = LWP::Simple::get($url)
-            or die "Failed to fetch $url: $!\n";
+        # my $document = LWP::Simple::get($url)
+        #[]       or die "Failed to fetch $url: $!\n";
+        my $reponse = Resources::Network::HTTPInterface->new->get($url);
+        my $document;
+        $document = $response->{content} if length $response->{content};
 
         my $fh = IO::File->new_tmpfile
             or die "Failed to create temp file: $!\n";
@@ -469,7 +473,7 @@ package Nemesis::ModuleLoader;
             }
         }
         $IO->print_info(
-            " $mods modules, $res resources and $unknown_data unknown data are available. Double tab to see them"
+            " $mods modules\n\t$res resources\n\t$unknown_data unknown data are available.\n\tDouble tab to see them"
         );
 
         #delete $self->{'modules'};
