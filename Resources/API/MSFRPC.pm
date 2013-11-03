@@ -1,24 +1,20 @@
 package Resources::API::MSFRPC;
-use Moose;
 
+
+use Nemesis::BaseRes -base;
 use Data::MessagePack;
 use LWP;
 use HTTP::Request;
-use Nemesis::Inject;
 
-nemesis resource {
-    1;
 
-}
-
-has 'Username' => ( isa => 'Str', is => 'rw', default => 'spike' );
-has 'Password' => ( isa => 'Str', is => 'rw', default => 'spiketest' );
-has 'Host'     => ( isa => 'Str', is => 'rw', default => '127.0.0.1' );
-has 'Port'     => ( isa => 'Int', is => 'rw', default => 5553 );
-has 'API'      => ( isa => 'Str', is => 'rw', default => '/api/' );
-has 'Token'    => ( is  => 'rw' );
-has 'Auth'     => ( isa => 'Int', is => 'rw', default => 0 );
-has 'Result'   => ( is  => "rw" );
+has 'Username' =>  sub { 'spike'};
+has 'Password' => sub { 'spiketest' };
+has 'Host'     => sub { '127.0.0.1' };
+has 'Port'     => sub { 5553 };
+has 'API'      => sub { '/api/' };
+has 'Token'    ;
+has 'Auth'     => sub { 0 };
+has 'Result'  ;
 
 sub call() {
     my $self        = shift;
