@@ -15,7 +15,7 @@ package Nemesis::ModuleLoader;
     ###### The::Net hack
     push @INC => sub {
     #    require LWP::Simple;
-        require Resources::Network::HTTPInterface;
+      #  require Resources::Network::HTTPInterface;
         require IO::File;
         require Fcntl;
 
