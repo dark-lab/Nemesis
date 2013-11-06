@@ -282,7 +282,6 @@ sub wifi_enum {
     my $current;
     foreach my $line (@Result) {
         if ( $line =~ /BSS\s+(.*)\(/ ) {
-
             $self->{'devices'}->{$Device}->{aps}->{$1} = {};
             $current = $1;
         }
@@ -294,12 +293,9 @@ sub wifi_enum {
             $self->{'devices'}->{$Device}->{aps}->{$current}->{"signal"} = $1;
 
         }
-
         if ( $line =~ /channel\s+(\d\d?)$/ ) {
             $self->{'devices'}->{$Device}->{aps}->{$current}->{"channel"} = $1;
-
         }
-
         if ( $line =~ /WPS/ ) {
             $self->{'devices'}->{$Device}->{aps}->{$current}->{"security"}
                 .= " WPS ";
