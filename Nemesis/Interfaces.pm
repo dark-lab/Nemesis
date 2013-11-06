@@ -59,12 +59,14 @@ sub wifi_scan() {
     my $self = shift;
     foreach my $dev ( keys %{ $self->{'devices'} } ) {
         $self->parse_config( "ifconfig", $dev );
-        if ( exists( $self->{'devices'}->{$dev}->{'WIRELESS'} )
-            && $self->{'devices'}->{$dev}->{'WIRELESS'} == 1 )
-        {
-            $self->wifi_enum($dev);
-            $self->parse_config( "iwconfig", $dev );
-        }
+
+        # if ( exists( $self->{'devices'}->{$dev}->{'WIRELESS'} )
+        #    && $self->{'devices'}->{$dev}->{'WIRELESS'} == 1 )
+        #{
+        $self->wifi_enum($dev);
+        $self->parse_config( "iwconfig", $dev );
+
+        #}
     }
 }
 
@@ -163,6 +165,9 @@ sub read_interface() {
             if ( $piece =~ /\:/ ) {
                 $piece =~ s/\://g;
                 $tmp_dev = $piece;
+
+  #      $Init->io->print_info("l'interfaccia ".$tmp_dev." su $file esiste!");
+
                 %{ $self->{'devices'}->{$tmp_dev} } = %tmp;
                 if ( $file =~ /wireless/i ) {
                     $self->{'devices'}->{$tmp_dev}->{'WIRELESS'} = 1;
@@ -188,11 +193,13 @@ sub getAPs {
     if ( $device eq "all" ) {
 
         foreach my $dev ( keys %{ $self->{'devices'} } ) {
-            if ( exists( $self->{'devices'}->{$dev}->{'WIRELESS'} )
-                and $self->{'devices'}->{$dev}->{'WIRELESS'} eq 1 )
-            {
-                $Aps->{$dev} = $self->{'devices'}->{$dev}->{aps};
-            }
+
+            # if ( exists( $self->{'devices'}->{$dev}->{'WIRELESS'} )
+            #     and $self->{'devices'}->{$dev}->{'WIRELESS'} eq 1 )
+            # {
+            $Aps->{$dev} = $self->{'devices'}->{$dev}->{aps};
+
+            # }
 
         }
 
@@ -203,8 +210,6 @@ sub getAPs {
         {
 
             $Aps = $self->{'devices'}->{$device}->{aps};
-
-            #  $Init->io->debug_dumper(\%Aps);
 
         }
     }
@@ -287,6 +292,11 @@ sub wifi_enum {
 
         if ( $line =~ /signal:\s+(.*)$/ ) {
             $self->{'devices'}->{$Device}->{aps}->{$current}->{"signal"} = $1;
+
+        }
+
+        if ( $line =~ /channel\s+(\d\d?)$/ ) {
+            $self->{'devices'}->{$Device}->{aps}->{$current}->{"channel"} = $1;
 
         }
 

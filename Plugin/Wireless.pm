@@ -24,6 +24,7 @@ sub rogue {    #associate every probe
 sub scan {
     my $self = shift;
     $self->Init->interfaces->wifi_scan();
+    $self->list();
 }
 
 sub list {
@@ -84,6 +85,13 @@ sub wps {
 
 }
 
+sub attack_wps() {
+    my $self   = shift;
+    my $Reaver = $self->Init->ml->atom("Reaver");
+    $Reaver->channel("test");
+    $self->Init->io->debug( $Reaver->_generateCommand() );
+}
+
 sub display_wifi() {
     my $self = shift;
     my $ap   = shift;
@@ -93,6 +101,8 @@ sub display_wifi() {
         if exists $ap->{'signal'};
     $self->Init->io->print_tabbed( $ap->{'security'}, 4 )
         if exists $ap->{'security'};
+    $self->Init->io->print_tabbed( $ap->{'channel'}, 4 )
+        if exists $ap->{'channel'};
 }
 
 sub auto_wps {
@@ -109,6 +119,8 @@ sub test {
 
 sub clear {
     my $self = shift;
+
+    # $_->monitor(0) for grep {$_->monitor_device ne ""} @{$self->res};
     foreach my $a ( @{ $self->res } ) {
         $a->monitor(0) if ( $a->monitor_device ne "" );
 
