@@ -29,9 +29,9 @@ sub clear() {
     my $IO        = $Init->getIO();
     my $workspace = $Init->getEnv()->workspace();
     $IO->print_info("Restoring ip forward");
-    $env->ipv4_forward("off");
+ #   $env->ipv4_forward("off");
     $IO->print_info("Flushing iptables");
-    $IO->exec("iptables -F;iptables -F -t nat");
+    #$IO->exec("iptables -F;iptables -F -t nat");
     my $process;
 
     if ( exists( $self->{'squidID'} ) ) {
