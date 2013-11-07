@@ -1,25 +1,29 @@
 package MiddleWare::Scanner;
 
 use Nemesis::BaseModule -base;
-use HTTP::Request;
+
+#use HTTP::Request;
 use Net::IP;
 use Nmap::Parser;
 use Resources::Models::Node;
 use DateTime;
+use NetAddr::IP;
 
 our $VERSION = '0.1a';
 our $AUTHOR  = "mudler";
 our $MODULE  = "Scanner plugin";
 our $INFO    = "<www.dark-lab.net>";
 
-my @PUBLIC_FUNCTIONS = qw(webtest nmap);
+our @PUBLIC_FUNCTIONS = qw(webtest nmap);
 
 has 'Arguments';
 has 'DB';
+#use namespace::autoclean;
 
 sub prepare {
     my $self = shift;
-  #  $self->DB( $self->Init->ml->atom("DB")->connect );
+
+    #  $self->DB( $self->Init->ml->atom("DB")->connect );
     $self->Arguments("-sS -sV -O -A -P0");
 }
 
@@ -54,7 +58,6 @@ sub nmap() {
     }
     else {
         my @Ips = $self->Init->getInterfaces()->ips();
-        use NetAddr::IP;
         foreach my $Ip (@Ips) {
             $self->Init->getIO()->print_info("Scanning the network of $Ip");
             $self->nmapscan( $Ip . '/24' );
@@ -77,7 +80,8 @@ sub nmapscan() {
     $self->Init->getIO()->print_info( "Session:" . $Session->scan_args );
     foreach my $host ( $Np->all_hosts() ) {
         next if ( $host->status ne "up" );
-        my $results = $self->Init->ml->getInstance("Database")->search( ip => $host->addr );
+        my $results = $self->Init->ml->getInstance("Database")
+            ->search( {ip => $host->addr} );
         my $DBHost;
         while ( my $chunk = $results->next ) {
             for my $foundhost (@$chunk) {
