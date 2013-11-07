@@ -36,13 +36,13 @@ sub start() {
         = 'msfrpcd -U '
         . $self->MSFRPC->Username . ' -P '
         . $self->MSFRPC->Password . ' -p '
-        . $self->MSFRPC->Port . ' -S';
+        . $self->MSFRPC->Port . ' -S ';
     $Io->print_info("Starting msfrpcd service.")
         ;    #AVVIO il demone msfrpc con le configurazioni della risorsa
     my $Process
         = $self->Init->ml->loadmodule('Process');   ##Carico il modulo process
     $Process->set(
-        type => 'daemon',                           # tipologia demone
+        type => 'system',                           # tipologia demone
         code => $processString                      # linea di comando...
     );
     if ( $Process->start() ) {                      #Avvio
@@ -62,10 +62,10 @@ sub start() {
 
 sub safe_database() {
     my $self = shift;
-    my $result = $self->DB->search( class => "Resources::Models::Exploit" );
+    my $result = $self->DB->search( {class => "Resources::Models::Exploit" });
     while ( my $block = $result->next ) {
         foreach my $item (@$block) {
-            my $result2 = $self->DB->search( module => $item->module );
+            my $result2 = $self->DB->search({ module => $item->module });
             while ( my $block2 = $result2->next ) {
                 foreach my $item2 (@$block2) {
                     if ( $item ne $item2 ) {
@@ -208,9 +208,13 @@ sub test() {
 sub matchExpl() {
     my $self   = shift;
     my $String = shift;
-    my @Objs   = $self->DB->rsearch(
+
+    my @Objs   = $self->DB->rsearch({
+
+    
         class  => "Resources::Models::Exploit",
         module => $String
+    }
     );
 
     $self->Init->getIO->print_tabbed(
@@ -255,7 +259,7 @@ sub matchNode() {
 sub matchPort() {
     my $self   = shift;
     my $String = shift;
-    my $Objs   = $self->DB->search( default_rport => $String );
+    my $Objs   = $self->DB->search({ default_rport => $String });
     $self->Init->getIO->print_tabbed(
         "Searching a matching exploit for port $String", 3 );
 
