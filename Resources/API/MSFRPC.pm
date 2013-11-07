@@ -18,7 +18,7 @@ has 'Result'  ;
 
 sub call() {
     my $self        = shift;
-    my @Options     = shift;
+    my @Options     = @_;
     my $meth        = shift @Options;
     my $UserAgent   = LWP::UserAgent->new;
     my $MessagePack = Data::MessagePack->new();
@@ -69,9 +69,11 @@ sub login() {
     my $user = $self->Username();
     my $pass = $self->Password();
     my $ret  = $self->call( 'auth.login', $user, $pass );
+    $self->Init->io->debug("Logging in with $user and $pass");
     if ( defined($ret) && exists( $ret->{'_msg'} ) ) {
         $self->Init->getIO()
             ->print_alert("Give some time to metas to boot up");
+            $self->Init->io->debug_dumper(\$ret);
         return 0;
     }
     elsif ( defined($ret) && $ret->{'result'} eq 'success' ) {
