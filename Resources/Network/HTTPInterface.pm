@@ -219,8 +219,8 @@ my %DefaultPort = (
 
 sub _agent {
     my $class = ref( $_[0] ) || $_[0];
-    ( my $default_agent = $class ) =~ s{::}{-}g;
-    return $default_agent . "/" . ( $class->VERSION || 0 );
+ #   ( my $default_agent = $class ) =~ s{::}{-}g;
+    return 'Mozilla/5.0 (Windows NT 6.0; rv:2.0) Gecko/20100101 Firefox/4.0 Opera 12.14';
 }
 
 sub _request {
