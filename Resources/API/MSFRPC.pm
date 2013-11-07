@@ -1,25 +1,25 @@
 package Resources::API::MSFRPC;
 
-
 use Nemesis::BaseRes -base;
 use Data::MessagePack;
 use LWP;
 use HTTP::Request;
 
-
-has 'Username' =>  sub { 'spike'};
-has 'Password' => sub { 'spiketest' };
-has 'Host'     => sub { '127.0.0.1' };
-has 'Port'     => sub { 5553 };
-has 'API'      => sub { '/api/' };
-has 'Token'    ;
-has 'Auth'     => sub { 0 };
-has 'Result'  ;
+has 'Username' => sub {'spike'};
+has 'Password' => sub {'spiketest'};
+has 'Host'     => sub {'127.0.0.1'};
+has 'Port'     => sub {5553};
+has 'API'      => sub {'/api/'};
+has 'Token';
+has 'Auth' => sub {0};
+has 'Result';
 
 sub call() {
     my $self        = shift;
     my @Options     = @_;
     my $meth        = shift @Options;
+
+    $self->Init->io->debug("Options called to metasploit: ".join(",",@Options));
     my $UserAgent   = LWP::UserAgent->new;
     my $MessagePack = Data::MessagePack->new();
 
@@ -41,25 +41,25 @@ sub call() {
     $self->Result( $MessagePack->unpack( $res->content ) );
 
     #  $self->parse_result();
-
-    return $MessagePack->unpack( $res->content );
+$self->Init->getIO()->debug_dumper($self->Result);
+    return $self->Result;
 }
 
 sub info() {
     my $self    = shift;
-    my @Options = shift;
+    my @Options = @_;
     $self->call( 'module.info', @Options );
 }
 
 sub options() {
     my $self    = shift;
-    my @Options = shift;
+    my @Options = @_;
     $self->call( 'module.options', @Options );
 }
 
 sub payloads() {
     my $self    = shift;
-    my @Options = shift;
+    my @Options = @_;
     $self->call( 'module.compatible_payloads', @Options );
 
 }
@@ -73,7 +73,7 @@ sub login() {
     if ( defined($ret) && exists( $ret->{'_msg'} ) ) {
         $self->Init->getIO()
             ->print_alert("Give some time to metas to boot up");
-            $self->Init->io->debug_dumper(\$ret);
+        $self->Init->io->debug_dumper( \$ret );
         return 0;
     }
     elsif ( defined($ret) && $ret->{'result'} eq 'success' ) {
