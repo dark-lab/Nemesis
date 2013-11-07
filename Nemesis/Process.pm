@@ -300,11 +300,11 @@ package Nemesis::Process;
             $self->save_pid($p);
 
 
-                while (<$rdr>) {
-                    $self->save($_);
+                # while (<$rdr>) {
+                #     $self->save($_);
 
-                }
-
+                # }
+waitpid( $p, 0 );
             
 
             $self->save("Daemon mode\n");
@@ -494,7 +494,7 @@ package Nemesis::Process;
         $Init->getIO()->debug( "getting the pid of: " . $PIECES[0] );
         my $I = 0
             ; #We set a variable to 0, to be the index for the array we are visiting
-
+sleep 1; # i hate that..
         foreach my $piece (@PIECES) {
             my @FOUND_PIDS = $this_pid->get_pidof($piece);
             my $first = 0;    #another index for the PIDS FOUND FOR THE PIECE
