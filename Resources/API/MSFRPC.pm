@@ -15,11 +15,12 @@ has 'Auth' => sub {0};
 has 'Result';
 
 sub call() {
-    my $self        = shift;
-    my @Options     = @_;
-    my $meth        = shift @Options;
+    my $self    = shift;
+    my @Options = @_;
+    my $meth    = shift @Options;
 
-    $self->Init->io->debug("Options called to metasploit: ".join(",",@Options));
+    $self->Init->io->debug(
+        "Options called to metasploit: " . join( ",", @Options ) );
     my $UserAgent   = LWP::UserAgent->new;
     my $MessagePack = Data::MessagePack->new();
 
@@ -35,14 +36,25 @@ sub call() {
     $HttpRequest->content( $MessagePack->pack( \@Options ) );
     my $res = $UserAgent->request($HttpRequest);
 
-    #  $self->Init->getIO->debug_dumper($res);
-    return $res if $res->code == 500 or $res->code != 200;
+    $self->Init->getIO->debug_dumper($res);
+    $self->error($res) and return if $res->code == 500 or $res->code != 200;
 
     $self->Result( $MessagePack->unpack( $res->content ) );
+    $self->Init->io->error( $self->Result->{error_message} ) and return $self->Result
+        if $res->code == 200 and exists $self->Result->{error_message};
 
     #  $self->parse_result();
-$self->Init->getIO()->debug_dumper($self->Result);
+    $self->Init->getIO()->debug_dumper( $self->Result );
     return $self->Result;
+}
+
+sub error() {
+    my $self  = shift;
+    my $error = shift;
+    if ( $error->content ) {
+        $self->Init->io->error( $error->content );
+    }
+
 }
 
 sub info() {
@@ -55,6 +67,13 @@ sub options() {
     my $self    = shift;
     my @Options = @_;
     $self->call( 'module.options', @Options );
+
+}
+
+sub execute() {
+    my $self    = shift;
+    my @Options = @_;
+    $self->call( 'module.execute', @Options );
 }
 
 sub payloads() {
