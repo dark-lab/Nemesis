@@ -1,16 +1,63 @@
 Nemesis
 =======
+
+<pre>
+                                                                                       
+                                                                                           
+  L.                      ,;                                ,;           .                .
+  EW:        ,ft        f#i                               f#i           ;W  t            ;W
+  E##;       t#E      .E#t              ..       :      .E#t           f#E  Ej          f#E
+  E###t      t#E     i#W,              ,W,     .Et     i#W,          .E#f   E#,       .E#f 
+  E#fE#f     t#E    L#D.              t##,    ,W#t    L#D.          iWW;    E#t      iWW;  
+  E#t D#G    t#E  :K#Wfff;           L###,   j###t  :K#Wfff;       L##Lffi  E#t     L##Lffi
+  E#t  f#E.  t#E  i##WLLLLt        .E#j##,  G#fE#t  i##WLLLLt     tLLG##L   E#t    tLLG##L 
+  E#t   t#K: t#E   .E#L           ;WW; ##,:K#i E#t   .E#L           ,W#i    E#t      ,W#i  
+  E#t    ;#W,t#E     f#E:        j#E.  ##f#W,  E#t     f#E:        j#E.     E#t     j#E.   
+  E#t     :K#D#E      ,WW;     .D#L    ###K:   E#t      ,WW;     .D#j       E#t   .D#j     
+  E#t      .E##E       .D#;   :K#t     ##D.    E#t       .D#;   ,WK,        E#t  ,WK,      
+  ..         G#E         tt   ...      #G      ..          tt   EG.         E#t  EG.       
+              fE                       j                        ,           ,;.  ,         
+               ,                                                
+
+                            dHP^~"        "~^THb.
+                          .AHF                YHA.  
+                         .AHHb.              .dHHA.  
+                         HHAUAAHAbn      adAHAAUAHA  
+                         HF~"_____        ____ ]HHH 
+                         HAPK""~^YUHb  dAHHHHHHHHHH
+                         HHHD> .andHH  HHUUP^~YHHHH
+                         ]HHP     "~Y  P~"     THH[ 
+                         `HK                   ]HH'  
+                          THAn.  .d.aAAn.b.  .dHHP
+                          ]HHHHAAUP" ~~ "YUAAHHHH[
+                          `HHP^~"  .annn.  "~^YHH'
+                           YHb    ~" "" "~    dHF
+                            "YAb..abdHHbndbndAP"
+                              THHAAb.  .adAHHF
+                              "UHHHHHHHHHHU"     
+                                ]HHUUHHHHHH[
+                              .adHHb "HHHHHbn.
+                       ..andAAHHHHHHb.AHHHHHHHAAbnn..
+                  .ndAAHHHHHHUUHHHHHHHHHHUP^~"~^YUHHHAAbn.
+                    "~^YUHHP"   "~^YUHHUP"        "^YUP^"
+                         ""         "~~"
+
+</pre>
+
+
 Nemesis is a FOSS (Free and Open Source Software) framework for network pen-testing
 
 
-This framework's aim to help any pen-testers in their job improving the user experience of the various tools.<br /> <br />
+This framework's aim to help any pen-testers in their job improving the user experience of the various tools.
+
 
 ## Description
 Nemesis is a framework enterely written in Perl, structured to make a friendly environment for Pen-Testers.
 The framework links informations gathered from different tools and facilitates the execution of some attack's vectors.
 The software is modular and can be extended from anyone who wants, just make a pull!
-Every module can be loaded and unloaded in runtime just to suite the occasion of use (one of the goals is to run on an embedded system).
+Every module can be loaded and unloaded in runtime just to fit your needs (one of the goals is to run on an embedded system).
 Users can execute stuff from a simple CLI, with a debug mode for developers and is really easy to use.
+The CLI is structured to have a simple workflow for your pentesting sessions.
 
 
 ### Goals:
@@ -18,14 +65,16 @@ Users can execute stuff from a simple CLI, with a debug mode for developers and 
 * Create a unique interface to pen-testing's programs;
 * Link informations found from different tools;
 * Automate standard operation and common routine during pen-testing;
-* LAN/WLAN Exploiting;
+* Making metasploit usage automatized
+* Leveraging metasploit exploit database to analyze active/passive traffic to match exploits fingerprintings (mostly done)
+* LAN/WLAN Exploiting (We are almost at the end of this);
 * Web App Exploiting;
 * Make pen-testing fun!
 
 ## The Complex Stuff:
 * Finalizing the metasploit integration
-* Rewriting of the modules to be more tiny for most environment, to delete the ```minimal``` branch
-* Give it a code clean and maybe a MakeFile.PL
+* Module rewrital, to be more portable for most environment, we need to delete the ```minimal``` branch
+* We need to clean the code and maybe a MakeFile.PL (I know, PM maybe will hate us)
 * maybe writing a better TODO and a fixed milestone? just adding stuff to todo it's making all more difficult
 
 ## TODO:
@@ -36,65 +85,38 @@ Users can execute stuff from a simple CLI, with a debug mode for developers and 
 Module that are capable to load will load, so minimal functions it's garanted (for execution as a daemon).
 
 
-**Minimal Dependencies**
-
-
-
-**Full Dependencies**
-Alt::Crypt::RSA::BigInt<br />
-App::FatPacker<br />
-Crypt::CBC<br />
-Data::MessagePack<br />
-Data::Structure::Util<br />
-DateTime<br />
-Devel::Declare::Lexer<br />
-Devel::Declare::Lexer::Factory<br />
-Getopt::Long<br />
-HTTP::Request<br />
-KiokuDB<br />
-KiokuDB::Util<br />
-LWP<br />
-LWP::Simple<br />
-Module::Loaded<br />
-Mojo::IOLoop<br />
-Mojo::Server::Daemon<br />
-Mojolicious::Lite<br />
-Moose<br />
-Moose::Util::TypeConstraints<br />
-MooseX::Declare<br />
-Net::Frame::Dump::Online<br />
-Net::Frame::Layer::DNS<br />
-Net::Frame::Layer::DNS::RR<br />
-Net::Frame::Layer::ETH<br />
-Net::Frame::Layer::IPv4<br />
-Net::Frame::Layer::UDP<br />
-Net::Frame::Simple<br />
-Net::IP<br />
-Net::Write::Layer<br />
-Net::Write::Layer2<br />
-NetAddr::IP<br />
-Nmap::Parser<br />
-POE<br />
-Regexp::Common<br />
-Scalar::Util<br />
-Search::GIN::Extract::Class<br />
-Search::GIN::Query::Class<br />
-Search::GIN::Query::Manual<br />
-Term::ANSIColor<br />
-Term::UI<br />
-Term::Visual<br />
-Unix::PID<br />
-WWW::Mechanize<br />
-forks<br />
-namespace::autoclean<br />
-All programs useful for pen-testing<br />
-And obviously Perl!
-
 **How install Nemesis**
-The fastest way to get Nemesis full working on your war PC is to run:<br />
-  cpanm --installdeps .
-This will install all dependencies required by Nemesis in your PC.
+
+You typically dont' need to install it unless you want some other juicy features.
+If you need the full interface, the fastest way to get Nemesis full working on your war PC is to run:
+
+```cpanm --installdeps .```
+
+This will automatically install all dependencies required.
+***
+If you don't need all that stuff, you can run *nemesis* as a daemon, but you will loose the CLI workflow, you can achieve that by setting up a 
+session (works like a scripting interface) that can be read from the software and will execute the tasks you need
 
 ## Suggestions
 Extensibility is the most important feature of this framework. 
-So we are very happy to get some feedbacks from comunity, if you have some useful suggestions about the project don't wait to submit them to us!
+So we are very happy to get some feedbacks from comunity, if you have some useful suggestions about the project don't wait to submit them to 
+us! Pull Requests and issues are welcome!
+
+
+***
+
+##Why do we need another framework for pentesting, metasploit it's not enough?
+
+Yes, i think it's enough. This is a personal project that we made to automize tasks because we wanna to export metasploit functionality in an 
+embedded system: our goal here it's to build a device capable to exploit LAN and WLAN so the pentester can be more hidden (thus nobody can have 
+suspects on you  ;)  ).
+
+Our dream it's to import metasploit exploits, and execute them in the framework: why? we wanna be an alternative to funcy ruby stuff.
+
+***
+
+Feel free to contact us! 
+mudler@dark-lab.net skullbocks@dark-lab.net
+
+
+
