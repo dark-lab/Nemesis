@@ -1,6 +1,5 @@
 package Nemesis::Process;
 {
-    
 
     # use forks::shared;
     #    share($Init);
@@ -60,8 +59,8 @@ package Nemesis::Process;
                 $state = $self->fork();
             }
         }
-        if($state){
-            if(my $Job = $Init->ml->getInstance("Jobs")){
+        if ($state) {
+            if ( my $Job = $Init->ml->getInstance("Jobs") ) {
                 $Job->list();
                 $Job->add($self);
             }
@@ -80,9 +79,10 @@ package Nemesis::Process;
         my $self = shift;
         $Init->io->debug("Starting the thread");
 
-
-        if(exists $self->{'CONFIG'}->{'natural'} and $self->{'CONFIG'}->{'natural'} != 1 ){
- use forks;
+        if ( exists $self->{'CONFIG'}->{'natural'}
+            and $self->{'CONFIG'}->{'natural'} != 1 )
+        {
+            use forks;
         }
 
         if ( exists( $self->{'CONFIG'}->{'instance'} ) ) {
@@ -161,6 +161,9 @@ package Nemesis::Process;
         if ( exists( $self->{'INSTANCE'} ) ) {
             $Init->io->debug( "Joining", $self->{'CONFIG'}->{'INDEX'} );
             $self->{'INSTANCE'}->join();
+        }
+        elsif ( $self->{'CONFIG'}->{'type'} eq 'daemon' ) {
+            waitpid( $self->{'CONFIG'}->{'PID'}, 0 );
         }
     }
 
@@ -296,25 +299,30 @@ package Nemesis::Process;
         use Symbol 'gensym';
         $err = gensym;
 
-        if ( $p = open3( $wtr, $rdr, $err, $cmd ) ) {
-            $self->save_pid($p);
+        my $pid = fork();
+        $Init->io->error("Cannot fork: $!") if ( !defined $pid );
+        if ( !$pid ) { #XXX: WITHOUT FORK RUBY GOES DEFUNCT-
+            if ( $p = open3( $wtr, $rdr, $err, $cmd ) ) {
+                $self->save_pid($p);
 
+                # while (<$err>) {
+                #    $self->save($_);
+                #    $Init->io->debug($_);
 
-                # while (<$rdr>) {
-                #     $self->save($_);
+                #}
+                $self->save("Daemon mode\n");
 
-                # }
-waitpid( $p, 0 );
-            
+                waitpid( $p, 0 );
 
-            $self->save("Daemon mode\n");
-            return 1;
-        }
-        else {
-            $Init->getIO()
-                ->print_error( "Error! $err " . $self->{'CONFIG'}->{'code'} );
-            $self->destroy();
-            return ();
+                return 1;
+            }
+            else {
+                $Init->getIO()
+                    ->print_error(
+                    "Error! $err " . $self->{'CONFIG'}->{'code'} );
+                $self->destroy();
+                return;
+            }
         }
 
         #$Init->getIO()->set_debug(0);
@@ -494,7 +502,8 @@ waitpid( $p, 0 );
         $Init->getIO()->debug( "getting the pid of: " . $PIECES[0] );
         my $I = 0
             ; #We set a variable to 0, to be the index for the array we are visiting
-sleep 1; # i hate that..
+        sleep 1;    # i hate that..
+
         foreach my $piece (@PIECES) {
             my @FOUND_PIDS = $this_pid->get_pidof($piece);
             my $first = 0;    #another index for the PIDS FOUND FOR THE PIECE

@@ -36,13 +36,13 @@ sub start() {
         = 'msfrpcd -U '
         . $self->MSFRPC->Username . ' -P '
         . $self->MSFRPC->Password . ' -p '
-        . $self->MSFRPC->Port . ' -S ';
+        . $self->MSFRPC->Port . ' -S -f';
     $Io->print_info("Starting msfrpcd service.")
         ;    #AVVIO il demone msfrpc con le configurazioni della risorsa
     my $Process
         = $self->Init->ml->loadmodule('Process');   ##Carico il modulo process
     $Process->set(
-        type => 'system',                           # tipologia demone
+        type => 'daemon',                           # tipologia demone
         code => $processString                      # linea di comando...
     );
     if ( $Process->start() ) {                      #Avvio
@@ -84,10 +84,17 @@ sub LaunchExploitOnNode() {
     my $self    = shift;
     my $Node    = shift;
     my $Exploit = shift;
-    my @OPTIONS = ( "exploits", $Exploit->module, );
+    my @OPTIONS = ( "exploits", $Exploit->module );
 
     #Posso usare le promises, oppure
     #master polling ogni 10 minuti.
+    my $LaunchResult= $self->MSFRPC->execute($Exploit->type, $Exploit->module, {
+        PAYLOAD=>undef,
+        TARGET=>undef,
+        ACTION=> undef,
+        });
+
+
     my $Options = $self->MSFRPC->options( "exploits", $Exploit->module );
     my $Payloads = $self->MSFRPC->payloads( $Exploit->module );
     $self->Init->getIO->debug_dumper( \$Options );

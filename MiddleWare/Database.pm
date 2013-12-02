@@ -99,8 +99,8 @@ sub prepare {
     my $self = shift;
 
     #  my $DB   = $self->Init->ml->loadmodule("DB");
-    # $DB->connect();
-    #  $self->DB($DB);
+   # $DB->connect();
+   # $self->DB($DB);
     $self->Dispatcher( $self->Init->ml->atom("Dispatcher") );
     $self->start();
 

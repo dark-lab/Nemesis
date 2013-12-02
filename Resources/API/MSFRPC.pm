@@ -36,15 +36,15 @@ sub call() {
     $HttpRequest->content( $MessagePack->pack( \@Options ) );
     my $res = $UserAgent->request($HttpRequest);
 
-    $self->Init->getIO->debug_dumper($res);
+    #$self->Init->getIO->debug_dumper($res);
     $self->error($res) and return if $res->code == 500 or $res->code != 200;
 
     $self->Result( $MessagePack->unpack( $res->content ) );
-    $self->Init->io->error( $self->Result->{error_message} ) and return $self->Result
-        if $res->code == 200 and exists $self->Result->{error_message};
+    $self->Init->io->error( $self->Result->{'error_message'} ) and return $self->Result
+        if exists $self->Result->{'error_message'} and $res->code == 200;
 
     #  $self->parse_result();
-    $self->Init->getIO()->debug_dumper( $self->Result );
+    #$self->Init->getIO()->debug_dumper( $self->Result );
     return $self->Result;
 }
 

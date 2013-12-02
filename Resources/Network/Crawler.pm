@@ -1,5 +1,5 @@
 package  Resources::Network::Crawler;
-use Moose;
+#use Moose;
 
 use Nemesis::BaseRes -base;
 

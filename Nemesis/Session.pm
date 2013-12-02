@@ -238,13 +238,13 @@ use File::Path;
         my $COMMAND_LOG;
         my @FLOW;
         if ($File) {
-            open $COMMAND_LOG, "<", $File;
+            open $COMMAND_LOG, "<", $File or $Init->io->debug("Session is new, cannot read flow");
             @FLOW = <$COMMAND_LOG>;
         }
         else {
             open $COMMAND_LOG, "<",
                 $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/"
-                . $CONF->{'VARS'}->{'FLOWFILE'};
+                . $CONF->{'VARS'}->{'FLOWFILE'} or $Init->io->debug("Session is new, cannot read flow");
             @FLOW = <$COMMAND_LOG>;
         }
 
