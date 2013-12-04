@@ -59,6 +59,8 @@ Every module can be loaded and unloaded in runtime just to fit your needs (one o
 Users can execute stuff from a simple CLI, with a debug mode for developers and is really easy to use.
 The CLI is structured to have a simple workflow for your pentesting sessions.
 
+## Status
+Currently it's under developing, so there are basic functionality working for now
 
 ### Goals:
 
