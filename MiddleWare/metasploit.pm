@@ -89,9 +89,14 @@ sub LaunchExploitOnNode() {
     #Posso usare le promises, oppure
     #master polling ogni 10 minuti.
     my $LaunchResult= $self->MSFRPC->execute($Exploit->type, $Exploit->module, {
-        PAYLOAD=>undef,
-        TARGET=>undef,
-        ACTION=> undef,
+     ##   PAYLOAD=>undef,
+     ##   TARGET=>undef,
+     ##   ACTION=> undef,
+
+     RHOST =>$Node->ip, 
+     RPORT => $Exploit->default_rport
+
+
         });
 
 
