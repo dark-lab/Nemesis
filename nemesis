@@ -10,6 +10,7 @@ use Getopt::Long qw( GetOptions );
 GetOptions(
     "s=s"   => \my $SessionName,    # Session start
     "w=s"   => \my $Wrap,           # Wrap an execution script
+    "m=s"   => \my $M,
     "debug" => \my $DebugCli,       # Debug modality
 
 );
@@ -18,13 +19,13 @@ GetOptions(
 
 if ( defined($Wrap) and defined($SessionName) ) {
     $Init->io->set_debug(1) if defined($DebugCli);
-    $Init->getModuleLoader()->loadmodules();
+    defined $M? $Init->getModuleLoader()->loadmodules(split(/\,|\,\s/,$M)): $Init->getModuleLoader()->loadmodules();
     $Init->ml->instance("session")->spawn($SessionName);
     $Init->getSession()->wrap($Wrap);
 }
 elsif ( defined($Wrap) ) {
     $Init->io->set_debug(1) if defined($DebugCli);
-    $Init->getModuleLoader()->loadmodules();
+    defined $M? $Init->getModuleLoader()->loadmodules(split(/\,|\,\s/,$M)): $Init->getModuleLoader()->loadmodules();
     $Init->getSession()->wrap( $Init->getSession->_get_flow($Wrap) );
 }
 

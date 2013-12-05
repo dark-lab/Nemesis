@@ -413,11 +413,11 @@ package Nemesis::ModuleLoader;
     }
 
     sub loadmodules {
-        my $self = shift;
+        my $self            = shift;
         my @selectedModules = ();
-        @selectedModules = shift if @_>0;    
+        my $IO              = $Init->getIO();
+        @selectedModules = @_ if @_ > 0;
         my @modules;
-        my $IO   = $Init->getIO();
         my @Libs = $self->getLibs;
         my $modules;
         my $mods         = 0;
@@ -428,8 +428,10 @@ package Nemesis::ModuleLoader;
 
         foreach my $Library (@Libs) {
             my ($name) = $Library =~ m/([^\.|^\/]+)\.pm/;
-            next if @selectedModules>0 and $self->_match(@selectedModules,$name);
             next if !$name;
+            next
+                if @selectedModules > 0
+                and !&_match( \@selectedModules, $name ); ## XXX: Note, should change behaviour here, need an array of libs to load, not to avoid them thru the cycle
             my $Class = $self->resolvObj($name);
             $self->unload( $Class, $Library );
             $Init->getIO()
@@ -528,12 +530,10 @@ package Nemesis::ModuleLoader;
 
     ############# array match ##############
     sub _match() {
-
-        #my $self  = shift;
+        #        my $self  = shift;
         my $array = shift;
         my $value = shift;
-        my %hash;
-        @hash{ @{$array} } = 1;
+        my %hash = map { $_ => 1 } @$array;
         $hash{$value} ? return 1 : return 0;
     }
 
