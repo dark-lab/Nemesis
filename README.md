@@ -59,6 +59,8 @@ Every module can be loaded and unloaded in runtime just to fit your needs (one o
 Users can execute stuff from a simple CLI, with a debug mode for developers and is really easy to use.
 The CLI is structured to have a simple workflow for your pentesting sessions.
 
+## Status
+Currently it's under developing, so there are basic functionality working for now
 
 ### Goals:
 
@@ -94,22 +96,18 @@ If you need the full interface, the fastest way to get Nemesis full working on y
 
 This will automatically install all dependencies required.
 ***
-If you don't need all that stuff, you can run *nemesis* as a daemon, but you will loose the CLI workflow, you can achieve that by setting up a 
-session (works like a scripting interface) that can be read from the software and will execute the tasks you need
+If you don't need all that stuff, you can run *nemesis* as a daemon, but you will loose the CLI workflow, you can achieve that by setting up a session (works like a scripting interface) that can be read from the software and will execute the tasks you need
 
 ## Suggestions
 Extensibility is the most important feature of this framework. 
-So we are very happy to get some feedbacks from comunity, if you have some useful suggestions about the project don't wait to submit them to 
-us! Pull Requests and issues are welcome!
+So we are very happy to get some feedbacks from comunity, if you have some useful suggestions about the project don't wait to submit them to us! Pull Requests and issues are welcome!
 
 
 ***
 
 ##Why do we need another framework for pentesting, metasploit it's not enough?
 
-Yes, i think it's enough. This is a personal project that we made to automize tasks because we wanna to export metasploit functionality in an 
-embedded system: our goal here it's to build a device capable to exploit LAN and WLAN so the pentester can be more hidden (thus nobody can have 
-suspects on you  ;)  ).
+Yes, i think it's enough. This is a personal project that we made to automize tasks because we wanna to export metasploit functionality in an embedded system: our goal here it's to build a device capable to exploit LAN and WLAN so the pentester can be more hidden (thus nobody can have suspects on you  ;)  ).
 
 Our dream it's to import metasploit exploits, and execute them in the framework: why? we wanna be an alternative to funcy ruby stuff.
 
@@ -119,4 +117,19 @@ Feel free to contact us!
 mudler@dark-lab.net skullbocks@dark-lab.net
 
 
+## License
+    Nemesis - Pentesting Framework
+    Copyright (C) 2013  mudler@dark-lab.net, skullbocks@dark-lab.net
 
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
