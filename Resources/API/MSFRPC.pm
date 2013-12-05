@@ -1,29 +1,26 @@
 package Resources::API::MSFRPC;
-use Moose;
 
+use Nemesis::BaseRes -base;
 use Data::MessagePack;
 use LWP;
 use HTTP::Request;
-use Nemesis::Inject;
 
-nemesis resource {
-    1;
-
-}
-
-has 'Username' => ( isa => 'Str', is => 'rw', default => 'spike' );
-has 'Password' => ( isa => 'Str', is => 'rw', default => 'spiketest' );
-has 'Host'     => ( isa => 'Str', is => 'rw', default => '127.0.0.1' );
-has 'Port'     => ( isa => 'Int', is => 'rw', default => 5553 );
-has 'API'      => ( isa => 'Str', is => 'rw', default => '/api/' );
-has 'Token'    => ( is  => 'rw' );
-has 'Auth'     => ( isa => 'Int', is => 'rw', default => 0 );
-has 'Result'   => ( is  => "rw" );
+has 'Username' => sub {'spike'};
+has 'Password' => sub {'spiketest'};
+has 'Host'     => sub {'127.0.0.1'};
+has 'Port'     => sub {5553};
+has 'API'      => sub {'/api/'};
+has 'Token';
+has 'Auth' => sub {0};
+has 'Result';
 
 sub call() {
-    my $self        = shift;
-    my @Options     = shift;
-    my $meth        = shift @Options;
+    my $self    = shift;
+    my @Options = @_;
+    my $meth    = shift @Options;
+
+    $self->Init->io->debug(
+        "Options called to metasploit: " . join( ",", @Options ) );
     my $UserAgent   = LWP::UserAgent->new;
     my $MessagePack = Data::MessagePack->new();
 
@@ -39,31 +36,49 @@ sub call() {
     $HttpRequest->content( $MessagePack->pack( \@Options ) );
     my $res = $UserAgent->request($HttpRequest);
 
-    #  $self->Init->getIO->debug_dumper($res);
-    return $res if $res->code == 500 or $res->code != 200;
+    #$self->Init->getIO->debug_dumper($res);
+    $self->error($res) and return if $res->code == 500 or $res->code != 200;
 
     $self->Result( $MessagePack->unpack( $res->content ) );
+    $self->Init->io->error( $self->Result->{'error_message'} ) and return $self->Result
+        if exists $self->Result->{'error_message'} and $res->code == 200;
 
     #  $self->parse_result();
+    #$self->Init->getIO()->debug_dumper( $self->Result );
+    return $self->Result;
+}
 
-    return $MessagePack->unpack( $res->content );
+sub error() {
+    my $self  = shift;
+    my $error = shift;
+    if ( $error->content ) {
+        $self->Init->io->error( $error->content );
+    }
+
 }
 
 sub info() {
     my $self    = shift;
-    my @Options = shift;
+    my @Options = @_;
     $self->call( 'module.info', @Options );
 }
 
 sub options() {
     my $self    = shift;
-    my @Options = shift;
+    my @Options = @_;
     $self->call( 'module.options', @Options );
+
+}
+
+sub execute() {
+    my $self    = shift;
+    my @Options = @_;
+    $self->call( 'module.execute', @Options );
 }
 
 sub payloads() {
     my $self    = shift;
-    my @Options = shift;
+    my @Options = @_;
     $self->call( 'module.compatible_payloads', @Options );
 
 }
@@ -73,9 +88,11 @@ sub login() {
     my $user = $self->Username();
     my $pass = $self->Password();
     my $ret  = $self->call( 'auth.login', $user, $pass );
+    $self->Init->io->debug("Logging in with $user and $pass");
     if ( defined($ret) && exists( $ret->{'_msg'} ) ) {
         $self->Init->getIO()
             ->print_alert("Give some time to metas to boot up");
+        $self->Init->io->debug_dumper( \$ret );
         return 0;
     }
     elsif ( defined($ret) && $ret->{'result'} eq 'success' ) {

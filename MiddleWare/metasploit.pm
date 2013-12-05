@@ -36,7 +36,7 @@ sub start() {
         = 'msfrpcd -U '
         . $self->MSFRPC->Username . ' -P '
         . $self->MSFRPC->Password . ' -p '
-        . $self->MSFRPC->Port . ' -S';
+        . $self->MSFRPC->Port . ' -S -f';
     $Io->print_info("Starting msfrpcd service.")
         ;    #AVVIO il demone msfrpc con le configurazioni della risorsa
     my $Process
@@ -62,10 +62,11 @@ sub start() {
 
 sub safe_database() {
     my $self = shift;
-    my $result = $self->DB->search( class => "Resources::Models::Exploit" );
+    my $result
+        = $self->DB->search( { class => "Resources::Models::Exploit" } );
     while ( my $block = $result->next ) {
         foreach my $item (@$block) {
-            my $result2 = $self->DB->search( module => $item->module );
+            my $result2 = $self->DB->search( { module => $item->module } );
             while ( my $block2 = $result2->next ) {
                 foreach my $item2 (@$block2) {
                     if ( $item ne $item2 ) {
@@ -83,9 +84,22 @@ sub LaunchExploitOnNode() {
     my $self    = shift;
     my $Node    = shift;
     my $Exploit = shift;
-    my @OPTIONS = ( "exploits", $Exploit->module, );
+    my @OPTIONS = ( "exploits", $Exploit->module );
+
     #Posso usare le promises, oppure
     #master polling ogni 10 minuti.
+    my $LaunchResult= $self->MSFRPC->execute($Exploit->type, $Exploit->module, {
+     ##   PAYLOAD=>undef,
+     ##   TARGET=>undef,
+     ##   ACTION=> undef,
+
+     RHOST =>$Node->ip, 
+     RPORT => $Exploit->default_rport
+
+
+        });
+
+
     my $Options = $self->MSFRPC->options( "exploits", $Exploit->module );
     my $Payloads = $self->MSFRPC->payloads( $Exploit->module );
     $self->Init->getIO->debug_dumper( \$Options );
@@ -102,27 +116,33 @@ sub generate() {
     my $self = shift;
 
     for ( 1 .. 10 ) {
+        sleep 2;
+        $self->Init->io->info("waiting for meta");
 
         if ( $self->is_up ) {
             $self->populateDB;
             last;
         }
-        sleep 2;
-        $self->Init->io->info("waiting for meta");
+        else {
+            $self->Init->io->error("meta failed to start");
+
+        }
     }
-    $self->Init->io->error("meta failed to start");
 
     #   $self->safe_database;
 
 }
 
 sub is_up() {
-    my $self     = shift;
-    my $MSFRPC   = $self->MSFRPC;
-    my $response = $MSFRPC->call('module.exploits');
-    if ( exists( $response->{'modules'} ) ) {
-        return 1;
+    my $self = shift;
+    if ( $self->MSFRPC ) {
+        my $MSFRPC   = $self->MSFRPC;
+        my $response = $MSFRPC->call('module.exploits');
+        if ( exists( $response->{'modules'} ) ) {
+            return 1;
+        }
     }
+
     return 0;
 
 }
@@ -157,10 +177,6 @@ sub populateDB() {
     $Counter = 0;
     foreach my $exploit (@EXPL_LIST) {
 
-        my $Information = $MSFRPC->info( "exploits", $exploit );
-        my $Options = $MSFRPC->options( "exploits", $exploit );
-        $MSFRPC->parse_result;
-
         my $result = $DB->search( { module => $exploit } );
         my $AlreadyThere = 0;
         while ( my $block = $result->next ) {
@@ -171,6 +187,10 @@ sub populateDB() {
         }
         if ( $AlreadyThere == 0 ) {
             $IO->debug("Adding $exploit to Exploit DB");
+            my $Information = $MSFRPC->info( "exploits", $exploit );
+            my $Options = $MSFRPC->options( "exploits", $exploit );
+            $MSFRPC->parse_result;
+
             my @Targets = values %{ $Information->{'targets'} };
             my @References = map { $_ = join( "|", @{$_} ); }
                 @{ $Information->{'references'} };
@@ -188,7 +208,11 @@ sub populateDB() {
             $DB->add($Expla);
             $Counter++;
         }
+        else {
+            $IO->debug("Exploit already in the database");
+        }
     }
+
     $IO->print_info(" $Counter added");
 }
 
@@ -208,9 +232,13 @@ sub test() {
 sub matchExpl() {
     my $self   = shift;
     my $String = shift;
-    my @Objs   = $self->DB->rsearch(
-        class  => "Resources::Models::Exploit",
-        module => $String
+
+    my @Objs = $self->DB->rsearch(
+        {
+
+            class  => "Resources::Models::Exploit",
+            module => $String
+        }
     );
 
     $self->Init->getIO->print_tabbed(
@@ -255,7 +283,7 @@ sub matchNode() {
 sub matchPort() {
     my $self   = shift;
     my $String = shift;
-    my $Objs   = $self->DB->search( default_rport => $String );
+    my $Objs   = $self->DB->search( { default_rport => $String } );
     $self->Init->getIO->print_tabbed(
         "Searching a matching exploit for port $String", 3 );
 

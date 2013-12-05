@@ -23,7 +23,7 @@ sub run() {
     my $self         = shift;
     my $ResourceName = shift;
     eval("use $ResourceName");
-    $ResourceName->setInit($Init);
+    $ResourceName->setInit($self->Init);
 
     my $daemon = Mojo::Server::Daemon->new(
         app    => $ResourceName->app,

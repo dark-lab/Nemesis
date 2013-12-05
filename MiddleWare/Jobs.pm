@@ -1,5 +1,6 @@
 package MiddleWare::Jobs;
 use Nemesis::BaseModule -base;
+use Resources::Util;
 
 our $VERSION = '0.1a';
 our $AUTHOR  = "mudler";
@@ -11,7 +12,7 @@ our @PUBLIC_FUNCTIONS = qw(list kill detach result status clear);  #NECESSARY
 
 has 'Processes' => sub { [] };
 
-sub prepare { my $self = shift; $self->import_jobs(); }
+sub prepare { shift->import_jobs(); }
 
 sub add {    #Not avaible from cli, but avaible among Plugins/MiddleWare
     my $self = shift;
@@ -21,6 +22,7 @@ sub add {    #Not avaible from cli, but avaible among Plugins/MiddleWare
 
 sub clear() {
     my $self = shift;
+    $self->import_jobs();
     $self->Init->io->info("cleaning not running and pending jobs");
     foreach my $Proc ( @{ $self->Processes } ) {
 
@@ -52,7 +54,7 @@ sub import_jobs() {
             if ( $Proc->get_id eq $file ) {
                 my $Process = $self->Init->ml->atom("Process");
                 $Process->load($file);
-                push( @{ $self->Processes }, $Process );
+                push( @{ $self->Processes }, $Process ) if !&Resources::Util::match($self->Processes,$Process);
                 $found = 1;
                 last;
             }
@@ -60,11 +62,12 @@ sub import_jobs() {
         if ( $found == 0 ) {
             my $Process = $self->Init->ml->loadmodule("Process");
             $Process->load($file);
-            push( @{ $self->Processes }, $Process );
+            push( @{ $self->Processes }, $Process ) if !&Resources::Util::match($self->Processes,$Process);
         }
 
     }
     closedir(DIR);
 }
+
 
 1;

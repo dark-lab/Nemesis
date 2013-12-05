@@ -14,8 +14,9 @@ package Nemesis::ModuleLoader;
 
     ###### The::Net hack
     push @INC => sub {
-    #    require LWP::Simple;
-        require Resources::Network::HTTPInterface;
+
+        #    require LWP::Simple;
+        #  require Resources::Network::HTTPInterface;
         require IO::File;
         require Fcntl;
 
@@ -412,9 +413,11 @@ package Nemesis::ModuleLoader;
     }
 
     sub loadmodules {
-        my $self = shift;
+        my $self            = shift;
+        my @selectedModules = ();
+        my $IO              = $Init->getIO();
+        @selectedModules = @_ if @_ > 0;
         my @modules;
-        my $IO   = $Init->getIO();
         my @Libs = $self->getLibs;
         my $modules;
         my $mods         = 0;
@@ -426,6 +429,9 @@ package Nemesis::ModuleLoader;
         foreach my $Library (@Libs) {
             my ($name) = $Library =~ m/([^\.|^\/]+)\.pm/;
             next if !$name;
+            next
+                if @selectedModules > 0
+                and !&_match( \@selectedModules, $name ); ## XXX: Note, should change behaviour here, need an array of libs to load, not to avoid them thru the cycle
             my $Class = $self->resolvObj($name);
             $self->unload( $Class, $Library );
             $Init->getIO()
@@ -520,6 +526,15 @@ package Nemesis::ModuleLoader;
             }
         }
         return 0;
+    }
+
+    ############# array match ##############
+    sub _match() {
+        #        my $self  = shift;
+        my $array = shift;
+        my $value = shift;
+        my %hash = map { $_ => 1 } @$array;
+        $hash{$value} ? return 1 : return 0;
     }
 
     ############# ALIASES #############

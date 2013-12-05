@@ -3,14 +3,53 @@ package MiddleWare::Database;
 use Fcntl qw(:DEFAULT :flock);
 use Nemesis::BaseModule -base;
 
-our $VERSION = '0.1a';
-our $AUTHOR  = "mudler";
-our $MODULE  = "Database Manager plugin";
-our $INFO    = "<www.dark-lab.net>";
-my @PUBLIC_FUNCTIONS = qw( start stop list search);
+our $VERSION          = '0.1a';
+our $AUTHOR           = "mudler";
+our $MODULE           = "Database Manager plugin";
+our $INFO             = "<www.dark-lab.net>";
+our @PUBLIC_FUNCTIONS = qw( start stop list find);
 
 has 'Dispatcher';
 has 'DB';
+
+sub find() {
+    ##It's just visual
+    my $self = shift;
+    my $arg  = shift;    #single argument for now
+    if ( $arg =~ /exploit/i ) {
+
+        my $results
+            = $self->search( { class => "Resources::Models::Exploit" } );
+
+#       while( my $block = $results->next ) {
+#           foreach my $item ( @{$block} ) {
+#               $self->Init->getIO->debug($item->ip.": ".join(",",@{$item->ports}),__PACKAGE__);
+#               $self->Init->getIO->debug("Possible vulns ".$item->attachments->size);
+
+        #           }
+        #       }
+
+        #Exploit visualization
+    }
+    elsif ( $arg =~ /node/i ) {
+        my $results = $self->search( { class => "Resources::Models::Node" } );
+
+        #Node visualization
+        while ( my $block = $results->next ) {
+            foreach my $item ( @{$block} ) {
+                $self->Init->io->print_title( $item->ip );
+                $self->Init->getIO->info( "Open ports: "
+                        . join( ",", grep { s/\|.*$//g; } @{ $item->ports } )
+                ) if @{ $item->ports } > 0;
+                $self->Init->getIO->info(
+                    "Possible vulns " . $item->attachments->size );
+
+            }
+        }
+
+    }
+
+}
 
 sub add() {
     my $self  = shift;
@@ -60,8 +99,8 @@ sub prepare {
     my $self = shift;
 
     #  my $DB   = $self->Init->ml->loadmodule("DB");
-    # $DB->connect();
-    #  $self->DB($DB);
+   # $DB->connect();
+   # $self->DB($DB);
     $self->Dispatcher( $self->Init->ml->atom("Dispatcher") );
     $self->start();
 

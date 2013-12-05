@@ -1,22 +1,21 @@
 package Resources::API::DB;
+use Nemesis::BaseRes -base;
 
-use Moose;
 use KiokuDB;
 use Search::GIN::Extract::Class;
 use Search::GIN::Query::Manual;
 use Search::GIN::Query::Class;
 use Fcntl qw(:DEFAULT :flock);
 use Resources::Models::Snap;
-use Nemesis::Inject;
 
-nemesis resource {
-    my $Dispatcher = $Init->ml->loadmodule("Dispatcher");
+has 'BackEnd'   ;
+has 'Dispatcher';
+
+sub prepare {
+    my $self       = shift;
+    my $Dispatcher = $self->Init->ml->loadmodule("Dispatcher");
     $self->Dispatcher($Dispatcher);
 }
-
-has 'BackEnd'    => ( is => "rw" );
-has 'Dispatcher' => ( is => "rw" );
-
 sub lookup() {
     my $self = shift;
     my $uuid = shift;
@@ -41,7 +40,7 @@ sub add () {
     foreach my $Obj (@Objs) {
         my ($ModuleName) = $Obj =~ /(.*?)\=/;
 
-        #$Init->io->debug("Now dispatcher seek for event_ $ModuleName");
+        #$self->Init->io->debug("Now dispatcher seek for event_ $ModuleName");
         $self->Dispatcher->match( "event_" . $ModuleName, $Obj )
             ;    #Not Async for now.
 
@@ -114,7 +113,7 @@ sub connect() {
 
         #    # log_auto_remove => 1,
         #    extract => Search::GIN::Extract::Class->new
-        # ) or $Init->io->error("Error loading BackEnd");
+        # ) or $self->Init->io->error("Error loading BackEnd");
 
         $BackEnd = KiokuDB->connect(
             "bdb-gin:dir=" . $self->Init->getSession()->getSessionPath,
@@ -132,11 +131,11 @@ sub connect() {
                     circular_off($_) for @leaked;
                     }
             }
-        ) or $Init->io->error("ERROR $!");
+        ) or $self->Init->io->error("ERROR $!");
 
         $self->BackEnd($BackEnd);
     }
-    $Init->io->debug( "Connected", __PACKAGE__ );
+    $self->Init->io->debug( "Connected", __PACKAGE__ );
     return $self;
 }
 

@@ -26,17 +26,17 @@ sub import {
         *{"${caller}::MODULE"}  = "";
         *{"${caller}::VERSION"} = "";
         *{"${caller}::INFO"}    = "";
-        *{"${caller}::info"} = sub {
-            my $self = shift;
-            $self->Init->getIO()->print_tabbed(
-                __PACKAGE__ . " "
-                    . *{"${caller}::MODULE"} . " v"
-                    . *{"${caller}::VERSION"} . "~ "
-                    . *{"${caller}::AUTHOR"} . " ~ "
-                    . *{"${caller}::INFO"},
-                2
-            );
-        };
+        # *{"${caller}::info"} = sub {
+        #     my $self = shift;
+        #     $self->Init->getIO()->print_tabbed(
+        #         __PACKAGE__ . " "
+        #             . *{"${caller}::MODULE"} . " v"
+        #             . *{"${caller}::VERSION"} . "~ "
+        #             . *{"${caller}::AUTHOR"} . " ~ "
+        #             . *{"${caller}::INFO"},
+        #         2
+        #     );
+        # };
         ###END NEMESIS
         *{"${caller}::has"} = sub { attr( $caller, @_ ) };
         attr( $caller, 'Init' );    # XXX: da testare
