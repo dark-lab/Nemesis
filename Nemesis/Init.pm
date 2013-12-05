@@ -6,9 +6,9 @@ package Nemesis::Init;
         bless( {}, $package );
         $package->{'Env'} = new Nemesis::Env( Init => $package );
         $package->{'Session'} = new Nemesis::Session( Init => $package );
-        $package->{'ModuleLoader'} =
-            new Nemesis::ModuleLoader( Init => $package );
-            $package->{'ModuleLoader'}->getLibs();
+        $package->{'ModuleLoader'}
+            = new Nemesis::ModuleLoader( Init => $package );
+        $package->{'ModuleLoader'}->getLibs();
         if ( $package->{'Session'}->exists("default_session") ) {
             $package->{'Session'}->restore("default_session");
         }
@@ -21,8 +21,8 @@ package Nemesis::Init;
             verbose => 0,
             Init    => $package
         );
-        $package->{'Interfaces'} =
-            new Nemesis::Interfaces( Init => $package );
+        $package->{'Interfaces'}
+            = new Nemesis::Interfaces( Init => $package );
 
         $0 = "SpikeNemesis";
         return $package;
