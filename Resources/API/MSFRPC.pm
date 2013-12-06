@@ -41,7 +41,7 @@ sub call() {
 
     $self->Result( $MessagePack->unpack( $res->content ) );
     $self->Init->io->error( $self->Result->{'error_message'} ) and return $self->Result
-        if exists $self->Result->{'error_message'} and $res->code == 200;
+        if defined $self->Result and exists $self->Result->{'error_message'} and $res->code == 200;
 
     #  $self->parse_result();
     #$self->Init->getIO()->debug_dumper( $self->Result );
