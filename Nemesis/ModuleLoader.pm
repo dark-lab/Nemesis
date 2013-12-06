@@ -431,7 +431,8 @@ package Nemesis::ModuleLoader;
             next if !$name;
             next
                 if @selectedModules > 0
-                and !&_match( \@selectedModules, $name ); ## XXX: Note, should change behaviour here, need an array of libs to load, not to avoid them thru the cycle
+                and !&_match( \@selectedModules, $name )
+                ; ## XXX: Note, should change behaviour here, need an array of libs to load, not to avoid them thru the cycle
             my $Class = $self->resolvObj($name);
             $self->unload( $Class, $Library );
             $Init->getIO()
@@ -530,10 +531,11 @@ package Nemesis::ModuleLoader;
 
     ############# array match ##############
     sub _match() {
+
         #        my $self  = shift;
         my $array = shift;
         my $value = shift;
-        my %hash = map { $_ => 1 } @$array;
+        my %hash  = map { $_ => 1 } @$array;
         $hash{$value} ? return 1 : return 0;
     }
 

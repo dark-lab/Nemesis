@@ -29,6 +29,11 @@ use File::Path;
         return $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'};
     }
 
+    sub getSessionDir {
+        my $self = shift;
+        return $self->{'CONF'}->{'VARS'}->{'SESSION_DIR'};
+    }
+
     sub serialize {
         my $self = shift;
         my $var  = $_[0];

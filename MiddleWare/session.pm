@@ -7,7 +7,7 @@ my $VERSION = '0.1a';
 my $AUTHOR  = "mudler";
 my $MODULE  = __PACKAGE__;
 my $INFO    = "<www.dark-lab.net>";
-my @PUBLIC_FUNCTIONS =
+our @PUBLIC_FUNCTIONS =
     qw(list wrap spawn stash);    #Public exported functions NECESSARY
 
 sub help() {                      #NECESSARY
@@ -54,7 +54,7 @@ sub list() {
     my $Session = $self->Init->getSession();
     my $session_dir =
           $self->Init->getEnv()->workspace() . "/"
-        . $Session->{'CONF'}->{'VARS'}->{'SESSION_DIR'};
+        . $Session->getSessionDir;
     opendir my $DH, $session_dir or croak "$0: opendir: $!";
     my @sessions = grep { -d "$session_dir/$_" && !/^\.{1,2}$/ } readdir($DH);
     $self->Init->getIO()
