@@ -209,15 +209,16 @@ use File::Path;
         }
         foreach my $FLOW_LINE (@FLOW) {
             chomp($FLOW_LINE);
+            $Init->io->debug("My line is $FLOW_LINE");
             my @FLOW_PIECES = split( '@', $FLOW_LINE );
             my $module = shift(@FLOW_PIECES);
             next if !$module;
             my $method = shift(@FLOW_PIECES);
             next if !$method;
             my $ARGS = shift(@FLOW_PIECES);
-            next if !$ARGS;
-
-            my @REAL_ARGS = split( '#', $ARGS );
+            #next if !$ARGS;
+            my @REAL_ARGS = split( '#', $ARGS ) if $ARGS;
+            $Init->io->debug(" executing $module $method and ".join(" ",@REAL_ARGS));
             $Init->getModuleLoader()->execute( $module, $method, @REAL_ARGS );
         }
     }
