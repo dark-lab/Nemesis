@@ -124,7 +124,7 @@ sub connect() {
                 leak_tracker => sub {
                     my @leaked = @_;
 
-                    warn "leaked " . scalar(@leaked) . " objects";
+                    $self->Init->alert("leaked " . scalar(@leaked) . " objects, mop up");
 
                     # try to mop up.
                     use Data::Structure::Util qw(circular_off);
