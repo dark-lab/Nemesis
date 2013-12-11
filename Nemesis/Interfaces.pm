@@ -140,6 +140,14 @@ sub connected() {
     return $conn, $internet;
 }
 
+sub getIP() {
+    my $self   = shift;
+    my $Device = shift;
+    exists $self->{'devices'}->{$Device}->{'IPV4_ADDRESS'}
+        ? return $self->{'devices'}->{$Device}->{'IPV4_ADDRESS'}
+        : return undef;
+}
+
 sub connected_devices() {
     my $self     = shift;
     my $conn     = 0;
@@ -294,7 +302,8 @@ sub wifi_enum {
 
         }
         if ( $line =~ /channel\s+(\d\d?)$/ ) {
-            $self->{'devices'}->{$Device}->{aps}->{$current}->{"channel"} = $1;
+            $self->{'devices'}->{$Device}->{aps}->{$current}->{"channel"}
+                = $1;
         }
         if ( $line =~ /WPS/ ) {
             $self->{'devices'}->{$Device}->{aps}->{$current}->{"security"}
