@@ -172,7 +172,7 @@ package Nemesis::ModuleLoader;
 
         if ( !is_loaded($object) ) {
             $Init->getIO()->debug( "loading plugin $object ", __PACKAGE__ );
-            eval("use $object");
+            eval "require $object;1";  
             if ($@) {
                 $Init->getIO()
                     ->print_error("Something went wrong loading $object: $@");
