@@ -8,7 +8,7 @@ our $MODULE  = "Metasploit Module";
 our $INFO    = "<www.dark-lab.net>";
 
 #Funzioni che fornisco.
-our @PUBLIC_FUNCTIONS = qw(list kill detach result status clear);  #NECESSARY
+our @PUBLIC_FUNCTIONS = qw(list kill detach result status clear);   #NECESSARY
 
 has 'Processes' => sub { [] };
 
@@ -25,16 +25,15 @@ sub clear() {
     $self->import_jobs();
     $self->Init->io->info("cleaning not running and pending jobs");
     foreach my $Proc ( @{ $self->Processes } ) {
-
-        #  $Proc->destroy() if ( $Proc->is_running );
-        $Proc->destroy();
+        $Proc->destroy() if ( $Proc->is_running );
+        # $Proc->destroy();
     }
 
 }
 
 sub list {
     my $self = shift;
-    $self->Init->io->print_title("what are your modules?");
+    $self->Init->io->print_title("Jobs in execution");
     foreach my $Job ( @{ $self->Processes } ) {
         $self->Init->io->process_status($Job);
     }
@@ -54,7 +53,8 @@ sub import_jobs() {
             if ( $Proc->get_id eq $file ) {
                 my $Process = $self->Init->ml->atom("Process");
                 $Process->load($file);
-                push( @{ $self->Processes }, $Process ) if !&Resources::Util::match($self->Processes,$Process);
+                push( @{ $self->Processes }, $Process )
+                    if !&Resources::Util::match( $self->Processes, $Process );
                 $found = 1;
                 last;
             }
@@ -62,12 +62,12 @@ sub import_jobs() {
         if ( $found == 0 ) {
             my $Process = $self->Init->ml->loadmodule("Process");
             $Process->load($file);
-            push( @{ $self->Processes }, $Process ) if !&Resources::Util::match($self->Processes,$Process);
+            push( @{ $self->Processes }, $Process )
+                if !&Resources::Util::match( $self->Processes, $Process );
         }
 
     }
     closedir(DIR);
 }
-
 
 1;

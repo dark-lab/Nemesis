@@ -10,7 +10,7 @@ my $INFO    = "<www.dark-lab.net>";
 
 #Funzioni che fornisco.
 our @PUBLIC_FUNCTIONS
-    = qw(start clear sessionlist call test generate matchExpl);    #NECESSARY
+    = qw(start console clear sessionlist call test generate matchExpl);    #NECESSARY
 
 #Attributo Processo del demone MSFRPC
 has 'Process';
@@ -36,7 +36,8 @@ sub start() {
         = 'msfrpcd -U '
         . $self->MSFRPC->Username . ' -P '
         . $self->MSFRPC->Password . ' -p '
-        . $self->MSFRPC->Port . ' -S -f';
+        . $self->MSFRPC->Port
+        . ' -S -f';
     $Io->print_info("Starting msfrpcd service.")
         ;    #AVVIO il demone msfrpc con le configurazioni della risorsa
     my $Process
@@ -88,22 +89,58 @@ sub LaunchExploitOnNode() {
 
     #Posso usare le promises, oppure
     #master polling ogni 10 minuti.
-    my $LaunchResult= $self->MSFRPC->execute($Exploit->type, $Exploit->module, {
-     ##   PAYLOAD=>undef,
-     ##   TARGET=>undef,
-     ##   ACTION=> undef,
 
-     RHOST =>$Node->ip, 
-     RPORT => $Exploit->default_rport
+    $self->Init->io->debug_dumper($self->MSFRPC->console_read());
+
+    $self->MSFRPC->console_write("use ".$Exploit->module);
+    $self->MSFRPC->console_write("set RHOST ".$Node->ip);
+    $self->MSFRPC->console_write("set RPORT 80");
+    $self->MSFRPC->console_write("run");
+    $self->MSFRPC->console_write("jobs");
+    sleep 3;
+
+    $self->Init->io->debug_dumper($self->MSFRPC->console_read);
+
+   #  my $LaunchResult = $self->MSFRPC->execute(
+   #      $Exploit->type,
+   #      $Exploit->module,
+   #      {
+   #          ##   PAYLOAD=>undef,
+   #          ##   TARGET=>undef,
+   #          ##   ACTION=> undef,
+
+   #          RHOST => $Node->ip,
+   #          RPORT => $Exploit->default_rport
+
+   #      }
+   #  );
+
+   #  $self->Init->io->debug_dumper({   $Exploit->type => 0,
+   #      $Exploit->module =>
+   #      {
+   #          ##   PAYLOAD=>undef,
+   #          ##   TARGET=>undef,
+   #          ##   ACTION=> undef,
+
+   #          RHOST => $Node->ip,
+   #          RPORT => 80
+
+   #      }});
+
+   #  my $Options = $self->MSFRPC->options( "exploits", $Exploit->module );
+   #  my $Payloads = $self->MSFRPC->payloads( $Exploit->module );
+   # $self->Init->getIO->debug_dumper( \$Options );
+   # # $self->Init->getIO->debug_dumper( \$Payloads );
+   #    $self->Init->getIO->debug_dumper( \$LaunchResult );
 
 
-        });
+}
 
+sub console(){
+    my $self=shift;
+    $self->MSFRPC->console_write(@_);
+    $self->Init->io->debug_dumper($self->MSFRPC->console_read);
 
-    my $Options = $self->MSFRPC->options( "exploits", $Exploit->module );
-    my $Payloads = $self->MSFRPC->payloads( $Exploit->module );
-    $self->Init->getIO->debug_dumper( \$Options );
-    $self->Init->getIO->debug_dumper( \$Payloads );
 
 }
 
@@ -223,7 +260,7 @@ sub test() {
         Resources::Models::Node->new( ip => "127.0.0.1" ),
         Resources::Models::Exploit->new(
             type   => "exploits",
-            module => "auxiliary/admin/backupexec/dump"
+            module => "windows/misc/ib_isc_attach_database"
         )
     );
 
