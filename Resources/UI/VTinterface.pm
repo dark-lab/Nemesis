@@ -78,9 +78,9 @@ sub start_guts {
 }
 
 sub load_all {
-        my ( $kernel, $heap ) = @_[ KERNEL, HEAP ];
+    my ( $kernel, $heap ) = @_[ KERNEL, HEAP ];
 
-      my $vt   = $heap->{'vt'};
+    my $vt   = $heap->{'vt'};
     my $Init = $heap->{'Init'};
     $Init->getIO->print_ascii_fh( *Resources::Logo::DATA, "logo" );
     $Init->getModuleLoader()->loadmodules();
@@ -97,8 +97,8 @@ sub handle_term_input {
     my ( $kernel, $heap, $input, $exception )
         = @_[ KERNEL, HEAP, ARG0, ARG1 ];
     chomp($input);
-   
-      my $vt   = $heap->{'vt'};
+
+    my $vt   = $heap->{'vt'};
     my $Init = $heap->{'Init'};
     $Init->getIO()->parse_cli($input);
 
@@ -120,8 +120,8 @@ sub handle_term_input {
 
 sub update_time {
     my ( $kernel, $heap ) = @_[ KERNEL, HEAP ];
-  
-      my $vt   = $heap->{'vt'};
+
+    my $vt   = $heap->{'vt'};
     my $Init = $heap->{'Init'};
     $vt->set_status_field( $vt->current_window,
         time => $Init->getEnv()->time_seconds() );
@@ -134,9 +134,9 @@ sub update_time {
 
 sub update_name {
     my ( $kernel, $heap ) = @_[ KERNEL, HEAP ];
-  
-      my $vt   = $heap->{'vt'};
-    my $Init = $heap->{'Init'};
+
+    my $vt          = $heap->{'vt'};
+    my $Init        = $heap->{'Init'};
     my $window_name = $vt->get_window_name( $vt->current_window );
     $vt->set_status_field( $vt->current_window,
         name => $Init->getIO->get_prompt_out );
@@ -144,9 +144,9 @@ sub update_name {
 
 sub test_buffer {
     my ( $kernel, $heap ) = @_[ KERNEL, HEAP ];
-    my $i    = 0;
- 
-      my $vt   = $heap->{'vt'};
+    my $i = 0;
+
+    my $vt   = $heap->{'vt'};
     my $Init = $heap->{'Init'};
     $i++;
     $vt->print( $$vt->current_window, $i );
@@ -156,8 +156,7 @@ sub test_buffer {
 sub stop_guts {
     my ( $kernel, $heap ) = @_[ KERNEL, HEAP ];
 
-  
-      my $vt   = $heap->{'vt'};
+    my $vt   = $heap->{'vt'};
     my $Init = $heap->{'Init'};
     $vt->shutdown;
     $kernel->alarm_remove_all();
