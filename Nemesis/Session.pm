@@ -187,8 +187,6 @@ use File::Path;
         my $self = shift;
         my $File = shift;
         my @FLOW;
-
-        #Method to wrap all!
         if ( defined($File) and ref($File) eq 'ARRAY' ) {
             @FLOW = @{$File};
         }
@@ -256,16 +254,14 @@ use File::Path;
         my @FLOW;
         if ($File) {
             open $COMMAND_LOG, "<", $File
-                or $Init->io->debug("Cannot read flow $File")
-                and return;
+                or $Init->io->debug("Cannot read flow ".  $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/".$File) and die();
             @FLOW = <$COMMAND_LOG>;
         }
         else {
             open $COMMAND_LOG, "<",
                 $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/"
-                . $CONF->{'VARS'}->{'FLOWFILE'}
-                or $Init->io->debug("Session is new, cannot read flow")
-                and return;
+                . $CONF->{'VARS'}->{'FLOWFILE'} or
+                $Init->io->debug("Session is new, cannot read flow ".  $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/".$File) and die();
             @FLOW = <$COMMAND_LOG>;
         }
 
