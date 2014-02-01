@@ -5,14 +5,12 @@ use Carp;
 use POE;
 use Term::Visual;
 use Resources::Logo;
-use Nemesis::Inject;
-nemesis resource{ 1; }
+use Nemesis::BaseRes -base;
 
 #NOTE:
 #http://search.cpan.org/~flora/Devel-Declare-0.006006/lib/Devel/Declare.pm
 #http://search.cpan.org/~flora/B-Hooks-Parser-0.09/lib/B/Hooks/Parser.pm
 #http://perlbrew.pl/
-
 #TODO: Valutare Net:Interface ?
 #use strict;
 #TODO: Valutare l'inclusione di http://search.cpan.org/~reedfish/Net-FullAuto-0.999944/lib/Net/FullAuto.pm
@@ -25,6 +23,7 @@ nemesis resource{ 1; }
 
 sub run() {
     my $self = shift;
+    $self->Init->io->print_info("Starting");
 
     #$vt->print($window_id, $Init->getIO->print_ascii_fh(*DATA,"logo"));
 
@@ -38,8 +37,8 @@ sub run() {
     #$vt->print($window_id, $vt->get_palette("st_values", "ncolor"));
     #$vt->debug("testing debugging");
 ## Initialize the back-end guts of the "client".
-    our $vt = Term::Visual->new( Alias => "interface" );
 
+    my $vt = Term::Visual->new( Alias => "interface" );
     POE::Session->create(
         inline_states => {
             _start         => \&start_guts,
@@ -49,7 +48,9 @@ sub run() {
             load_all       => \&load_all,
             test_buffer    => \&test_buffer,
             _stop          => \&stop_guts,
-        }
+        },
+        heap => { 'vt' => $vt, 'Init' => $self->Init },
+
     );
 
     $poe_kernel->run();
@@ -58,14 +59,15 @@ sub run() {
 
 sub start_guts {
     my ( $kernel, $heap ) = @_[ KERNEL, HEAP ];
+    my $vt   = $heap->{'vt'};
+    my $Init = $heap->{'Init'};
 
     # Tell the terminal to send me input as "got_term_input".
     $kernel->post( interface => send_me_input => "got_term_input" );
-
+    $vt = $Init->getIO->setVt($vt);
     $Init->checkroot();
     $kernel->yield("update_name");
     $kernel->yield("update_time");
-    $vt = $Init->getIO->setVt($vt);
 
     # Start updating the time.
     $kernel->yield("load_all");
@@ -76,7 +78,11 @@ sub start_guts {
 }
 
 sub load_all {
-    $Init->getIO->print_ascii_fh( Resources::Logo::DATA, "logo" );
+    my ( $kernel, $heap ) = @_[ KERNEL, HEAP ];
+
+    my $vt   = $heap->{'vt'};
+    my $Init = $heap->{'Init'};
+    $Init->getIO->print_ascii_fh( *Resources::Logo::DATA, "logo" );
     $Init->getModuleLoader()->loadmodules();
     $Init->getIO()->print_info("Press CTRL+L to clear screen");
 
@@ -88,9 +94,12 @@ sub load_all {
 sub handle_term_input {
 
     #  beep();
-    my ( $kernel, $heap, $input, $exception ) =
-        @_[ KERNEL, HEAP, ARG0, ARG1 ];
+    my ( $kernel, $heap, $input, $exception )
+        = @_[ KERNEL, HEAP, ARG0, ARG1 ];
     chomp($input);
+
+    my $vt   = $heap->{'vt'};
+    my $Init = $heap->{'Init'};
     $Init->getIO()->parse_cli($input);
 
     # Got an exception.  These are interrupt (^C) or quit (^\).
@@ -112,6 +121,8 @@ sub handle_term_input {
 sub update_time {
     my ( $kernel, $heap ) = @_[ KERNEL, HEAP ];
 
+    my $vt   = $heap->{'vt'};
+    my $Init = $heap->{'Init'};
     $vt->set_status_field( $vt->current_window,
         time => $Init->getEnv()->time_seconds() );
 
@@ -123,15 +134,20 @@ sub update_time {
 
 sub update_name {
     my ( $kernel, $heap ) = @_[ KERNEL, HEAP ];
+
+    my $vt          = $heap->{'vt'};
+    my $Init        = $heap->{'Init'};
     my $window_name = $vt->get_window_name( $vt->current_window );
     $vt->set_status_field( $vt->current_window,
         name => $Init->getIO->get_prompt_out );
 }
 
-my $i = 0;
-
 sub test_buffer {
     my ( $kernel, $heap ) = @_[ KERNEL, HEAP ];
+    my $i = 0;
+
+    my $vt   = $heap->{'vt'};
+    my $Init = $heap->{'Init'};
     $i++;
     $vt->print( $$vt->current_window, $i );
     $kernel->alarm( test_buffer => int( time() / 60 ) * 60 + 20 );
@@ -139,6 +155,9 @@ sub test_buffer {
 
 sub stop_guts {
     my ( $kernel, $heap ) = @_[ KERNEL, HEAP ];
+
+    my $vt   = $heap->{'vt'};
+    my $Init = $heap->{'Init'};
     $vt->shutdown;
     $kernel->alarm_remove_all();
     if ( defined $heap->{input_session} ) {
