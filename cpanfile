@@ -23,9 +23,11 @@ requires 'LWP::UserAgent';
 requires 'MIME::Base64';
 requires 'Module::Load';
 requires 'Module::ScanDeps';
-requires 'Mojo::IOLoop';
-requires 'Mojo::Server::Daemon';
-requires 'Mojolicious::Lite';
+#### Those are not strictly required
+suggests 'Mojo::IOLoop'; 
+suggests 'Mojo::Server::Daemon';
+suggests 'Mojolicious::Lite';
+####
 requires 'Moose';
 requires 'Moose::Util::TypeConstraints';
 requires 'Nmap::Parser';
