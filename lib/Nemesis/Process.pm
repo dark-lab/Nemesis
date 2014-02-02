@@ -82,7 +82,11 @@ package Nemesis::Process;
         if ( exists $self->{'CONFIG'}->{'natural'}
             and $self->{'CONFIG'}->{'natural'} != 1 )
         {
-            use forks;
+            eval { use forks; };
+            if ($@) {
+                $Init->io->error(
+                    "Forks not present, can't do a drop replacement");
+            }
         }
 
         if ( exists( $self->{'CONFIG'}->{'instance'} ) ) {
@@ -301,7 +305,7 @@ package Nemesis::Process;
 
         my $pid = fork();
         $Init->io->error("Cannot fork: $!") if ( !defined $pid );
-        if ( !$pid ) { #XXX: WITHOUT FORK RUBY GOES DEFUNCT-
+        if ( !$pid ) {    #XXX: WITHOUT FORK RUBY GOES DEFUNCT-
             if ( $p = open3( $wtr, $rdr, $err, $cmd ) ) {
                 $self->save_pid($p);
 
