@@ -1,5 +1,5 @@
 gpl-3.0.txt
-MakeFile.pl
+Makefile.PL
 Profiles/mitm.profile
 Profiles/test_flow.flow
 TODO.txt
@@ -9,7 +9,6 @@ MiddleWare/.keep
 Plugin/MooseTest.pm
 README.md
 LICENSE
-bin
 bin/nemesis-curses
 bin/nemesis
 bin/nemesis-cli
@@ -27,7 +26,6 @@ lib/Nemesis/Init.pm
 lib/Nemesis/Interfaces.pm
 lib/Nemesis/BaseModule.pm
 lib/Nemesis/BaseRes.pm
-lib/Resources/Config
 lib/Resources/Config/w3af_debug.w3af
 lib/Resources/Config/w3af_script.w3af
 lib/Resources/Config/w3af_config.w3af
@@ -55,7 +53,6 @@ lib/Resources/Models/Snap.pm
 lib/Resources/Logo.pm
 lib/Resources/Wireless/Aircrack.pm
 lib/Resources/Wireless/Reaver.pm
-lib/Resources/WebVuln
 lib/Resources/WebVuln/SiteCloner.pm
 lib/Resources/WebVuln/RFI.pm
 lib/Resources/WebVuln/SQLi.pm
