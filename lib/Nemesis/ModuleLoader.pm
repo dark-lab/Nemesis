@@ -3,10 +3,10 @@ package Nemesis::ModuleLoader;
     # no warnings 'redefine';
     # use Try::Tiny;
     # use TryCatch;
-    use Module::Loaded;
     use LWP::Simple;
     use Regexp::Common qw /URI/;
     use File::Find;
+    use Module::Load;
 
     #external modules
     my @MODULES_PATH = ( 'Plugin', 'Resources', 'MiddleWare' );
@@ -44,7 +44,10 @@ package Nemesis::ModuleLoader;
         my $class = shift;
         my $self = { 'Base' => $base };
         %{$package} = @_;
-        $Init = $package->{'Init'};
+        $Init                     = $package->{'Init'};
+        $package->{'libs'}        = {};
+        $package->{'loaded_libs'} = {};
+
         $self->{'Base'}->{'pwd'} = $Init->getEnv()->{'ProgramPath'} . "/";
         return bless( $self, $class );
     }
@@ -123,11 +126,29 @@ package Nemesis::ModuleLoader;
     }
 
     sub _findLibName {
-        my $self  = shift;
-        my $URL   = $_[0];
-        my $Fetch = get($URL);
-        while ( $Fetch =~ /package\s+(.*?)\;/i ) {
-            return $1;
+        my $self = shift;
+        my $URL  = $_[0];
+
+        if ( $URL =~ /$RE{URI}{HTTP}/ ) {
+            my $Fetch = get($URL);
+            while ( $Fetch =~ /package\s+(.*?)\;/i ) {
+                return $1;
+            }
+        }
+        else {
+            return $self->{'libs'}->{$URL}
+                if ( exists $self->{'libs'}->{$URL} );
+
+            #my $module = $self->_findLib($URL);
+            open my $FH, "<" . $URL
+                or $Init->io->print_error( "Cannot open " . $URL );
+            my @L = <$FH>;
+            close $FH;
+            while ( "@L" =~ /package\s+(.*?)\;/i ) {
+                $self->{'libs'}->{$URL} = $1;
+                return $1;
+
+            }
         }
 
     }
@@ -137,6 +158,7 @@ package Nemesis::ModuleLoader;
         my $module = shift;
         my $object;
         if ( $module =~ /$RE{URI}{HTTP}/ ) {
+
             require $module;
             $object = $self->_findLibName($module);
 
@@ -144,9 +166,14 @@ package Nemesis::ModuleLoader;
         elsif ( $module =~ /\:\:/ ) {
             $object = $module;
         }
-        elsif ( my $Type = $self->_findLib($module) ) {
-            if ( $Type =~ /\// ) { $Type =~ s/\//\:\:/g; }
-            $object = $Type . "::" . $module;
+
+        #    elsif ( my $Type = $self->_findLib($module) ) {
+        #        if ( $Type =~ /\// ) { $Type =~ s/\//\:\:/g; }
+        #        $object = $Type . "::" . $module;
+
+        elsif ( $module = $self->_findLibName($module) ) {
+            $object = $module;
+
         }
         else {
             $object = "Nemesis::" . $module;
@@ -157,6 +184,7 @@ package Nemesis::ModuleLoader;
             $object2 =~ s/.*?inc\:lib\://g;
             return $object2;
         }
+        $Init->io->info( "Object resolved to " . $object );
         chomp($object);
         return $object;
     }
@@ -167,16 +195,45 @@ package Nemesis::ModuleLoader;
         if ( $_[1] ) {
             my %args = %{ $_[1] };
         }
-        my $IO     = $Init->getIO();
-        my $object = $self->resolvObj($module);
+        my $IO = $Init->getIO();
+        my $object;
+        if ( $module !~ /\:\:|\.pm/ ) {
 
-        if ( !is_loaded($object) ) {
+            my $SearchModule = $self->_findLib($module);
+            if ( defined $SearchModule ) {
+                $module = $SearchModule;
+                $object = $self->_findLibName($module);
+
+            }
+            else {
+                $module = "Nemesis::" . $module;
+                $object = $module;
+            }
+
+        }
+        else {
+            if ( $module =~ /\:\:/ ) {
+                $object = $module;
+            }
+            else {
+                $object = $self->_findLibName($module);
+            }
+
+        }
+
+        #    $Init->io->debug("Carico $module");
+        if ( !exists( $self->{'loaded_libs'}->{$object} ) ) {
             $Init->getIO()->debug( "loading plugin $object ", __PACKAGE__ );
-            eval "require $object;1";  
+
+            # $self->unload( $object, $module ); XXX: to Fix that
+
+            #eval "require $object;1";
+            load $object;
+            $self->{'loaded_libs'}->{$object} = 1;
             if ($@) {
                 $Init->getIO()
                     ->print_error("Something went wrong loading $object: $@");
-                return ();
+                return undef;
             }
         }
         if (%args) {
@@ -188,10 +245,10 @@ package Nemesis::ModuleLoader;
         if ($@) {
             $Init->getIO()
                 ->print_error("Something went wrong loading $object: $@");
-            return ();
+            return undef;
         }
 
-        $Init->getIO->debug( "$object provides: "
+        $Init->getIO->debug( "\t\t provides:\n\t\t\t\t "
                 . join( " ", $object->export_public_methods ) )
             if eval { $object->can("export_public_methods") };
         $Init->io->debug("Preparing $object") and $object->prepare()
@@ -231,34 +288,43 @@ package Nemesis::ModuleLoader;
 
         my $self    = shift;
         my $LibName = $_[0];
-        #
 
-        foreach my $Library ( $self->getLoadedLib ) {
-            my $Path  = $Init->getEnv()->getPathBin;
-            my $Match = $Library;
-            $Match =~ s/$Path\/?//g;
-            #
-            #$Init->getIO()->debug( "Lib $Match for $LibName", __PACKAGE__ );
-            my @I = @INC;
-            my $c = 0;
-            foreach my $a (@I) {
-                delete $I[$c] if ( $I[$c] eq "." );
-                $c++;
-            }
+        return $self->{'libs'}->{$LibName}
+            if ( exists $self->{'libs'}->{$LibName} );
+        my $Found;
+        foreach my $Library ( @{ $self->{'LibraryList'} } ) {
 
-            foreach my $INCLib (@I) {
-                $Match =~ s/$INCLib//g
-                    if defined($INCLib);
-            }
+            my ($name) = $Library =~ m/([^\.|^\/]+)\.pm/;
 
-#   $Init->getIO->debug("this is my match $Match INC is ".join(" ",@I),__PACKAGE__);
-            if ( $Match =~ /\/?(.*)\/$LibName/i ) {
+            $Found = $Library if ( defined $name and $name =~ /$LibName/i );
 
-#
-#   $Init->getIO->debug(" findLib matched $1 for $Match ($LibName)",__PACKAGE__);
-                return $1;
-            }
+        #             my $Path  = $Init->getEnv()->getPathBin;
+        #             my $Match = $Library;
+        #             $Match =~ s/$Path\/?//g;
+        #             #
+        #             my @I = @INC;
+        #                         $Init->getIO()->print_info(join("\t",@INC));
+        #             my $c = 0;
+        #             foreach my $a (@I) {
+        #                 delete $I[$c] if ( $I[$c] eq "." );
+        #                 $c++;
+        #             }
+
+            #             foreach my $INCLib (@I) {
+            #                 $Match =~ s/$INCLib//g
+            #                     if defined($INCLib);
+            #             }
+
+# #   $Init->getIO->debug("this is my match $Match INC is ".join(" ",@I),__PACKAGE__);
+#             if ( $Match =~ /\/?(.*)\/$LibName/i ) {
+
+# #
+# #   $Init->getIO->debug(" findLib matched $1 for $Match ($LibName)",__PACKAGE__);
+#                 return $1;
+#             }
         }
+
+        return $Found ? $Found : undef;
     }
 
     sub _findLibsByCategory() {
@@ -322,43 +388,15 @@ package Nemesis::ModuleLoader;
         my $IO   = $Init->getIO();
         my $Path = $Init->getEnv()->getPathBin;
         my @Libs;
+        $IO->debug("Searching for libs");
         foreach my $Library (@MODULES_PATH) {
-            local *DIR;
-            if ( !opendir( DIR, $Path . "/" . $Library ) ) {
-                ##Se non riesco a vedere in locale, forse sono nell'INC?
-                $IO->print_alert( "No "
-                        . $Path . "/"
-                        . $Library
-                        . " detected to find modules" );
-                foreach my $INCLib (@INC) {
-                    if ( -d $INCLib . "/" . $Library ) {
 
-                        #Oh, eccoli!
-                        # opendir( DIR, $INCLib . "/" . $Library );
-                        # push( @Libs,
-                        #     map { $_ = $INCLib . "/" . $Library . "/" . $_ }
-                        #     grep( !/^\.\.?$/, readdir(DIR) ) );
-                        # closedir(DIR);
-
-                        push( @Libs,
-                            $self->traverseDir( $INCLib . "/" . $Library ) );
-
-                    }
+            foreach my $INCLib (@INC) {
+                if ( -d $INCLib . "/" . $Library ) {
+                    push( @Libs,
+                        $self->traverseDir( $INCLib . "/" . $Library ) )
+                        ;    #Fill em up
                 }
-            }
-            else {
-                # push(
-                #     @Libs,
-                #     map {
-                #         $_ =
-                #               $self->{'Base'}->{'pwd'}
-                #             . $Library . "/"
-                #             . $_
-                #         }
-                #         grep( !/^\.\.?$/, readdir(DIR) )
-                # );
-                push( @Libs, $self->traverseDir( $Path . "/" . $Library ) );
-
             }
 
         }
@@ -368,14 +406,12 @@ package Nemesis::ModuleLoader;
 
     sub traverseDir() {
         my $self = shift;
-        my $dir  = shift;
         my @Res;
-
         find(
             sub {
                 push( @Res, $File::Find::name ) if -f;
             },
-            $dir
+            shift
         );
 
         return @Res;
@@ -418,13 +454,18 @@ package Nemesis::ModuleLoader;
         my $IO              = $Init->getIO();
         @selectedModules = @_ if @_ > 0;
         my @modules;
-        my @Libs = $self->getLibs;
+        my @Libs
+            = scalar( @{ $self->{'LibraryList'} } ) == 0
+            ? $self->getLibs
+            : @{ $self->{'LibraryList'} };
         my $modules;
         my $mods         = 0;
         my $res          = 0;
         my $unknown_data = 0;
         my $Path         = $Init->getEnv()->getPathBin;
         @{ $self->{'LibraryList'} } = @Libs;
+        print "LOADMODULES WAS CALLED\n";
+        print "THOSE ARE THE LIBS: \t " . join( "\t", @Libs );
 
         foreach my $Library (@Libs) {
             my ($name) = $Library =~ m/([^\.|^\/]+)\.pm/;
@@ -433,8 +474,7 @@ package Nemesis::ModuleLoader;
                 if @selectedModules > 0
                 and !&_match( \@selectedModules, $name )
                 ; ## XXX: Note, should change behaviour here, need an array of libs to load, not to avoid them thru the cycle
-            my $Class = $self->resolvObj($name);
-            $self->unload( $Class, $Library );
+                  #  my $Class = $self->resolvObj($name);
             $Init->getIO()
                 ->debug( "detected Plugin/Resource $name in $Library",
                 __PACKAGE__ );
@@ -447,7 +487,7 @@ package Nemesis::ModuleLoader;
                     $Init->getIO()
                         ->debug( $Library . " is a module!", __PACKAGE__ );
 
-                    $self->{'modules'}->{$name} = $self->loadmodule($name);
+                    $self->{'modules'}->{$name} = $self->loadmodule($Library);
                     if ( exists( $self->{'modules'}->{$name} )
                         and eval { $self->{'modules'}->{$name}->can("new") } )
                     {
@@ -550,10 +590,10 @@ package Nemesis::ModuleLoader;
         $self->loadmodule(@_);
     }
 
-    sub load() {
-        my $self = shift;
-        $self->loadmodule(@_);
-    }
+    #   sub load() {
+    #      my $self = shift;
+    #      $self->loadmodule(@_);
+    #  }
 
 }
 1;

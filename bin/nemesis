@@ -1,4 +1,6 @@
 #!/usr/bin/perl -w
+use FindBin '$Bin';
+use lib $Bin. "/lib";
 
 use Nemesis;
 
@@ -19,16 +21,22 @@ GetOptions(
 
 if ( defined($Wrap) and defined($SessionName) ) {
     $Init->io->set_debug(1) if defined($DebugCli);
-    defined $M? $Init->getModuleLoader()->loadmodules(split(/\,|\,\s/,$M)): $Init->getModuleLoader()->loadmodules();
+    defined $M
+        ? $Init->getModuleLoader()->loadmodules( split( /\,|\,\s/, $M ) )
+        : $Init->getModuleLoader()->loadmodules();
     $Init->ml->instance("session")->spawn($SessionName);
     $Init->getSession()->wrap($Wrap);
 }
 elsif ( defined($Wrap) ) {
     $Init->io->set_debug(1) if defined($DebugCli);
-    defined $M? $Init->getModuleLoader()->loadmodules(split(/\,|\,\s/,$M)): $Init->getModuleLoader()->loadmodules();
+    defined $M
+        ? $Init->getModuleLoader()->loadmodules( split( /\,|\,\s/, $M ) )
+        : $Init->getModuleLoader()->loadmodules();
     $Init->getSession()->wrap( $Init->getSession->_get_flow($Wrap) );
-} else {
-    $Init->io->error("You did not defined an execution script with -w, if you want console, just run nemesis-cli");
 }
-
+else {
+    $Init->io->error(
+        "You did not defined an execution script with -w, if you want console, just run nemesis-cli"
+    );
+}
 

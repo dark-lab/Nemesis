@@ -1,7 +1,5 @@
 package Nemesis;
 
-use FindBin '$Bin';
-use lib $Bin;
 #require forks;
 require Nemesis::Init;
 require Nemesis::Env;

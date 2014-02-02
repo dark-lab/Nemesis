@@ -4,11 +4,15 @@ package Nemesis::Init;
     sub new {
         my $package = shift;
         bless( {}, $package );
+                $package->{'Io'} = new Nemesis::IO(
+            debug   => 0,
+            verbose => 0,
+            Init    => $package
+        );
         $package->{'Env'} = new Nemesis::Env( Init => $package );
         $package->{'Session'} = new Nemesis::Session( Init => $package );
         $package->{'ModuleLoader'}
             = new Nemesis::ModuleLoader( Init => $package );
-        $package->{'ModuleLoader'}->getLibs();
         if ( $package->{'Session'}->exists("default_session") ) {
             $package->{'Session'}->restore("default_session");
         }
@@ -16,11 +20,11 @@ package Nemesis::Init;
             $package->{'Session'}->initialize("default_session");
             $package->{'Session'}->restore("default_session");
         }
-        $package->{'Io'} = new Nemesis::IO(
-            debug   => 0,
-            verbose => 0,
-            Init    => $package
-        );
+
+        $package->{'Env'}->setINCPaths;
+
+        $package->{'ModuleLoader'}->getLibs();
+
         $package->{'Interfaces'}
             = new Nemesis::Interfaces( Init => $package );
 

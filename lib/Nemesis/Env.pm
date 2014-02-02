@@ -21,6 +21,16 @@ sub new {
     return $package;
 }
 
+sub setINCPaths(){
+
+    my $self=shift;
+
+    push(@INC,$self->getPathBin);
+        push(@INC,$Init->getSession->getSessionPath);
+
+
+}
+
 sub generateID() {
 
     return int( rand(10000) );
