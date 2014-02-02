@@ -29,6 +29,7 @@ requires 'Mojolicious::Lite';
 requires 'Moose';
 requires 'Moose::Util::TypeConstraints';
 requires 'Nmap::Parser';
+require  'forks';
 requires 'POE';
 requires 'Regexp::Common';
 requires 'Scalar::Util';
