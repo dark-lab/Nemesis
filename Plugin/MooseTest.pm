@@ -2,7 +2,8 @@ package Plugin::MooseTest;
 
 use Moose;
 
-use Nemesis::Inject;
+#use Nemesis::Inject;
+use Nemesis::BaseModule -base;
 use namespace::autoclean;
 
 our $VERSION = '0.1a';
@@ -17,13 +18,13 @@ our @PUBLIC_FUNCTIONS = qw(test);
 #       *  No comments inside nemesis block{}
 #       *  Somethimes (i didn't have time to track that bug) you need to close your block in one line (so your graph must be at the endofline )
 
-nemesis module {
+# nemesis module {
 
-    init()->io->info("my test :)");
+#     init()->io->info("my test :)");
 
-}
+# }
 
-has 'Process' => ( is => 'rw' );
+has 'Process' => ( );
 
 sub test() {
     my $self = shift;
