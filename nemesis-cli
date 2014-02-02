@@ -10,25 +10,33 @@ use Getopt::Long qw( GetOptions );
 GetOptions(
     "s=s"   => \my $SessionName,    # Session start
     "w=s"   => \my $Wrap,           # Wrap an execution script
-    "m=s"   => \my $M,
     "debug" => \my $DebugCli,       # Debug modality
-
+    "m=s"   => \my $M,
 );
 
 ###XXX: $Wrap should be abs path for now.
 
 if ( defined($Wrap) and defined($SessionName) ) {
     $Init->io->set_debug(1) if defined($DebugCli);
-    defined $M? $Init->getModuleLoader()->loadmodules(split(/\,|\,\s/,$M)): $Init->getModuleLoader()->loadmodules();
+    defined $M
+        ? $Init->getModuleLoader()->loadmodules( split( /\,|\,\s/, $M ) )
+        : $Init->getModuleLoader()->loadmodules();
     $Init->ml->instance("session")->spawn($SessionName);
     $Init->getSession()->wrap($Wrap);
 }
 elsif ( defined($Wrap) ) {
     $Init->io->set_debug(1) if defined($DebugCli);
-    defined $M? $Init->getModuleLoader()->loadmodules(split(/\,|\,\s/,$M)): $Init->getModuleLoader()->loadmodules();
+    defined $M
+        ? $Init->getModuleLoader()->loadmodules( split( /\,|\,\s/, $M ) )
+        : $Init->getModuleLoader()->loadmodules();
     $Init->getSession()->wrap( $Init->getSession->_get_flow($Wrap) );
-} else {
-    $Init->io->error("You did not defined an execution script with -w, if you want console, just run nemesis-cli");
 }
 
+if ( defined($SessionName) and !defined($Wrap) ) {
+    $Init->ml->instance("session")->spawn($SessionName);
+    $Init->ml->instance("session")->wrap();
+}
+
+my $Interface = $Init->ml->atom("Terminterface");
+$Interface->run();
 

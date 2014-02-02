@@ -23,7 +23,7 @@ use Nemesis::BaseRes -base;
 
 sub run() {
     my $self = shift;
-    $self->Init->io->print_info("Starting");
+   # $self->Init->io->print_info("Starting");
 
     #$vt->print($window_id, $Init->getIO->print_ascii_fh(*DATA,"logo"));
 
