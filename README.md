@@ -83,8 +83,8 @@ CI Status (master branch): [![Build Status](https://travis-ci.org/dark-lab/Nemes
 * maybe writing a better TODO and a fixed milestone? just adding stuff to todo it's making all more difficult
 
 ## TODO:
-- [TODO](/TODO)
- 
+
+Open TODO.txt
 
 
 Module that are capable to load will load, so minimal functions it's garanted (for execution as a daemon).
@@ -95,7 +95,7 @@ Module that are capable to load will load, so minimal functions it's garanted (f
 You typically dont' need to install it unless you want some other juicy features.
 If you need the full interface, the fastest way to get Nemesis full working on your war PC is to run:
 
-```cpanm --installdeps .```
+```cpanm --installdeps --notest .```
 
 This will automatically install all dependencies required.
 ***
