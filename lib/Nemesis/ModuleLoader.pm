@@ -448,6 +448,12 @@ package Nemesis::ModuleLoader;
         }
     }
 
+    sub reload() {
+
+        #dummy for now
+        1;
+    }
+
     sub loadmodules {
         my $self            = shift;
         my @selectedModules = ();
@@ -458,15 +464,16 @@ package Nemesis::ModuleLoader;
             = scalar( @{ $self->{'LibraryList'} } ) == 0
             ? $self->getLibs
             : @{ $self->{'LibraryList'} };
+
+        return $self->reload()
+            if ( scalar( keys %{ $self->{'modules'} } ) != 0 );
+
         my $modules;
         my $mods         = 0;
         my $res          = 0;
         my $unknown_data = 0;
         my $Path         = $Init->getEnv()->getPathBin;
         @{ $self->{'LibraryList'} } = @Libs;
-        print "LOADMODULES WAS CALLED\n";
-        print "THOSE ARE THE LIBS: \t " . join( "\t", @Libs );
-
         foreach my $Library (@Libs) {
             my ($name) = $Library =~ m/([^\.|^\/]+)\.pm/;
             next if !$name;

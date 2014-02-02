@@ -21,7 +21,7 @@ requires 'LWP::ConnCache';
 requires 'LWP::Simple';
 requires 'LWP::UserAgent';
 requires 'MIME::Base64';
-requires 'Module::Loaded';
+requires 'Module::Load';
 requires 'Module::ScanDeps';
 requires 'Mojo::IOLoop';
 requires 'Mojo::Server::Daemon';

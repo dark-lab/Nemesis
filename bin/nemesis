@@ -18,20 +18,16 @@ GetOptions(
 );
 
 ###XXX: $Wrap should be abs path for now.
-
+if ( defined $M ) {
+    $Init->getModuleLoader()->loadmodules( split( /\,|\,\s/, $M ) );
+}
 if ( defined($Wrap) and defined($SessionName) ) {
     $Init->io->set_debug(1) if defined($DebugCli);
-    defined $M
-        ? $Init->getModuleLoader()->loadmodules( split( /\,|\,\s/, $M ) )
-        : $Init->getModuleLoader()->loadmodules();
     $Init->ml->instance("session")->spawn($SessionName);
     $Init->getSession()->wrap($Wrap);
 }
 elsif ( defined($Wrap) ) {
     $Init->io->set_debug(1) if defined($DebugCli);
-    defined $M
-        ? $Init->getModuleLoader()->loadmodules( split( /\,|\,\s/, $M ) )
-        : $Init->getModuleLoader()->loadmodules();
     $Init->getSession()->wrap( $Init->getSession->_get_flow($Wrap) );
 }
 else {
