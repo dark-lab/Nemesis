@@ -61,6 +61,8 @@ The CLI is structured to have a simple workflow for your pentesting sessions.
 
 ## Status
 Currently it's under developing, so there are basic functionality working for now
+
+
 CI Status (master branch): [![Build Status](https://travis-ci.org/dark-lab/Nemesis.png?branch=master)](https://travis-ci.org/dark-lab/Nemesis)
 
 ### Goals:
