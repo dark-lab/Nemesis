@@ -584,7 +584,7 @@ package Nemesis::ModuleLoader;
         #        my $self  = shift;
         my $array = shift;
         my $value = shift;
-        my %hash  = map { $_ => 1 } @$array;
+        my %hash  = map { $_ => 1 } @{$array};
         $hash{$value} ? return 1 : return 0;
     }
 
