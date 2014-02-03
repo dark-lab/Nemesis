@@ -98,7 +98,7 @@ If you need the full interface, the fastest way to get Nemesis full working on y
 ```cpanm --installdeps --notest .```
 
 This will automatically install all dependencies required.
-Otherwise you can use the Makefile.PL mantra  to test and install it, but it's not necessary (you can just launch ```nemesis```, ```nemesis-cli`` or ```nemesis-curses```)
+Otherwise you can use the Makefile.PL mantra  to test and install it, but it's not necessary (you can just launch ```nemesis```, ```nemesis-cli``` or ```nemesis-curses```)
 
 ```
 perl Makefile.PL # optionally "perl Makefile.PL verbose"
