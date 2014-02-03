@@ -1,6 +1,10 @@
-* rewrite middleware and plugins with Nemesis::Base that not uses KiokuDB
-+ Net:Interface ?
+* remove Moose
+* complete metasploit integration
+* better suitable option for DB, KiokuDB is a heavy dependency
+* complete the integration of the DHCPD server, for rogue WiFi AP
++ Net:Interface to substitute Nemesis::Interfaces
 + Net:Route
-#ANN, SVM, DecisionTree?
+#ANN, SVM, DecisionTree :  for unpredictable decisions
 #Websploit? dsniff?
-# HTTP::Proxy
+# HTTP::Proxy: integration of a fast proxy
+
