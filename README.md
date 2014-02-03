@@ -79,10 +79,10 @@ CI Status (master branch): [![Build Status](https://travis-ci.org/dark-lab/Nemes
 ## The Complex Stuff:
 * Finalizing the metasploit integration
 * Module rewrital, to be more portable for most environment, we need to delete the ```minimal``` branch
-* We need to clean the code and maybe a MakeFile.PL (I know, PM maybe will hate us)
+* We need to clean the code and <del>maybe a MakeFile.PL (I know, PM maybe will hate us)</del>
 * maybe writing a better TODO and a fixed milestone? just adding stuff to todo it's making all more difficult
 
-## TODO:
+### TODO:
 
 Open TODO.txt
 
@@ -90,7 +90,7 @@ Open TODO.txt
 Module that are capable to load will load, so minimal functions it's garanted (for execution as a daemon).
 
 
-**How install Nemesis**
+## How install Nemesis
 
 You typically dont' need to install it unless you want some other juicy features.
 If you need the full interface, the fastest way to get Nemesis full working on your war PC is to run:
@@ -98,8 +98,37 @@ If you need the full interface, the fastest way to get Nemesis full working on y
 ```cpanm --installdeps --notest .```
 
 This will automatically install all dependencies required.
+Otherwise you can use the Makefile.PL mantra  to test and install it, but it's not necessary (you can just launch ```nemesis```, ```nemesis-cli`` or ```nemesis-curses```)
+
+```
+perl Makefile.PL # optionally "perl Makefile.PL verbose"
+make
+make test        # optionally set TEST_VERBOSE=1
+sudo make install     # only if you want main modules installed in your libpath
+```
+
+
 ***
 If you don't need all that stuff, you can run *nemesis* as a daemon, but you will loose the CLI workflow, you can achieve that by setting up a session (works like a scripting interface) that can be read from the software and will execute the tasks you need
+
+## Structure
+
+*Nemesis* will search plugins in the following directories : "MiddleWare", "Plugins" and "Resources".
+That directories can be in your libpath, in your current working directory or in the session directory, if no explicit module are given with the -m option (separated by a comma) it will load all plugins that can be found.
+Essentially the framework is divided in 3 kinda of extensions:
+
+
+#### MiddleWares
+
+Those modules behaves like a layer between plugins and the user interaction (it's trivial that a user shouldn't interact with middlewares, just launch them).
+
+#### Plugins
+
+Those modules actually does the bad stuff, can be user invoked with the proper arguments (if needed)
+
+#### Resources
+
+Are all modules, bunch of codes and all the other kinda of stuff needed (e.g. configuration files, binaries, ecc..) that can't have access to the framework api but can still be invoked by other modules.
 
 ## Suggestions
 Extensibility is the most important feature of this framework. 
@@ -122,7 +151,7 @@ mudler@dark-lab.net skullbocks@dark-lab.net
 
 ## License
     Nemesis - Pentesting Framework
-    Copyright (C) 2013  mudler@dark-lab.net, skullbocks@dark-lab.net
+    Copyright (C) 2013-2014  mudler@dark-lab.net, skullbocks@dark-lab.net
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
