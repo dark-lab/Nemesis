@@ -10,7 +10,7 @@ package Nemesis::ModuleLoader;
 
     #external modules
     my @MODULES_PATH = ( 'Plugin', 'Resources', 'MiddleWare' );
-    our @SystemCommands = ( "reload", "exit" );    #Exported by defaultxh
+    our @SystemCommands = ( "reload", "exit" );    #Exported by default
 
     ###### The::Net hack
     push @INC => sub {
@@ -179,11 +179,12 @@ package Nemesis::ModuleLoader;
             $object = "Nemesis::" . $module;
 
         }
-        if ( $object =~ /par\-/ ) {
-            $object2 = $object;
-            $object2 =~ s/.*?inc\:lib\://g;
-            return $object2;
-        }
+        # XXX:  PAR PACKER WORKAROUND
+        # if ( $object =~ /par\-/ ) {
+        #     $object2 = $object;
+        #     $object2 =~ s/.*?inc\:lib\://g;
+        #     return $object2;
+        # }
         $Init->io->info( "Object resolved to " . $object );
         chomp($object);
         return $object;
@@ -474,6 +475,7 @@ package Nemesis::ModuleLoader;
         my $unknown_data = 0;
         my $Path         = $Init->getEnv()->getPathBin;
         @{ $self->{'LibraryList'} } = @Libs;
+        my $err=0;
         foreach my $Library (@Libs) {
             my ($name) = $Library =~ m/([^\.|^\/]+)\.pm/;
             next if !$name;
@@ -522,7 +524,7 @@ package Nemesis::ModuleLoader;
             if ($@) {
                 $IO->print_error($@);
                 delete $self->{'modules'}->{$name};
-
+                $err++;
                 # return 0;
             }
         }
@@ -531,7 +533,7 @@ package Nemesis::ModuleLoader;
         );
 
         #delete $self->{'modules'};
-        return 1;
+        return $err;
     }
 
     sub isModule() {

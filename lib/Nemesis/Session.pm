@@ -42,7 +42,7 @@ use File::Path;
     }
 
     sub info {
-        print "Session module\n";
+        $Init->getIO()->print_info("Session: a main module.");
     }
 
     sub new_file {
