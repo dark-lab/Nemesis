@@ -37,7 +37,7 @@ sub import {
                     . ${"${caller}::MODULE"}. " v"
                     . ${"${caller}::VERSION"} . "~ "
                     . ${"${caller}::AUTHOR"} . " ~ "
-                    . ${"${caller}::INfO"},
+                    . ${"${caller}::INFO"},
                 2
             );
         };

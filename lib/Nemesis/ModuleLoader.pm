@@ -47,8 +47,10 @@ package Nemesis::ModuleLoader;
         $Init                     = $package->{'Init'};
         $package->{'libs'}        = {};
         $package->{'loaded_libs'} = {};
-
-        $self->{'Base'}->{'pwd'} = $Init->getEnv()->{'ProgramPath'} . "/";
+        $package->{'mods'}        = 0;
+        $package->{'res'}         = 0;
+        $package->{'unknown'}     = 0;
+        $self->{'Base'}->{'pwd'}  = $Init->getEnv()->{'ProgramPath'} . "/";
         return bless( $self, $class );
     }
 
@@ -179,6 +181,7 @@ package Nemesis::ModuleLoader;
             $object = "Nemesis::" . $module;
 
         }
+
         # XXX:  PAR PACKER WORKAROUND
         # if ( $object =~ /par\-/ ) {
         #     $object2 = $object;
@@ -190,9 +193,97 @@ package Nemesis::ModuleLoader;
         return $object;
     }
 
+    sub loadmodules {
+        my $self            = shift;
+        my @selectedModules = ();
+        my $IO              = $Init->getIO();
+        @selectedModules = @_ if @_ > 0;
+        my @modules;
+        my @Libs
+            = scalar( @{ $self->{'LibraryList'} } ) == 0
+            ? $self->getLibs
+            : @{ $self->{'LibraryList'} };
+
+        return $self->reload()
+            if ( scalar( keys %{ $self->{'modules'} } ) != 0 );
+
+        my $modules;
+        my $Path         = $Init->getEnv()->getPathBin;
+
+        #     @{ $self->{'LibraryList'} } = @Libs;
+        my $err = 0;
+
+        #   $Init->io->debug("Loading: ".join("\n\t",@Libs));
+        foreach my $Library (@Libs) {
+            my ($name) = $Library =~ m/([^\.|^\/]+)\.pm/;
+
+            next if !$name;
+            next
+                if @selectedModules > 0
+                and !&_match( \@selectedModules, $name )
+                ; ## XXX: Note, should change behaviour here, need an array of libs to load, not to avoid them thru the cycle
+                  #  my $Class = $self->resolvObj($name);
+            $Init->getIO()
+                ->debug( "detected Plugin/Resource $name in $Library",
+                __PACKAGE__ );
+            eval {
+                if ( exists( $self->{'modules'}->{$name} ) ) {
+                    delete $self->{'modules'}->{$name};
+                }
+                if ( $self->isModule($Library) ) {
+
+                    $Init->getIO()
+                        ->debug( $Library . " is a module!", __PACKAGE__ );
+
+                    if ( my $obj = $self->loadmodule($Library) ) {
+                        $self->{'mods'}++;
+                        $Init->getIO->print_info(
+                            "Module $name ($Library) correctly loaded.");
+                        $self->{'loaded_libs'}->{$obj} = 1;
+                        $self->{'modules'}->{$name}    = $obj;
+
+                    }
+
+                }
+                elsif ( $self->isResource($Library) ) {
+                    $self->{'res'}++;
+
+#$Init->getIO()->debug("$Library ($name) is a Nemesis Resource",__PACKAGE__ );
+                    $Init->getIO->print_info(
+                        "Resource $name ($Library) detected");
+                    $self->{'loaded_libs'}->{$name} = 1;
+
+                }
+                else {
+                    $self->{'unknown'}++;
+                    $Init->getIO()
+                        ->debug( "$Library it's nothing to me", __PACKAGE__ );
+                }
+
+            };
+            if ($@) {
+                $IO->print_error("Error loading $name ($Library) :".$@);
+                delete $self->{'modules'}->{$name};
+                $err++;
+
+                # return 0;
+            }
+        }
+        $IO->print_info( " "
+                . $self->{'mods'}
+                . " modules\n\t"
+                . $self->{'res'}
+                . " resources\n\t"
+                . $self->{'unknown'}
+                . " unknown data are available.\n\tDouble tab to see them" );
+        #delete $self->{'modules'};
+        return $err;
+    }
+
     sub loadmodule() {
         my $self   = shift;
         my $module = $_[0];
+        my $name   = $module;
         if ( $_[1] ) {
             my %args = %{ $_[1] };
         }
@@ -224,36 +315,44 @@ package Nemesis::ModuleLoader;
 
         #    $Init->io->debug("Carico $module");
         if ( !exists( $self->{'loaded_libs'}->{$object} ) ) {
-            $Init->getIO()->debug( "loading plugin $object ", __PACKAGE__ );
+
+            $Init->getIO()->debug("loading plugin $object ");
 
             # $self->unload( $object, $module ); XXX: to Fix that
 
             #eval "require $object;1";
             load $object;
-            $self->{'loaded_libs'}->{$object} = 1;
             if ($@) {
                 $Init->getIO()
                     ->print_error("Something went wrong loading $object: $@");
                 return undef;
             }
-        }
-        if (%args) {
-            eval { $object = $object->new( Init => $Init, %args ); };
+
+
+
+            if (%args) {
+                eval { $object = $object->new( Init => $Init, %args ); };
+            }
+            else {
+                eval { $object = $object->new( Init => $Init ); };
+            }
+            if ($@) {
+                $Init->getIO()
+                    ->print_error("Something went wrong loading $object: $@");
+                return undef;
+            }
+            $Init->getIO->debug( "\t\t provides:\n\t\t\t\t "
+                    . join( " ", $object->export_public_methods ) )
+                if eval { $object->can("export_public_methods") };
+            $Init->io->debug("Preparing $object") and $object->prepare()
+                if ( eval { $object->can("prepare") } );
         }
         else {
-            eval { $object = $object->new( Init => $Init ); };
-        }
-        if ($@) {
-            $Init->getIO()
-                ->print_error("Something went wrong loading $object: $@");
+            $Init->io->info( $object . " : was already loaded " );
             return undef;
+
         }
 
-        $Init->getIO->debug( "\t\t provides:\n\t\t\t\t "
-                . join( " ", $object->export_public_methods ) )
-            if eval { $object->can("export_public_methods") };
-        $Init->io->debug("Preparing $object") and $object->prepare()
-            if ( eval { $object->can("prepare") } );
         return $object;
     }
 
@@ -453,87 +552,6 @@ package Nemesis::ModuleLoader;
 
         #dummy for now
         1;
-    }
-
-    sub loadmodules {
-        my $self            = shift;
-        my @selectedModules = ();
-        my $IO              = $Init->getIO();
-        @selectedModules = @_ if @_ > 0;
-        my @modules;
-        my @Libs
-            = scalar( @{ $self->{'LibraryList'} } ) == 0
-            ? $self->getLibs
-            : @{ $self->{'LibraryList'} };
-
-        return $self->reload()
-            if ( scalar( keys %{ $self->{'modules'} } ) != 0 );
-
-        my $modules;
-        my $mods         = 0;
-        my $res          = 0;
-        my $unknown_data = 0;
-        my $Path         = $Init->getEnv()->getPathBin;
-        @{ $self->{'LibraryList'} } = @Libs;
-        my $err=0;
-        foreach my $Library (@Libs) {
-            my ($name) = $Library =~ m/([^\.|^\/]+)\.pm/;
-            next if !$name;
-            next
-                if @selectedModules > 0
-                and !&_match( \@selectedModules, $name )
-                ; ## XXX: Note, should change behaviour here, need an array of libs to load, not to avoid them thru the cycle
-                  #  my $Class = $self->resolvObj($name);
-            $Init->getIO()
-                ->debug( "detected Plugin/Resource $name in $Library",
-                __PACKAGE__ );
-            eval {
-                if ( exists( $self->{'modules'}->{$name} ) ) {
-                    delete $self->{'modules'}->{$name};
-                }
-                if ( $self->isModule($Library) ) {
-
-                    $Init->getIO()
-                        ->debug( $Library . " is a module!", __PACKAGE__ );
-
-                    $self->{'modules'}->{$name} = $self->loadmodule($Library);
-                    if ( exists( $self->{'modules'}->{$name} )
-                        and eval { $self->{'modules'}->{$name}->can("new") } )
-                    {
-                        $mods++;
-                        $Init->getIO->print_info(
-                            "Module $name ($Library) correctly loaded.");
-
-                    }
-
-                }
-                elsif ( $self->isResource($Library) ) {
-                    $res++;
-
-#$Init->getIO()->debug("$Library ($name) is a Nemesis Resource",__PACKAGE__ );
-                    $Init->getIO->print_info(
-                        "Resource $name ($Library) detected");
-                }
-                else {
-                    $unknown_data++;
-                    $Init->getIO()
-                        ->debug( "$Library it's nothing to me", __PACKAGE__ );
-                }
-
-            };
-            if ($@) {
-                $IO->print_error($@);
-                delete $self->{'modules'}->{$name};
-                $err++;
-                # return 0;
-            }
-        }
-        $IO->print_info(
-            " $mods modules\n\t$res resources\n\t$unknown_data unknown data are available.\n\tDouble tab to see them"
-        );
-
-        #delete $self->{'modules'};
-        return $err;
     }
 
     sub isModule() {
