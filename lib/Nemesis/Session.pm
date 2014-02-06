@@ -261,7 +261,7 @@ use File::Path;
             open $COMMAND_LOG, "<",
                 $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/"
                 . $CONF->{'VARS'}->{'FLOWFILE'} or
-                $Init->io->debug("Session is new, cannot read flow ".  $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/".$File) and die();
+                $Init->io->debug("Session is new, now flowfile") and return [];
             @FLOW = <$COMMAND_LOG>;
         }
 
