@@ -4,13 +4,11 @@ package Nemesis::Process;
     # use forks::shared;
     #    share($Init);
     #TODO: Add tags to processes!  For analyzer.
-    #TODO: Have a look to IPC::Run and IPC::Open3
     use Carp qw( croak );
     ###### Major change api
     ### now that we have two separate branch, one for master
     ### and one for minimal (so we now can assume that you have good resources on master and more dependency) we can switch to open ipc3
     ### developer happines :)
-    use IPC::Open3;
 
     use Unix::PID;
     use Data::Dumper;
@@ -38,7 +36,9 @@ package Nemesis::Process;
         $self->{'CONFIG'}->{'INDEX'} = $self->generate_lock()
             if !exists( $self->{'CONFIG'}->{'INDEX'} );
         if ( !defined( $self->{'CONFIG'}->{'type'} ) ) {
-            croak "No type defined, aborting..";
+            $self->{'CONFIG'}->{'type'}="daemon";
+            $state = $self->daemon();
+
         }
         else {
             if ( $self->{'CONFIG'}->{'type'} eq 'daemon' ) {
@@ -48,15 +48,25 @@ package Nemesis::Process;
             }
             elsif ( $self->{'CONFIG'}->{'type'} eq 'thread' ) {
                 $Init->getIO()->debug("Starting job.. ");
+                my $can_use_threads = eval 'use threads; 1';
+                if ($can_use_threads) {
+                    $self->thread();
+                }
+                else {
+                    $self->{'CONFIG'}->{'type'}="daemon";
 
-                $self->thread();
+                    $state = $self->daemon()
+                        ;    #daemon a drop replacement for threads
+
+                }
 
             }
             else {
                 ##Daemon now replaces forks legacy functionality ;)
                 # in future will be removed
                 $Init->getIO()->debug("Starting fork.. ");
-                $state = $self->fork();
+                $state = $self->fork()
+                    ; #this was roughly handling daemon spawning, that way was abandoned so far.
             }
         }
         if ($state) {
@@ -82,8 +92,13 @@ package Nemesis::Process;
         if ( exists $self->{'CONFIG'}->{'natural'}
             and $self->{'CONFIG'}->{'natural'} != 1 )
         {
-            eval { use forks; };
-            if ($@) {
+
+            my $can_use_forks = eval 'use forks; 1';
+            if ($can_use_forks) {
+                $Init->io->info("We can use forks!");
+            }
+            else {
+
                 $Init->io->error(
                     "Forks not present, can't do a drop replacement");
             }
@@ -98,7 +113,7 @@ package Nemesis::Process;
                     my $instance = shift;
                     $instance->run();
                 },
-                $self->{'CONFIG'}->{'instance'}
+                $self->{'CONFIG'}->{'args'}
             );
         }
         elsif ( exists( $self->{'CONFIG'}->{'code'} ) ) {
@@ -107,7 +122,8 @@ package Nemesis::Process;
 
                 my $code = $self->{'CONFIG'}->{'code'};
                 $self->{'INSTANCE'}
-                    = threads->new( \&$code, $self->{'args'} );
+                    = threads->new( \&$code,                 $self->{'CONFIG'}->{'args'}
+ );
             }
             else {
 
@@ -115,7 +131,8 @@ package Nemesis::Process;
                     sub {
                         eval( $self->{'CONFIG'}->{'code'} );
                     },
-                    $self->{'args'}
+                                 $self->{'CONFIG'}->{'args'}
+
                 );
             }
         }
@@ -288,10 +305,8 @@ package Nemesis::Process;
         return $self->{'CONFIG'}->{ $_[0] };
     }
 
-    sub daemon {
-        my $self = shift;
-        croak "You have not run start..\n"
-            if !exists( $self->{'CONFIG'}->{'INDEX'} );
+    sub launch() {
+        my $self     = shift;
         my $this_pid = Unix::PID->new();
         my $p;
         my $cmd
@@ -303,29 +318,110 @@ package Nemesis::Process;
         use Symbol 'gensym';
         $err = gensym;
 
+        #use POSIX "setsid";
         my $pid = fork();
         $Init->io->error("Cannot fork: $!") if ( !defined $pid );
         if ( !$pid ) {    #XXX: WITHOUT FORK RUBY GOES DEFUNCT-
-            if ( $p = open3( $wtr, $rdr, $err, $cmd ) ) {
-                $self->save_pid($p);
+            chdir("/") || die "can't chdir to /: $!";
+            open( STDIN, "< /dev/null" ) || die "can't read /dev/null: $!";
+            open( STDOUT, "> /dev/null" )
+                || die "can't write to /dev/null: $!";
 
-                # while (<$err>) {
-                #    $self->save($_);
-                #    $Init->io->debug($_);
+            #  ( setsid() != -1 ) || die "Can't start a new session: $!";
+            open( STDERR, ">&STDOUT" ) || die "can't dup stdout: $!";
 
-                #}
-                $self->save("Daemon mode\n");
+            #  if ( $p = open3( $wtr, $rdr, $err, $cmd ) ) {
 
-                waitpid( $p, 0 );
+            # while (<$err>) {
+            #    $self->save($_);
+            #    $Init->io->debug($_);
 
-                return 1;
+            #}
+
+            system($cmd);
+
+            return 1;
+
+            #  }
+            #  else {
+            # $Init->getIO()
+            #     ->print_error(
+            #     "Error! $err " . $self->{'CONFIG'}->{'code'} );
+            # $self->destroy();
+            # return;
+            #}
+        }
+        else {
+            $self->save_pid($pid);
+            $self->save("Daemon mode\n");
+
+        }
+
+    }
+
+    sub daemon {
+        ## XXX: Should handle the other cases
+        my $self = shift;
+        croak "You have not run start..\n"
+            if !exists( $self->{'CONFIG'}->{'INDEX'} );
+
+        if ( exists( $self->{'CONFIG'}->{'instance'} ) ) {
+            ### XXX: Launch should handle an instance
+            $Init->getIO()
+                ->debug(
+                "Starting a thread for " . $self->{'CONFIG'}->{'instance'} );
+            $self->{'INSTANCE'} = threads->new(
+                sub {
+                    my $instance = shift;
+                    $instance->run();
+                },
+                $self->{'CONFIG'}->{'args'}
+            );
+        }
+        elsif ( exists( $self->{'CONFIG'}->{'code'} ) ) {
+            ### XXX: Launch should handle a code reference
+
+            if ( reftype( $self->{'CONFIG'}->{'code'} ) eq "CODE" ) {
+
+                my $code = $self->{'CONFIG'}->{'code'};
+                $self->{'INSTANCE'}
+                    = threads->new( \&$code, $self->{'CONFIG'}->{'args'} );
             }
             else {
-                $Init->getIO()
-                    ->print_error(
-                    "Error! $err " . $self->{'CONFIG'}->{'code'} );
-                $self->destroy();
-                return;
+                ### XXX: Everything else it's passed directly to system()
+                $self->launch();
+            }
+        }
+        elsif ( exists( $self->{'CONFIG'}->{'module'} ) ) {
+            ### XXX: Launch should handle a module
+
+            #TODO: Will even start?
+            $self->{'CONFIG'}->{'module'} =~ s/\:\:/\//g;
+            my @LOADED_LIBS = $Init->getModuleLoader()->getLoadedLib();
+            foreach my $Lib (@LOADED_LIBS) {
+
+                #$self->{'CONFIG'}->{'module'}=~s/\//\:\:/g;
+
+                if ( $Lib =~ $self->{'CONFIG'}->{'module'} ) {
+                    my $Module = $self->{'CONFIG'}->{'module'};
+                    $Init->getIO()->debug("i handle that");
+                    open HANDLE, "<" . $Lib;
+                    @CODE = <HANDLE>;
+                    close HANDLE;
+
+                    $Init->getIO()->debug("@CODE");
+
+                    # $Module =~ s/\//\:\:/g;
+                    $self->{'INSTANCE'} = threads->new(
+                        sub {
+                            my $instance = $Init->getModuleLoader()
+                                ->loadmodule($Module);
+                            $instance->run();
+                        },
+                        [$Init]
+                    );
+
+                }
             }
         }
 
@@ -374,18 +470,32 @@ package Nemesis::Process;
         }
     }
 
-    sub get_pid() {
+    sub get_pid()
+    {   #If arguments passed (a pidfile path), open the file and save the pid.
+            # otherwhise returns the pid of the process
+         #get_pid with the argument should be invoked only if you are building your process
+         #manually e.g. you launch a daemon and you specify pidfile path
         my $self = shift;
-        if (open FILE,
-            "<"
-            . $Init->getEnv()->tmp_dir() . "/"
-            . $self->{'CONFIG'}->{'INDEX'} . ".pid"
-            )
-        {
-            my @pid = <FILE>;
-            close FILE;
-            return $pid[0];
+        if ( my $pidfile = shift ) {
+            if ( open FILE, "<" . $pidfile ) {
+                my @pid = <FILE>;
+                $self->save_pid( $pid[0] );
+                close FILE;
+            }
         }
+        else {
+            if (open FILE,
+                "<"
+                . $Init->getEnv()->tmp_dir() . "/"
+                . $self->{'CONFIG'}->{'INDEX'} . ".pid"
+                )
+            {
+                my @pid = <FILE>;
+                close FILE;
+                return $pid[0];
+            }
+        }
+
         return ();
 
     }
