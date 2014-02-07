@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 use FindBin '$Bin';
-use lib $Bin."/lib";
+use lib $Bin. "/lib";
 use Nemesis;
 
 my $Init = new Nemesis::Init();
@@ -18,9 +18,8 @@ GetOptions(
 ###XXX: $Wrap should be abs path for now."
 $Init->io->set_debug(1) if defined($DebugCli);
 
-
-if(defined $M){
-$Init->getModuleLoader()->loadmodules( split( /\,|\,\s/, $M ) );
+if ( defined $M ) {
+    $Init->getModuleLoader()->loadmodules( split( /\,|\,\s/, $M ) );
 }
 
 if ( defined($Wrap) and defined($SessionName) ) {
@@ -28,15 +27,12 @@ if ( defined($Wrap) and defined($SessionName) ) {
     $Init->getSession()->wrap($Wrap);
 }
 elsif ( defined($Wrap) ) {
-    $Init->getSession()->wrap( $Wrap );
+    $Init->getSession()->wrap($Wrap);
 }
 if ( defined($SessionName) and !defined($Wrap) ) {
     $Init->ml->instance("session")->spawn($SessionName);
     $Init->ml->instance("session")->wrap();
 }
-
-
-
 
 my $Interface = $Init->ml->atom("Terminterface");
 $Interface->run();
