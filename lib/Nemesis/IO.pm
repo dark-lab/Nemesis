@@ -281,7 +281,8 @@ sub debug() {
                 . colored( $_[0], "white on_black bold" ) . "\n";
         }
 
-    }
+    } 
+    return 1;
 
 }
 
