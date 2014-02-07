@@ -36,7 +36,7 @@ package Nemesis::Process;
         $self->{'CONFIG'}->{'INDEX'} = $self->generate_lock()
             if !exists( $self->{'CONFIG'}->{'INDEX'} );
         if ( !defined( $self->{'CONFIG'}->{'type'} ) ) {
-            $self->{'CONFIG'}->{'type'}="daemon";
+            $self->{'CONFIG'}->{'type'} = "daemon";
             $state = $self->daemon();
 
         }
@@ -48,12 +48,11 @@ package Nemesis::Process;
             }
             elsif ( $self->{'CONFIG'}->{'type'} eq 'thread' ) {
                 $Init->getIO()->debug("Starting job.. ");
-                my $can_use_threads = eval 'use threads; 1';
-                if ($can_use_threads) {
+                if ( $Init->ml->got_lib("threads") ) {
                     $self->thread();
                 }
                 else {
-                    $self->{'CONFIG'}->{'type'}="daemon";
+                    $self->{'CONFIG'}->{'type'} = "daemon";
 
                     $state = $self->daemon()
                         ;    #daemon a drop replacement for threads
@@ -93,8 +92,7 @@ package Nemesis::Process;
             and $self->{'CONFIG'}->{'natural'} != 1 )
         {
 
-            my $can_use_forks = eval 'use forks; 1';
-            if ($can_use_forks) {
+            if ( $Init->ml->got_lib("forks") ) {
                 $Init->io->info("We can use forks!");
             }
             else {
@@ -122,8 +120,7 @@ package Nemesis::Process;
 
                 my $code = $self->{'CONFIG'}->{'code'};
                 $self->{'INSTANCE'}
-                    = threads->new( \&$code,                 $self->{'CONFIG'}->{'args'}
- );
+                    = threads->new( \&$code, $self->{'CONFIG'}->{'args'} );
             }
             else {
 
@@ -131,7 +128,7 @@ package Nemesis::Process;
                     sub {
                         eval( $self->{'CONFIG'}->{'code'} );
                     },
-                                 $self->{'CONFIG'}->{'args'}
+                    $self->{'CONFIG'}->{'args'}
 
                 );
             }
