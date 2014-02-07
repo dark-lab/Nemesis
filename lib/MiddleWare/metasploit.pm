@@ -49,11 +49,11 @@ sub start() {
     if ( $Process->start() ) {                      #Avvio
         $self->Process($Process)
             ;    #Nell'attributo processo del plugin ci inserisco il processo
-            sleep 2;
+            
         if ( $Process->is_running ) {
             $Io->print_info("Service msfrcpd started")
                 ;    #Controllo se si è avviato
-            $Io->process_status($Process);    #Stampo lo status
+           # $Io->process_status($Process);    #Stampo lo status
             $Io->print_alert(
                 "Now you have to give some time to metasploit to be up and running.."
             );
