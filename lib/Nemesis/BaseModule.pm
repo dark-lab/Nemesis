@@ -23,10 +23,6 @@ sub import {
 
         ###NEMESIS
         @{"${caller}::PUBLIC_FUNCTIONS"}      = ();
-        *{"${caller}::AUTHOR"}                = "";
-        *{"${caller}::MODULE"}                = "";
-        *{"${caller}::VERSION"}               = "";
-        *{"${caller}::INFO"}                  = "";
         *{"${caller}::export_public_methods"} = sub {
             return @{"${caller}::PUBLIC_FUNCTIONS"}, "info";
         };
@@ -35,8 +31,9 @@ sub import {
             $self->Init->getIO()->print_tabbed(
                 __PACKAGE__ . " "
                     . ${"${caller}::MODULE"}. " v"
-                    . ${"${caller}::VERSION"} . "~ "
+                    . ${"${caller}::VERSION"} . " ~ "
                     . ${"${caller}::AUTHOR"} . " ~ "
+                    . ${"${caller}::DESCRIPTION"}. " ~ "
                     . ${"${caller}::INFO"},
                 2
             );
