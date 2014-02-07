@@ -3,11 +3,11 @@ package MiddleWare::Scanner;
 use Nemesis::BaseModule -base;
 
 #use HTTP::Request;
-use Net::IP;
+#use Net::IP;
 use Nmap::Parser;
 use Resources::Models::Node;
 use DateTime;
-use NetAddr::IP;
+#use NetAddr::IP;
 
 our $VERSION = '0.1a';
 our $AUTHOR  = "mudler";
