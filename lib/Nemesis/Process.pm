@@ -98,7 +98,8 @@ package Nemesis::Process;
             else {
 
                 $Init->io->error(
-                    "Forks not present, can't do a drop replacement");
+                    "Forks not present, can't do a drop replacement, we can't give up anyway"
+                );
             }
         }
 
@@ -302,23 +303,24 @@ package Nemesis::Process;
         return $self->{'CONFIG'}->{ $_[0] };
     }
 
-    sub launch() {
-        my $self     = shift;
+    sub daemon {
+        ## XXX: Should handle the other cases
+        my $self = shift;
+        croak "You have not run start..\n"
+            if !exists( $self->{'CONFIG'}->{'INDEX'} );
+        use Symbol 'gensym';    #lazy load
+
         my $this_pid = Unix::PID->new();
         my $p;
-        my $cmd
-            = $Init->getIO()->generate_command( $self->{'CONFIG'}->{'code'} );
-        $Init->getIO()->debug($cmd);
 
         #$Init->getIO()->set_debug(1);
         my ( $wtr, $rdr, $err );
-        use Symbol 'gensym';
         $err = gensym;
 
         #use POSIX "setsid";
         my $pid = fork();
         $Init->io->error("Cannot fork: $!") if ( !defined $pid );
-        if ( !$pid ) {    #XXX: WITHOUT FORK RUBY GOES DEFUNCT-
+        if ( !$pid ) {          #XXX: WITHOUT FORK RUBY GOES DEFUNCT-
             chdir("/") || die "can't chdir to /: $!";
             open( STDIN, "< /dev/null" ) || die "can't read /dev/null: $!";
             open( STDOUT, "> /dev/null" )
@@ -334,9 +336,33 @@ package Nemesis::Process;
             #    $Init->io->debug($_);
 
             #}
+            if ( exists( $self->{'CONFIG'}->{'instance'} ) ) {
+                exists $self->{'CONFIG'}->{'args'}
+                    ? $self->{'CONFIG'}->{'instance'}
+                    ->run( $self->{'CONFIG'}->{'args'} )
+                    : $self->{'CONFIG'}->{'instance'}->run();
+            }
+            elsif ( exists( $self->{'CONFIG'}->{'code'} ) ) {
+                if ( reftype( $self->{'CONFIG'}->{'code'} ) eq "CODE" ) {
 
-            system($cmd);
-
+                    my $code = $self->{'CONFIG'}->{'code'};
+                    &$code( $self->{'CONFIG'}->{'args'} );
+                }
+                else {
+                    my $cmd
+                        = $Init->getIO()
+                        ->generate_command( $self->{'CONFIG'}->{'code'} );
+                    $Init->getIO()->debug($cmd);
+                    system($cmd);
+                }
+            }
+            elsif ( exists( $self->{'CONFIG'}->{'module'} ) ) {
+                my $Module = $Init->getModuleLoader()
+                    ->loadmodule( $self->{'CONFIG'}->{'module'} );
+                exists $self->{'CONFIG'}->{'args'}
+                    ? $Module->run( $self->{'CONFIG'}->{'args'} )
+                    : $Module->run();
+            }
             return 1;
 
             #  }
@@ -352,74 +378,6 @@ package Nemesis::Process;
             $self->save_pid($pid);
             $self->save("Daemon mode\n");
 
-        }
-
-    }
-
-    sub daemon {
-        ## XXX: Should handle the other cases
-        my $self = shift;
-        croak "You have not run start..\n"
-            if !exists( $self->{'CONFIG'}->{'INDEX'} );
-
-        if ( exists( $self->{'CONFIG'}->{'instance'} ) ) {
-            ### XXX: Launch should handle an instance
-            $Init->getIO()
-                ->debug(
-                "Starting a thread for " . $self->{'CONFIG'}->{'instance'} );
-            $self->{'INSTANCE'} = threads->new(
-                sub {
-                    my $instance = shift;
-                    $instance->run();
-                },
-                $self->{'CONFIG'}->{'args'}
-            );
-        }
-        elsif ( exists( $self->{'CONFIG'}->{'code'} ) ) {
-            ### XXX: Launch should handle a code reference
-
-            if ( reftype( $self->{'CONFIG'}->{'code'} ) eq "CODE" ) {
-
-                my $code = $self->{'CONFIG'}->{'code'};
-                $self->{'INSTANCE'}
-                    = threads->new( \&$code, $self->{'CONFIG'}->{'args'} );
-            }
-            else {
-                ### XXX: Everything else it's passed directly to system()
-                $self->launch();
-            }
-        }
-        elsif ( exists( $self->{'CONFIG'}->{'module'} ) ) {
-            ### XXX: Launch should handle a module
-
-            #TODO: Will even start?
-            $self->{'CONFIG'}->{'module'} =~ s/\:\:/\//g;
-            my @LOADED_LIBS = $Init->getModuleLoader()->getLoadedLib();
-            foreach my $Lib (@LOADED_LIBS) {
-
-                #$self->{'CONFIG'}->{'module'}=~s/\//\:\:/g;
-
-                if ( $Lib =~ $self->{'CONFIG'}->{'module'} ) {
-                    my $Module = $self->{'CONFIG'}->{'module'};
-                    $Init->getIO()->debug("i handle that");
-                    open HANDLE, "<" . $Lib;
-                    @CODE = <HANDLE>;
-                    close HANDLE;
-
-                    $Init->getIO()->debug("@CODE");
-
-                    # $Module =~ s/\//\:\:/g;
-                    $self->{'INSTANCE'} = threads->new(
-                        sub {
-                            my $instance = $Init->getModuleLoader()
-                                ->loadmodule($Module);
-                            $instance->run();
-                        },
-                        [$Init]
-                    );
-
-                }
-            }
         }
 
         #$Init->getIO()->set_debug(0);
@@ -604,8 +562,9 @@ package Nemesis::Process;
     }
 
     sub pidof($) {
-        my $self     = shift;
-        my @PIECES   = split( /\s+/, shift );
+        my $self = shift;
+        ## XXX: THIS IS LEGACY CODE, BAD STUFF HAS BEEN DONE DOWN THERE
+        my @PIECES = split( /\s+/, shift );
         my $this_pid = Unix::PID->new();
         my $p;
         my %matr;
@@ -640,9 +599,7 @@ package Nemesis::Process;
         my @SORTED_PIDS = sort { $matr{$b} <=> $matr{$a} } ( keys(%matr) );
         {
             $p = shift(@SORTED_PIDS);
-
-            #$Init->getIO()->debug("popped $last_pid, shifted $first_pid");
-        }    # end-foreach
+        }
         $Init->getIO()->debug( "MAX PID " . $p );
         return ($p);
     }
