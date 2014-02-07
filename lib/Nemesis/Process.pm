@@ -70,8 +70,8 @@ package Nemesis::Process;
         }
         if ($state) {
             if ( my $Job = $Init->ml->getInstance("Jobs") ) {
-                $Job->list();
                 $Job->add($self);
+                $Job->list();
             }
         }
         return $state ? $self->get_id() : ();
@@ -319,7 +319,7 @@ package Nemesis::Process;
 
         #use POSIX "setsid";
         my $pid = fork();
-        $Init->io->error("Cannot fork: $!") if ( !defined $pid );
+        $Init->io->error("Cannot fork: $!") and return undef if ( !defined $pid );
         if ( !$pid ) {          #XXX: WITHOUT FORK RUBY GOES DEFUNCT-
             chdir("/") || die "can't chdir to /: $!";
             open( STDIN, "< /dev/null" ) || die "can't read /dev/null: $!";
@@ -353,7 +353,7 @@ package Nemesis::Process;
                         = $Init->getIO()
                         ->generate_command( $self->{'CONFIG'}->{'code'} );
                     $Init->getIO()->debug($cmd);
-                    system($cmd);
+                    exec($cmd);
                 }
             }
             elsif ( exists( $self->{'CONFIG'}->{'module'} ) ) {
@@ -363,7 +363,7 @@ package Nemesis::Process;
                     ? $Module->run( $self->{'CONFIG'}->{'args'} )
                     : $Module->run();
             }
-            return 1;
+            exit 0;
 
             #  }
             #  else {
@@ -379,7 +379,6 @@ package Nemesis::Process;
             $self->save("Daemon mode\n");
 
         }
-
         #$Init->getIO()->set_debug(0);
     }
 
