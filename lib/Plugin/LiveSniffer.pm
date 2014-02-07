@@ -15,7 +15,7 @@ has 'Sniffer';
 
 sub start() {
     my $self = shift;
-
+    my $device=shift;
     if ( $self->Init->checkroot() ) {
         $self->Init->io()
             ->print_alert(
@@ -25,7 +25,7 @@ sub start() {
     my $Process = $self->Init->getModuleLoader->loadmodule("Process");
 
     my $Monitor = $self->Init->getModuleLoader->loadmodule("Monitor");
-    $Monitor->Device("wlan0");
+    $Monitor->Device($device);
     $Process->set(
         type     => "thread",
         instance => $Monitor
