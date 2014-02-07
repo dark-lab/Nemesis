@@ -2,12 +2,12 @@ package MiddleWare::Scanner;
 
 use Nemesis::BaseModule -base;
 
-#use HTTP::Request;
+#use HTTP::Request; #use NetAddr::IP;
 #use Net::IP;
-use Nmap::Parser;
 use Resources::Models::Node;
 use DateTime;
-#use NetAddr::IP;
+
+
 
 our $VERSION = '0.1a';
 our $AUTHOR  = "mudler";
@@ -18,6 +18,7 @@ our @PUBLIC_FUNCTIONS = qw(webtest nmap);
 
 has 'Arguments';
 has 'DB';
+
 #use namespace::autoclean;
 
 sub prepare {
@@ -53,6 +54,12 @@ sub webtest() {
 sub nmap() {
     my $self = shift;
     my $Ip   = shift;
+
+    if ( !$self->Init->ml->got_lib("Nmap::Parser") ) { #if true it will be loaded
+        $self->Init->io->error("You don't seem to have Nmap::Parser");
+        return 0;
+    }
+
     if ($Ip) {
         $self->nmapscan($Ip);
     }
@@ -73,15 +80,16 @@ sub nmapscan() {
     $Np->cache_scan(
         $self->Init->getSession()->new_file( DateTime->now, __PACKAGE__ ) );
 
-    $self->Init->getIO()->print_info("Scanning started on $Ip");
+    $self->Init->getIO()->print_info("Scanning started on $Ip with ".$self->Arguments);
     $Np->parsescan( $self->Init->getEnv()->whereis("nmap"),
         $self->Arguments . " $Ip" );
     my $Session = $Np->get_session;
     $self->Init->getIO()->print_info( "Session:" . $Session->scan_args );
+    my $Meta = $self->Init->ml->getInstance("metasploit");
     foreach my $host ( $Np->all_hosts() ) {
         next if ( $host->status ne "up" );
         my $results = $self->Init->ml->getInstance("Database")
-            ->search( {ip => $host->addr} );
+            ->search( { ip => $host->addr } );
         my $DBHost;
         while ( my $chunk = $results->next ) {
             for my $foundhost (@$chunk) {
@@ -107,7 +115,6 @@ sub nmapscan() {
                 "OS Name: " . $os->name() . " Family: " . $os->osfamily, 3 );
             $Node->os( $os->osfamily );
         }
-        my $Meta = $self->Init->getModuleLoader()->getInstance("metasploit");
         my @Found_Ports;
         for my $port ( $host->tcp_ports() ) {
             my $service = $host->tcp_service($port);
