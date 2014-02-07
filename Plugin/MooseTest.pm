@@ -1,10 +1,7 @@
 package Plugin::MooseTest;
 
-use Moose;
-
 #use Nemesis::Inject;
 use Nemesis::BaseModule -base;
-use namespace::autoclean;
 
 our $VERSION = '0.1a';
 our $AUTHOR  = "mudler";
