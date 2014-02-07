@@ -230,7 +230,7 @@ package Nemesis::ModuleLoader;
             }
         }
         $IO->print_info( " " .
-                  keys( $self->{'loaded_libs'} )
+                  keys( %{ $self->{'loaded_libs'} })
                 . " modules\n\t"
                 . $self->{'res'}
                 . " resources\n\t"
