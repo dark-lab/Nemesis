@@ -208,7 +208,7 @@ package Nemesis::ModuleLoader;
             if ( scalar( keys %{ $self->{'modules'} } ) != 0 );
 
         my $modules;
-        my $Path         = $Init->getEnv()->getPathBin;
+        my $Path = $Init->getEnv()->getPathBin;
 
         #     @{ $self->{'LibraryList'} } = @Libs;
         my $err = 0;
@@ -262,7 +262,7 @@ package Nemesis::ModuleLoader;
 
             };
             if ($@) {
-                $IO->print_error("Error loading $name ($Library) :".$@);
+                $IO->print_error( "Error loading $name ($Library) :" . $@ );
                 delete $self->{'modules'}->{$name};
                 $err++;
 
@@ -276,6 +276,7 @@ package Nemesis::ModuleLoader;
                 . " resources\n\t"
                 . $self->{'unknown'}
                 . " unknown data are available.\n\tDouble tab to see them" );
+
         #delete $self->{'modules'};
         return $err;
     }
@@ -327,8 +328,6 @@ package Nemesis::ModuleLoader;
                     ->print_error("Something went wrong loading $object: $@");
                 return undef;
             }
-
-
 
             if (%args) {
                 eval { $object = $object->new( Init => $Init, %args ); };
@@ -425,6 +424,16 @@ package Nemesis::ModuleLoader;
         }
 
         return $Found ? $Found : undef;
+    }
+
+    sub got_lib() {
+        my $self = shift;
+        my $lib=shift;
+        my $can_use = eval 'use ' . $lib . '; 1';
+        if ($can_use) {
+            return 1;
+        }
+        return 0;
     }
 
     sub _findLibsByCategory() {
