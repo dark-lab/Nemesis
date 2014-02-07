@@ -47,7 +47,6 @@ package Nemesis::ModuleLoader;
         $Init                     = $package->{'Init'};
         $package->{'libs'}        = {};
         $package->{'loaded_libs'} = {};
-        $package->{'mods'}        = 0;
         $package->{'res'}         = 0;
         $package->{'unknown'}     = 0;
         $self->{'Base'}->{'pwd'}  = $Init->getEnv()->{'ProgramPath'} . "/";
@@ -95,12 +94,12 @@ package Nemesis::ModuleLoader;
         my $self = shift;
         my @OUT;
         my @PUBLIC_FUNC;
+        return @{$self->{'PUBLIC_FUNCS'}} if (exists $self->{'PUBLIC_FUNCS'});
         foreach my $module ( sort( keys %{ $self->{'modules'} } ) ) {
             @PUBLIC_FUNC = ();
             eval {
-                @PUBLIC_FUNC = eval {
-                    $self->{'modules'}->{$module}->export_public_methods();
-                };
+                @PUBLIC_FUNC = $self->{'modules'}->{$module}->export_public_methods();
+                
                 foreach my $method (@PUBLIC_FUNC) {
                     $method = $module . "." . $method;
 
@@ -114,7 +113,11 @@ package Nemesis::ModuleLoader;
                     "Error $@ raised when populating public methods");
             }
         }
-        return @OUT, @SystemCommands;
+
+        push(@OUT,@SystemCommands);
+        $self->{'PUBLIC_FUNCS'} = \@OUT;
+
+        return @OUT;
     }
 
     sub listmodules {
@@ -155,44 +158,6 @@ package Nemesis::ModuleLoader;
 
     }
 
-    sub resolvObj() {
-        my $self   = shift;
-        my $module = shift;
-        my $object;
-        if ( $module =~ /$RE{URI}{HTTP}/ ) {
-
-            require $module;
-            $object = $self->_findLibName($module);
-
-        }
-        elsif ( $module =~ /\:\:/ ) {
-            $object = $module;
-        }
-
-        #    elsif ( my $Type = $self->_findLib($module) ) {
-        #        if ( $Type =~ /\// ) { $Type =~ s/\//\:\:/g; }
-        #        $object = $Type . "::" . $module;
-
-        elsif ( $module = $self->_findLibName($module) ) {
-            $object = $module;
-
-        }
-        else {
-            $object = "Nemesis::" . $module;
-
-        }
-
-        # XXX:  PAR PACKER WORKAROUND
-        # if ( $object =~ /par\-/ ) {
-        #     $object2 = $object;
-        #     $object2 =~ s/.*?inc\:lib\://g;
-        #     return $object2;
-        # }
-        $Init->io->info( "Object resolved to " . $object );
-        chomp($object);
-        return $object;
-    }
-
     sub loadmodules {
         my $self            = shift;
         my @selectedModules = ();
@@ -227,20 +192,14 @@ package Nemesis::ModuleLoader;
                 ->debug( "detected Plugin/Resource $name in $Library",
                 __PACKAGE__ );
             eval {
-                if ( exists( $self->{'modules'}->{$name} ) ) {
-                    delete $self->{'modules'}->{$name};
-                }
                 if ( $self->isModule($Library) ) {
-
                     $Init->getIO()
                         ->debug( $Library . " is a module!", __PACKAGE__ );
-
                     if ( my $obj = $self->loadmodule($Library) ) {
-                        $self->{'mods'}++;
                         $Init->getIO->print_info(
                             "Module $name ($Library) correctly loaded.");
-                        $self->{'loaded_libs'}->{$obj} = 1;
-                        $self->{'modules'}->{$name}    = $obj;
+                        $self->{'loaded_libs'}->{$name}++;
+                        $self->{'modules'}->{$name} = $obj;
 
                     }
 
@@ -251,7 +210,8 @@ package Nemesis::ModuleLoader;
 #$Init->getIO()->debug("$Library ($name) is a Nemesis Resource",__PACKAGE__ );
                     $Init->getIO->print_info(
                         "Resource $name ($Library) detected");
-                    $self->{'loaded_libs'}->{$name} = 1;
+
+                    # $self->{'loaded_libs'}->{$name}++;
 
                 }
                 else {
@@ -269,8 +229,8 @@ package Nemesis::ModuleLoader;
                 # return 0;
             }
         }
-        $IO->print_info( " "
-                . $self->{'mods'}
+        $IO->print_info( " " .
+                  keys( $self->{'loaded_libs'} )
                 . " modules\n\t"
                 . $self->{'res'}
                 . " resources\n\t"
@@ -285,11 +245,12 @@ package Nemesis::ModuleLoader;
         my $self   = shift;
         my $module = $_[0];
         my $name   = $module;
-        if ( $_[1] ) {
-            my %args = %{ $_[1] };
-        }
-        my $IO = $Init->getIO();
+        my $IO     = $Init->getIO();
         my $object;
+        my %args = %{ $_[1] } if ( $_[1] );
+
+        $name = $1 if ( $name =~ m/([^\.|^\/]+)\.pm/ );
+
         if ( $module !~ /\:\:|\.pm/ ) {
 
             my $SearchModule = $self->_findLib($module);
@@ -304,6 +265,11 @@ package Nemesis::ModuleLoader;
             }
 
         }
+        elsif ( $module =~ /$RE{URI}{HTTP}/ ) {
+
+            require $module;
+            $object = $self->_findLibName($module);
+        }
         else {
             if ( $module =~ /\:\:/ ) {
                 $object = $module;
@@ -315,7 +281,7 @@ package Nemesis::ModuleLoader;
         }
 
         #    $Init->io->debug("Carico $module");
-        if ( !exists( $self->{'loaded_libs'}->{$object} ) ) {
+        if ( !exists( $self->{'loaded_libs'}->{$name} ) ) {
 
             $Init->getIO()->debug("loading plugin $object ");
 
@@ -427,8 +393,8 @@ package Nemesis::ModuleLoader;
     }
 
     sub got_lib() {
-        my $self = shift;
-        my $lib=shift;
+        my $self    = shift;
+        my $lib     = shift;
         my $can_use = eval 'use ' . $lib . '; 1';
         if ($can_use) {
             return 1;
