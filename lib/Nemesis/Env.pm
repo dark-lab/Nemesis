@@ -21,13 +21,12 @@ sub new {
     return $package;
 }
 
-sub setINCPaths(){
+sub setINCPaths() {
 
-    my $self=shift;
+    my $self = shift;
 
-    push(@INC,$self->getPathBin);
-        push(@INC,$Init->getSession->getSessionPath);
-
+    push( @INC, $self->getPathBin );
+    push( @INC, $Init->getSession->getSessionPath );
 
 }
 
