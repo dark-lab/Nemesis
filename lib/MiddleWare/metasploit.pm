@@ -37,7 +37,7 @@ sub start() {
         . $self->MSFRPC->Username . ' -P '
         . $self->MSFRPC->Password . ' -p '
         . $self->MSFRPC->Port
-        . ' -S -f';
+        . ' -S -f'; #FOREGROUND
     $Io->print_info("Starting msfrpcd service.")
         ;    #AVVIO il demone msfrpc con le configurazioni della risorsa
     my $Process
@@ -49,6 +49,7 @@ sub start() {
     if ( $Process->start() ) {                      #Avvio
         $self->Process($Process)
             ;    #Nell'attributo processo del plugin ci inserisco il processo
+            sleep 2;
         if ( $Process->is_running ) {
             $Io->print_info("Service msfrcpd started")
                 ;    #Controllo se si è avviato
