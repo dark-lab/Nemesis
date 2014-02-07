@@ -16,7 +16,7 @@ sub prepare { shift->import_jobs(); }
 
 sub add {    #Not avaible from cli, but avaible among Plugins/MiddleWare
     my $self = shift;
-    push( @{ $self->Processes }, $_[0] );
+    push( @{ $self->Processes }, @_);
     return $self;
 }
 
