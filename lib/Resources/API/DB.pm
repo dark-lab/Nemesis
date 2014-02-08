@@ -1,7 +1,7 @@
 package Resources::API::DB;
 use Nemesis::BaseRes -base;
 
-use KiokuDB;
+use KiokuDB; #### XXX: to change database approach
 use Search::GIN::Extract::Class;
 use Search::GIN::Query::Manual;
 use Search::GIN::Query::Class;
