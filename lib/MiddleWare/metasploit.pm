@@ -43,6 +43,7 @@ sub start() {
     my $Process
         = $self->Init->ml->loadmodule('Process');   ##Carico il modulo process
     $Process->set(
+        tag  => 'msfrpcd',
         type => 'daemon',                           # tipologia demone
         code => $processString                      # linea di comando...
     );
@@ -153,8 +154,8 @@ sub event_Resources__Exploit {
 sub generate() {
     my $self = shift;
 
-    for ( 1 .. 10 ) {
-        sleep 2;
+    while ($self->Process->is_running ) {
+        sleep 5;
         $self->Init->io->info("waiting for meta");
 
         if ( $self->is_up ) {
@@ -162,7 +163,7 @@ sub generate() {
             last;
         }
         else {
-            $self->Init->io->error("meta failed to start");
+            $self->Init->io->error("meta doesn't answer yet");
 
         }
     }
