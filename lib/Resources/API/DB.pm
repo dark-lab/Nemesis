@@ -29,10 +29,10 @@ sub add () {
     # my $Obj = shift;
     my @Objs = @_;
 
-    #my $s   = $self->BackEnd->new_scope;
+    my $s   = $self->BackEnd->new_scope;
 
     # takes a snapshot of $some_object
-    $self->BackEnd->scoped_txn(
+    $self->BackEnd->txn_do(
         sub {
             $self->BackEnd->insert(@Objs);
         }
@@ -118,24 +118,23 @@ sub connect() {
         $BackEnd = KiokuDB->connect(
             "bdb-gin:dir=" . $self->Init->getSession()->getSessionPath,
             create       => 1,
+        #    serializer => "yaml",
             extract      => Search::GIN::Extract::Class->new,
-            live_objects => {
-                clear_leaks  => 1,
-                leak_tracker => sub {
-                    my @leaked = @_;
-
-                    $self->Init->io->alert("leaked " . scalar(@leaked) . " objects, mop up");
-
-                    # try to mop up.
-                    use Data::Structure::Util qw(circular_off);
-                    circular_off($_) for @leaked;
-                    }
-            }
+           # live_objects => {
+               clear_leaks  => 1,
+                  leak_tracker => sub {
+                      my @leaked = @_;
+                      $self->Init->io->alert("leaked " . scalar(@leaked) . " objects, mop up");
+                      # try to mop up.
+                      use Data::Structure::Util qw(circular_off);
+                      circular_off($_) for @leaked;
+                      },
+           #  }
         ) or $self->Init->io->error("ERROR $!");
 
         $self->BackEnd($BackEnd);
     }
-    $self->Init->io->debug( "Connected", __PACKAGE__ );
+    $self->Init->io->debug( "Connected", __PACKAGE__ ) if defined $self->BackEnd;
     return $self;
 }
 
