@@ -55,15 +55,17 @@ sub add() {
     my $self  = shift;
     my @stuff = @_;
     my $DB    = $self->DB || $self->Init->ml->atom("DB");
-    $DB->connect();
+   # $DB->connect();
     return 1 if $DB->add(@stuff);
 }
 
 sub search () {
     my $self    = shift;
     my $Options = shift;
-    my $DB      = $self->DB || $self->Init->ml->atom("DB");
-    $DB->connect();
+    my $DB      = $self->DB;
+    $self->Init->io->info(
+        "Searching " . join( "\t", values( %{$Options} ) ) );
+  #  $DB->connect();
     return $DB->search($Options);
 }
 
@@ -71,7 +73,8 @@ sub rsearch() {    #Regex search
     my $self    = shift;
     my $Options = shift;
     my $DB      = $self->DB || $self->Init->ml->atom("DB");
-    $DB->connect();
+
+    #  $DB->connect();
     return $DB->searchRegex($Options);
 }
 
@@ -79,7 +82,8 @@ sub remove() {
     my $self = shift;
     my $obj  = shift;
     my $DB   = $self->DB || $self->Init->ml->atom("DB");
-    $DB->connect();
+
+    # $DB->connect();
     return $DB->delete($obj);
 
 }
@@ -88,7 +92,8 @@ sub update() {
     my $self   = shift;
     my $Object = shift;
     my $DB     = $self->DB || $self->Init->ml->atom("DB");
-    $DB->connect();
+
+    # $DB->connect();
     my $id  = $DB->object_to_id($Object);
     my $Old = $DB->lookup($id);
     return $DB->swap( $Old, $Object );
@@ -98,9 +103,10 @@ sub update() {
 sub prepare {
     my $self = shift;
 
-    #  my $DB   = $self->Init->ml->loadmodule("DB");
-   # $DB->connect();
-   # $self->DB($DB);
+    my $DB = $self->Init->ml->loadmodule("DB");
+    $DB->connect();
+
+ $self->DB($DB);
     $self->Dispatcher( $self->Init->ml->atom("Dispatcher") );
     $self->start();
 
