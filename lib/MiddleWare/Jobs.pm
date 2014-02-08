@@ -39,6 +39,14 @@ sub list {
     }
 }
 
+sub tag(){
+    my $self=shift;
+    my $tag= shift;
+    foreach my $Job ( @{ $self->Processes } ) {
+       return $Job if ($Job->get_var("tag") eq $tag);
+    }
+}
+
 sub import_jobs() {
     my $self = shift;
     opendir( DIR, $self->Init->getEnv()->tmp_dir() )
