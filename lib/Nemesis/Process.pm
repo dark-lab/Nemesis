@@ -1,17 +1,7 @@
 package Nemesis::Process;
 {
-
-    # use forks::shared;
-    #    share($Init);
-    #TODO: Add tags to processes!  For analyzer.
     use Carp qw( croak );
-    ###### Major change api
-    ### now that we have two separate branch, one for master
-    ### and one for minimal (so we now can assume that you have good resources on master and more dependency) we can switch to open ipc3
-    ### developer happines :)
-
     use Unix::PID;
-    use Data::Dumper;
     use Scalar::Util 'reftype';
     our $Init;
 
@@ -258,11 +248,11 @@ package Nemesis::Process;
     sub generate_lock {
         my $self            = shift;
         my $generated_index = int( rand(9000) );
-        while (
-            -e $Init->getEnv()->tmp_dir() . "/" . $generated_index . ".lock" )
-        {
-            $generated_index = int( rand() );
-        }
+        $generated_index = int( rand() )
+            unless ( !-e $Init->getEnv()->tmp_dir() . "/"
+            . $generated_index
+            . ".lock" );
+
         open FILE,
               ">"
             . $Init->getEnv()->tmp_dir() . "/"
@@ -319,8 +309,9 @@ package Nemesis::Process;
 
         #use POSIX "setsid";
         my $pid = fork();
-        $Init->io->error("Cannot fork: $!") and return undef if ( !defined $pid );
-        if ( !$pid ) {          #XXX: WITHOUT FORK RUBY GOES DEFUNCT-
+        $Init->io->error("Cannot fork: $!") and return undef
+            if ( !defined $pid );
+        if ( !$pid ) {    #XXX: WITHOUT FORK RUBY GOES DEFUNCT-
             chdir("/") || die "can't chdir to /: $!";
             open( STDIN, "< /dev/null" ) || die "can't read /dev/null: $!";
             open( STDOUT, "> /dev/null" )
@@ -379,6 +370,7 @@ package Nemesis::Process;
             $self->save("Daemon mode\n");
 
         }
+
         #$Init->getIO()->set_debug(0);
     }
 
