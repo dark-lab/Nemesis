@@ -1,6 +1,6 @@
 package Resources::Models::Snap;
-use Moose;
 
+use Moose;
 use DateTime;
 
 has 'was'  => ( is => "rw" );
