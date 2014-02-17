@@ -12,22 +12,22 @@ our @PUBLIC_FUNCTIONS = qw( start stop list find);
 has 'Dispatcher';
 has 'DB';
 
-sub find() {
+sub find {
     ##It's just visual
     my $self = shift;
     my $arg  = shift;    #single argument for now
     if ( $arg =~ /exploit/i ) {
-
         my $results
             = $self->search( { class => "Resources::Models::Exploit" } );
-
-#       while( my $block = $results->next ) {
-#           foreach my $item ( @{$block} ) {
-#               $self->Init->getIO->debug($item->ip.": ".join(",",@{$item->ports}),__PACKAGE__);
-#               $self->Init->getIO->debug("Possible vulns ".$item->attachments->size);
-
-        #           }
-        #       }
+        while ( my $block = $results->next ) {
+            foreach my $item ( @{$block} ) {
+                $self->Init->getIO->debug(
+                    $item->module . ": " . join( ",", @{ $item->targets } ),
+                    __PACKAGE__ );
+                $self->Init->getIO->debug(
+                    "Description: " . $item->description );
+            }
+        }
 
         #Exploit visualization
     }
@@ -38,57 +38,69 @@ sub find() {
         while ( my $block = $results->next ) {
             foreach my $item ( @{$block} ) {
                 $self->Init->io->print_title( $item->ip );
-                $self->Init->getIO->info( "Open ports: "
+                @{ $item->ports } > 0
+                    ? $self->Init->getIO->info( "Open ports: "
                         . join( ",", grep { s/\|.*$//g; } @{ $item->ports } )
-                ) if @{ $item->ports } > 0;
+                    )
+                    : $self->Init->getIO->info("No open ports found");
                 $self->Init->getIO->info(
                     "Possible vulns " . $item->attachments->size );
-
             }
         }
-
     }
+    else {
+        my $results = $self->search( { class => $arg } );
 
+        #Whatever else visualization
+        while ( my $block = $results->next ) {
+            foreach my $item ( @{$block} ) {
+                $self->Init->io->print_title($item);
+                $self->Init->getIO->print_dumper($item);
+            }
+        }
+    }
 }
 
-sub add() {
+sub add {
     my $self  = shift;
     my @stuff = @_;
     my $DB    = $self->DB || $self->Init->ml->atom("DB");
-   # $DB->connect();
-    return 1 if $DB->add(@stuff);
+
+    # $DB->connect();
+    $DB->add(@stuff) ? 1 : 0;
 }
 
-sub search () {
+sub search {
     my $self    = shift;
     my $Options = shift;
     my $DB      = $self->DB;
     $self->Init->io->info(
         "Searching " . join( "\t", values( %{$Options} ) ) );
-  #  $DB->connect();
+
+    #  $DB->connect();
     return $DB->search($Options);
 }
 
-sub rsearch() {    #Regex search
+sub rsearch {    #Regex search
     my $self    = shift;
     my $Options = shift;
     my $DB      = $self->DB || $self->Init->ml->atom("DB");
 
     #  $DB->connect();
-    return $DB->searchRegex($Options);
+    return $DB->searchRegex($Options)
+        ; #Yeah, it's not performant but KiokuDB it's not mongoDB (we can't depend on that heavy dep)
 }
 
-sub remove() {
+sub remove {
     my $self = shift;
     my $obj  = shift;
     my $DB   = $self->DB || $self->Init->ml->atom("DB");
 
     # $DB->connect();
     return $DB->delete($obj);
-
 }
 
-sub update() {
+sub update {
     my $self   = shift;
     my $Object = shift;
     my $DB     = $self->DB || $self->Init->ml->atom("DB");
@@ -97,22 +109,18 @@ sub update() {
     my $id  = $DB->object_to_id($Object);
     my $Old = $DB->lookup($id);
     return $DB->swap( $Old, $Object );
-
 }
 
 sub prepare {
     my $self = shift;
-
-    my $DB = $self->Init->ml->loadmodule("DB");
+    my $DB   = $self->Init->ml->loadmodule("DB");
     $DB->connect();
-
- $self->DB($DB);
+    $self->DB($DB);
     $self->Dispatcher( $self->Init->ml->atom("Dispatcher") );
     $self->start();
-
 }
 
-sub start() {
+sub start {
     my $self    = shift;
     my $Process = $self->Init->ml->loadmodule("Process");
     $Process->set(
@@ -123,7 +131,7 @@ sub start() {
     #$Process->start;
 }
 
-sub run() {
+sub run {
     ############
     ######      Saving new ids on a file
     my $self = shift;
@@ -141,7 +149,22 @@ sub run() {
                     #flock( FH, 1 );#Flock!
                     close FH;
                 }
+                else {
+                    $self->Init->io->error(
+                        "Unable to get lock on $WriteFile");
+                    return 0;
+                }
             }
+            else {
+                $self->Init->io->error(
+                    "Something wrong happened, you shouldn't see that");
+                return 0;
+            }
+        }
+        else {
+            $self->Init->io->error(
+                "Something wrong happened, you shouldn't see that");
+            return 0;
         }
         foreach my $ID (@Content) {
             my @Info         = split( /\|\|\|\|/, $ID );
