@@ -75,7 +75,7 @@ sub search {
     my $Options = shift;
     my $DB      = $self->DB;
     $self->Init->io->info(
-        "Searching " . join( "\t", values( %{$Options} ) ) );
+        "Searching for " . join( "\t", values( %{$Options} ) ) );
 
     #  $DB->connect();
     return $DB->search($Options);
@@ -116,7 +116,6 @@ sub prepare {
     my $DB   = $self->Init->ml->loadmodule("DB");
     $DB->connect();
     $self->DB($DB);
-    $self->Dispatcher( $self->Init->ml->atom("Dispatcher") );
     $self->start();
 }
 
@@ -135,6 +134,8 @@ sub run {
     ############
     ######      Saving new ids on a file
     my $self = shift;
+        $self->Dispatcher( $self->Init->ml->atom("Dispatcher") );
+
     while ( sleep 1 ) {
         my $WriteFile = $self->Init->session->new_file(".ids");
         my @Content;

@@ -1,14 +1,17 @@
 package Resources::API::DB;
 use Nemesis::BaseRes -base;
 
-use KiokuDB; #### XXX: to change database approach
+use KiokuDB;    #### XXX: to change database approach
+use KiokuDB::Backend::DBI; ## Just to ensure that will fail if not exist
+use DBI; ## same here
+#XXX: secretely planning to a DBM::Deep wrapper for no more tears on deps
 use Search::GIN::Extract::Class;
 use Search::GIN::Query::Manual;
 use Search::GIN::Query::Class;
 use Fcntl qw(:DEFAULT :flock);
 use Resources::Models::Snap;
 
-has 'BackEnd'   ;
+has 'BackEnd';
 has 'Dispatcher';
 
 sub prepare {
@@ -16,6 +19,7 @@ sub prepare {
     my $Dispatcher = $self->Init->ml->loadmodule("Dispatcher");
     $self->Dispatcher($Dispatcher);
 }
+
 sub lookup() {
     my $self = shift;
     my $uuid = shift;
@@ -29,12 +33,12 @@ sub add () {
     # my $Obj = shift;
     my @Objs = @_;
 
-    my $s   = $self->BackEnd->new_scope;
+    my $s = $self->BackEnd->new_scope;
 
     # takes a snapshot of $some_object
     $self->BackEnd->txn_do(
         sub {
-            $self->BackEnd->insert(@Objs);
+            $self->BackEnd->store(@Objs);
         }
     );
     foreach my $Obj (@Objs) {
@@ -55,7 +59,7 @@ sub update() {
     $self->BackEnd->txn_do(
         sub {
             $self->delete($Obj);
-            $self->add($Obj);
+            $self->store($Obj);
         }
     );
 
@@ -115,26 +119,46 @@ sub connect() {
         #    extract => Search::GIN::Extract::Class->new
         # ) or $self->Init->io->error("Error loading BackEnd");
 
+
         $BackEnd = KiokuDB->connect(
-            "bdb-gin:dir=" . $self->Init->getSession()->getSessionPath,
-            create       => 1,
-        #    serializer => "yaml",
-            extract      => Search::GIN::Extract::Class->new,
-           # live_objects => {
-               clear_leaks  => 1,
-                  leak_tracker => sub {
-                      my @leaked = @_;
-                      $self->Init->io->alert("leaked " . scalar(@leaked) . " objects, mop up");
-                      # try to mop up.
-                      use Data::Structure::Util qw(circular_off);
-                      circular_off($_) for @leaked;
-                      },
-           #  }
+            "dbi:SQLite:dbname=" . $self->Init->getSession()->getSessionPath."/.sqlite.db",
+            create     => 1,
+          #  log_auto_remove => 1,
+       #     serializer => "yaml",
+        # extract => Search::GIN::Extract::Callback->new(
+        #     extract => sub {
+        #         my ( $obj, $extractor, @args ) = @_;
+ 
+        #         if ( $obj->isa("Person") ) {
+        #             return {
+        #                 type => "user",
+        #                 name => $obj->name,
+        #             };
+        #         }
+ 
+        #         return;
+        #     },
+        # ),            # live_objects => {
+           # clear_leaks  => 1,
+        #    schema => 1,
+            # transactions=> 1,
+            # leak_tracker => sub {
+            #     my @leaked = @_;
+            #     $self->Init->io->alert(
+            #         "leaked " . scalar(@leaked) . " objects, mop up" );
+
+            #     # try to mop up.
+            #     use Data::Structure::Util qw(circular_off);
+            #     circular_off($_) for @leaked;
+            # },
+
+            #  }
         ) or $self->Init->io->error("ERROR $!");
 
         $self->BackEnd($BackEnd);
     }
-    $self->Init->io->debug( "Connected", __PACKAGE__ ) if defined $self->BackEnd;
+    $self->Init->io->debug( "Connected", __PACKAGE__ )
+        if defined $self->BackEnd;
     return $self;
 }
 
@@ -170,10 +194,20 @@ sub search() {
             = Search::GIN::Query::Class->new( class => $Search{'class'}, );
 
         # get results
+        eval {
         $results = $self->BackEnd->search($query);
+        };
+         if ($@) {
+            return 0;
+         }
     }
     else {
+          eval {
         $results = $self->BackEnd->search( \%Search );
+    };
+        if ($@) {
+            return 0;
+         }
     }
     return $results;
 

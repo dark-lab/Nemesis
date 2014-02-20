@@ -194,6 +194,7 @@ sub populateDB() {
 
     #  $self->start if ( !$self->Process or !$self->Process->is_running );
 
+    $self->generate() if !$self->Init->ml->module("Jobs")->tag("msfrpcd");
     if ( !$self->is_up ) {
         $IO->print_alert("Cannot sync with meta");
     }
@@ -217,14 +218,14 @@ sub populateDB() {
     foreach my $exploit (@EXPL_LIST) {
 
         my $result = $DB->search( { module => $exploit } );
-        my $AlreadyThere = 0;
-        while ( my $block = $result->next ) {
-            foreach my $item (@$block) {
-                $AlreadyThere = 1;
-                last;
-            }
-        }
-        if ( $AlreadyThere == 0 ) {
+        # my $AlreadyThere = 0;
+        # while ( my $block = $result->next ) {
+        #     foreach my $item (@$block) {
+        #         $AlreadyThere = 1;
+        #         last;
+        #     }
+        # }
+        if ( $result == 0 or $result->next) {
             $IO->debug("Adding $exploit to Exploit DB");
             my $Information = $MSFRPC->info( "exploits", $exploit );
             my $Options = $MSFRPC->options( "exploits", $exploit );
@@ -233,8 +234,8 @@ sub populateDB() {
             my @Targets = values %{ $Information->{'targets'} };
             my @References = map { $_ = join( "|", @{$_} ); }
                 @{ $Information->{'references'} };
-            $IO->debug( join( " ", @Targets ) . " targets" );
-            my $Expla = Resources::Models::Exploit->new(
+            $IO->debug($exploit ." supports the following targets: " .join( " ", @Targets ) );
+            my $Expl = Resources::Models::Exploit->new(
                 type          => "exploits",
                 module        => $exploit,
                 rank          => $Information->{'rank'},
@@ -244,7 +245,9 @@ sub populateDB() {
                 references    => \@References,
                 default_rport => $Options->{'RPORT'}->{'default'}
             );
-            $DB->add($Expla);
+                        $IO->debug("adding ".$exploit);
+
+            $DB->add($Expl);
             $Counter++;
         }
         else {
