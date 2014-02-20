@@ -2,11 +2,12 @@ requires 'Alt::Crypt::RSA::BigInt';
 requires 'App::FatPacker';
 requires 'Carp::Always';
 requires 'Crypt::CBC';
+requires 'DBI';
 requires 'Data::MessagePack';
-requires 'Data::Structure::Util';
 requires 'DateTime';
 requires 'Devel::Declare::Lexer';
 requires 'Devel::Declare::Lexer::Factory';
+requires 'File::Path';
 requires 'Getopt::Long';
 requires 'HTTP::Daemon';
 requires 'HTTP::Date';
@@ -16,6 +17,7 @@ requires 'HTTP::Proxy::HeaderFilter::standard';
 requires 'HTTP::Request';
 requires 'IO::Socket::SSL', '1.42';
 requires 'KiokuDB';
+requires 'KiokuDB::Backend::DBI';
 requires 'KiokuDB::Util';
 requires 'LWP';
 requires 'LWP::ConnCache';
@@ -44,8 +46,6 @@ suggests 'Net::IP';
 suggests 'Net::SSLeay', '1.49';
 suggests 'Net::Write::Layer';
 suggests 'Net::Write::Layer2';
-suggests 'NetAddr::IP';
-requires 'Nmap::Parser';
 requires 'POE';
 requires 'Regexp::Common';
 requires 'Scalar::Util';
@@ -59,7 +59,12 @@ requires 'Term::Visual';
 requires 'Time::Local';
 requires 'Unix::PID';
 requires 'WWW::Mechanize';
+requires 'namespace::autoclean';
 requires 'perl', '5.008001';
+
+on configure => sub {
+    requires 'ExtUtils::MakeMaker';
+};
 
 on test => sub {
     requires 'Test::Simple';
