@@ -1,3 +1,2 @@
-session@list@
-shell@run@uptime
-shell@run@uname#-a
+metasploit@start
+metasploit@generate
