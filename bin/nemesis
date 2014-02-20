@@ -20,6 +20,8 @@ GetOptions(
 ###XXX: $Wrap should be abs path for now.
 if ( defined $M ) {
     $Init->getModuleLoader()->loadmodules( split( /\,|\,\s/, $M ) );
+} else {
+    $Init->ml->loadmodules();
 }
 if ( defined($Wrap) and defined($SessionName) ) {
     $Init->io->set_debug(1) if defined($DebugCli);
