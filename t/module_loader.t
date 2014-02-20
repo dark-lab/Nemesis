@@ -1,4 +1,4 @@
-use Test::Simple tests => 4;
+use Test::Simple tests => 3;
 use Nemesis;
 use Scalar::Util qw ( reftype );
 
@@ -16,4 +16,3 @@ ok( &Nemesis::ModuleLoader::_match( [ 1, 2 ], 2 ) == 1,
 ok( &Nemesis::ModuleLoader::_match( \@test, 2 ) == 1,
     'Nemesis::ModuleLoader _match() ' );
 
-ok (reftype(\$Init->ml->export_public_methods()) eq 'ARRAY', 'Nemesis::ModuleLoader export_public_methods()');
