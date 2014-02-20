@@ -94,12 +94,14 @@ package Nemesis::ModuleLoader;
         my $self = shift;
         my @OUT;
         my @PUBLIC_FUNC;
-        return @{$self->{'PUBLIC_FUNCS'}} if (exists $self->{'PUBLIC_FUNCS'});
+        return @{ $self->{'PUBLIC_FUNCS'} }
+            if ( exists $self->{'PUBLIC_FUNCS'} );
         foreach my $module ( sort( keys %{ $self->{'modules'} } ) ) {
             @PUBLIC_FUNC = ();
             eval {
-                @PUBLIC_FUNC = $self->{'modules'}->{$module}->export_public_methods();
-                
+                @PUBLIC_FUNC
+                    = $self->{'modules'}->{$module}->export_public_methods();
+
                 foreach my $method (@PUBLIC_FUNC) {
                     $method = $module . "." . $method;
 
@@ -114,7 +116,7 @@ package Nemesis::ModuleLoader;
             }
         }
 
-        push(@OUT,@SystemCommands);
+        push( @OUT, @SystemCommands );
         $self->{'PUBLIC_FUNCS'} = \@OUT;
 
         return @OUT;
@@ -230,7 +232,7 @@ package Nemesis::ModuleLoader;
             }
         }
         $IO->print_info( " " .
-                  keys( %{ $self->{'loaded_libs'} })
+                  keys( %{ $self->{'loaded_libs'} } )
                 . " modules\n\t"
                 . $self->{'res'}
                 . " resources\n\t"
@@ -583,13 +585,15 @@ package Nemesis::ModuleLoader;
 
     ############# ALIASES #############
     sub instance() {
-        my $self = shift;
-        $self->getInstance( $_[0] );
+        shift->getInstance( $_[0] );
     }
 
     sub atom() {
-        my $self = shift;
-        $self->loadmodule(@_);
+        shift->loadmodule(@_);
+    }
+
+    sub module() {
+        shift->getInstance(@_);
     }
 
     #   sub load() {
