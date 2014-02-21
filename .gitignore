@@ -3,3 +3,5 @@ Makefile
 Makefile.old
 MANIFEST.bak
 MYMETA.*
+cover_db/
+pm_to_blib
