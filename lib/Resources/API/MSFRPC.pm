@@ -5,6 +5,7 @@ use Data::MessagePack;
 use LWP;
 use HTTP::Request;
 use Resources::Util;
+
 #http://blog.spiderlabs.com/2012/01/scripting-metasploit-using-msgrpc-.html
 has 'Username' => sub {'spike'};
 has 'Password' => sub {'spiketest'};
@@ -103,17 +104,64 @@ sub console_write() {
 
 }
 
+sub console() {
+    my $self    = shift;
+    my $command = shift;
+    my $console = shift // $self->currentConsole;
+    $self->console_write( $command . "\n", $console );
+    return $self->console_read($console);
+
+}
+
 sub console_read() {
     my $self = shift;
     my $console = shift // $self->currentConsole;
-
+    my $data;
     if ( &Resources::Util::match( $self->opened_consoles, $console ) ) {
-
-        return $self->call( "console.read", $console )->{'data'};
+        my $call = $self->call( "console.read", $console );
+        $data .= $call->{data};
+        if ( $call->{busy} == 1 ) {
+            sleep 1;
+            $data .= $self->console_read($console);
+        }
+        else {
+            return $data;
+        }
     }
     else {
         $self->Init->io->error("No console in the list");
     }
+}
+
+### Convenience function to launch exploit
+
+sub exploit() {
+    my $self    = shift;
+    my $Module  = shift;
+    my $options = shift;
+    $self->Init->io->debug_dumper( $self->console_read() );
+
+    $self->console( "use " . $Module );
+
+    foreach my $Option ( keys( %{$options} ) ) {
+        $self->console( "set " . $Option . " " . $options->{$Option} ) if defined $options->{$Option};
+
+    }
+
+    my $res = $self->console("exploit");
+
+    if ( $res =~ /Exploit\s+failed/i ) {
+        $self->Init->io->error( "Exploit failed : " . $Module );
+        $self->Init->io->error($res);
+        return 0;
+    }
+    else {
+        $self->Init->io->info($res);
+        return 1;
+
+        #Further read.
+    }
+
 }
 
 sub error() {
