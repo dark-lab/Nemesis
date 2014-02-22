@@ -10,7 +10,7 @@ my $INFO    = "<www.dark-lab.net>";
 
 #Funzioni che fornisco.
 our @PUBLIC_FUNCTIONS
-    = qw(start console clear sessionlist call test generate matchExpl)
+    = qw(start console clear sessionlist call test generate matchExpl pwn)
     ;    #NECESSARY
 
 #Attributo Processo del demone MSFRPC
@@ -278,13 +278,50 @@ sub matchExpl() {
     );
 
     $self->Init->getIO->print_tabbed(
-        "Found a total of " . scalar(@Objs) . " objects for /$String/i", 3 );
+        "Found a total of " . scalar(@Objs) . " objects for $String", 3 );
     foreach my $item (@Objs) {
         $self->Init->getIO->print_tabbed(
             "Found " . $item->module . " " . $item->name, 4 );
     }
     return @Objs;
 
+}
+
+sub pwn(){
+    my $self=shift;
+    my $host=shift || undef;
+    my @Hosts;
+    if($host){
+        my $results = $self->Init->ml->getInstance("Database")
+            ->search( { ip => $host } );
+        my $DBHost;
+        while ( my $chunk = $results->next ) {
+            for my $foundhost (@$chunk) {
+                       push(@Hosts,$foundhost);
+                last;
+            }
+        }
+    } else {
+              my $results = $self->Init->ml->getInstance("Database")
+            ->search(  { class => "Resources::Models::Node" } );
+        my $DBHost;
+        while ( my $chunk = $results->next ) {
+            for my $foundhost (@$chunk) {
+                       push(@Hosts,$foundhost);
+            }
+        }
+
+    }
+    $self->is_avaible;
+    foreach my $Node(@Hosts){
+        foreach my $PotentialExploit($Node->attachments->members){
+            next if !$PotentialExploit->isa("Resources::Models::Exploit");
+            $self->LaunchExploitOnNode(
+                $Node,
+                $PotentialExploit
+            );  
+        }
+    }
 }
 
 sub matchNode() {
@@ -336,18 +373,7 @@ sub matchPort() {
 
 sub sessionlist() {
     my $self    = shift;
-    my @OPTIONS = (
-        "auxiliary",
-        "server/browser_autopwn",
-        {   LHOST   => "0.0.0.0",
-            SRVPORT => "8080",
-            URIPATH => "/"
-        }
-    );
-
-    #my $response = $self->call( "session.list", @OPTIONS );
     $self->MSFRPC->call("session.list");
-
 }
 
 sub call() {
@@ -358,9 +384,7 @@ sub call() {
 
 sub clear() {
     my $self = shift;
-    $self->Process->destroy() if ( $self->Process );
-
-#Il metodo clear viene chiamato quando chiudiamo tutto, dunque se ho un processo attivo, lo chiudo!
+    $self->Process->destroy() if ( $self->Process ); #Destroy instance on exit
 }
 
 sub event_tcp() {
