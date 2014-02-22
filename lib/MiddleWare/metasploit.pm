@@ -24,6 +24,8 @@ sub prepare {
     my $self = shift;
     $self->MSFRPC( $self->Init->getModuleLoader->loadmodule("MSFRPC") );
     $self->DB( $self->Init->ml->getInstance("Database") );
+    $self->Process( $self->Init->ml->module("Jobs")->tag("msfrpcd") )
+        if $self->Init->ml->module("Jobs")->tag("msfrpcd"); #If exist i load the process
 }
 
 sub start() {
@@ -88,22 +90,30 @@ sub LaunchExploitOnNode() {
     my $self    = shift;
     my $Node    = shift;
     my $Exploit = shift;
-    my @OPTIONS = ( "exploits", $Exploit->module );
+ my $LaunchResult = $self->MSFRPC->exploit(
+         $Exploit->module,
+         {
+             ##   PAYLOAD=>undef,
+             ##   TARGET=>undef,
+             ##   ACTION=> undef,
 
-    #Posso usare le promises, oppure
-    #master polling ogni 10 minuti.
+             RHOST => $Node->ip,
+             RPORT => $Exploit->RPORT || $Exploit->default_rport,
+             LHOST => $Exploit->LHOST || undef
 
-    $self->Init->io->debug_dumper( $self->MSFRPC->console_read() );
 
-    $self->MSFRPC->console_write( "use " . $Exploit->module );
-    $self->MSFRPC->console_write( "set RHOST " . $Node->ip );
-    $self->MSFRPC->console_write("set RPORT 80");
-    $self->MSFRPC->console_write("run");
-    sleep 3;
+         }
+     );
 
-    $self->MSFRPC->console_write("jobs");
+ if($LaunchResult==1) {
+    $self->Init->io->info("Exploit successful");
+ }
+  
 
-    $self->Init->io->debug_dumper( $self->MSFRPC->console_read );
+   # $self->MSFRPC->console_write("jobs");
+
+#sleep 4;    
+#$self->Init->io->debug_dumper( $self->MSFRPC->console_read() );
 
     #  my $LaunchResult = $self->MSFRPC->execute(
     #      $Exploit->type,
@@ -139,12 +149,7 @@ sub LaunchExploitOnNode() {
 
 }
 
-sub console() {
-    my $self = shift;
-    $self->MSFRPC->console_write(@_);
-    $self->Init->io->debug_dumper( $self->MSFRPC->console_read );
 
-}
 
 sub event_Resources__Exploit {
     my $self = shift;
@@ -255,7 +260,8 @@ sub test() {
         Resources::Models::Node->new( ip => "127.0.0.1" ),
         Resources::Models::Exploit->new(
             type   => "exploits",
-            module => "windows/misc/ib_isc_attach_database"
+            module => "windows/misc/ib_isc_attach_database",
+            default_rport=>9090
         )
     );
 
@@ -266,8 +272,7 @@ sub matchExpl() {
     my $String = shift;
 
     my @Objs = $self->DB->rsearch(
-        {
-            class  => "Resources::Models::Exploit",
+        {   class  => "Resources::Models::Exploit",
             module => $String
         }
     );
