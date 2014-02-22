@@ -123,13 +123,11 @@ sub connect() {
         $BackEnd = KiokuDB->connect(
             "dbi:SQLite:dbname=" . $self->Init->getSession()->getSessionPath."/.sqlite.db",
             create     => 1,
-          #  log_auto_remove => 1,
-       #     serializer => "yaml",
         # extract => Search::GIN::Extract::Callback->new(
         #     extract => sub {
         #         my ( $obj, $extractor, @args ) = @_;
  
-        #         if ( $obj->isa("Person") ) {
+        #         if ( $obj->isa("") ) {
         #             return {
         #                 type => "user",
         #                 name => $obj->name,
@@ -138,21 +136,18 @@ sub connect() {
  
         #         return;
         #     },
-        # ),            # live_objects => {
-           # clear_leaks  => 1,
-        #    schema => 1,
-            # transactions=> 1,
-            # leak_tracker => sub {
-            #     my @leaked = @_;
-            #     $self->Init->io->alert(
-            #         "leaked " . scalar(@leaked) . " objects, mop up" );
+        # ),            
+            clear_leaks  => 1,
+             transactions=> 1,
+            leak_tracker => sub {
+                my @leaked = @_;
+                $self->Init->io->alert(
+                    "leaked " . scalar(@leaked) . " objects, mop up" );
 
-            #     # try to mop up.
-            #     use Data::Structure::Util qw(circular_off);
-            #     circular_off($_) for @leaked;
-            # },
-
-            #  }
+                # try to mop up.
+                use Data::Structure::Util qw(circular_off);
+                circular_off($_) for @leaked;
+            },
         ) or $self->Init->io->error("ERROR $!");
 
         $self->BackEnd($BackEnd);
