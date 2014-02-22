@@ -10,7 +10,8 @@ my $INFO    = "<www.dark-lab.net>";
 
 #Funzioni che fornisco.
 our @PUBLIC_FUNCTIONS
-    = qw(start console clear sessionlist call test generate matchExpl);    #NECESSARY
+    = qw(start console clear sessionlist call test generate matchExpl)
+    ;    #NECESSARY
 
 #Attributo Processo del demone MSFRPC
 has 'Process';
@@ -37,7 +38,7 @@ sub start() {
         . $self->MSFRPC->Username . ' -P '
         . $self->MSFRPC->Password . ' -p '
         . $self->MSFRPC->Port
-        . ' -S -f'; #FOREGROUND
+        . ' -S -f';    #FOREGROUND
     $Io->print_info("Starting msfrpcd service.")
         ;    #AVVIO il demone msfrpc con le configurazioni della risorsa
     my $Process
@@ -50,11 +51,11 @@ sub start() {
     if ( $Process->start() ) {                      #Avvio
         $self->Process($Process)
             ;    #Nell'attributo processo del plugin ci inserisco il processo
-            
+
         if ( $Process->is_running ) {
             $Io->print_info("Service msfrcpd started")
                 ;    #Controllo se si è avviato
-           # $Io->process_status($Process);    #Stampo lo status
+                     # $Io->process_status($Process);    #Stampo lo status
             $Io->print_alert(
                 "Now you have to give some time to metasploit to be up and running.."
             );
@@ -92,57 +93,56 @@ sub LaunchExploitOnNode() {
     #Posso usare le promises, oppure
     #master polling ogni 10 minuti.
 
-    $self->Init->io->debug_dumper($self->MSFRPC->console_read());
+    $self->Init->io->debug_dumper( $self->MSFRPC->console_read() );
 
-    $self->MSFRPC->console_write("use ".$Exploit->module);
-    $self->MSFRPC->console_write("set RHOST ".$Node->ip);
+    $self->MSFRPC->console_write( "use " . $Exploit->module );
+    $self->MSFRPC->console_write( "set RHOST " . $Node->ip );
     $self->MSFRPC->console_write("set RPORT 80");
     $self->MSFRPC->console_write("run");
-    $self->MSFRPC->console_write("jobs");
     sleep 3;
 
-    $self->Init->io->debug_dumper($self->MSFRPC->console_read);
+    $self->MSFRPC->console_write("jobs");
 
-   #  my $LaunchResult = $self->MSFRPC->execute(
-   #      $Exploit->type,
-   #      $Exploit->module,
-   #      {
-   #          ##   PAYLOAD=>undef,
-   #          ##   TARGET=>undef,
-   #          ##   ACTION=> undef,
+    $self->Init->io->debug_dumper( $self->MSFRPC->console_read );
 
-   #          RHOST => $Node->ip,
-   #          RPORT => $Exploit->default_rport
+    #  my $LaunchResult = $self->MSFRPC->execute(
+    #      $Exploit->type,
+    #      $Exploit->module,
+    #      {
+    #          ##   PAYLOAD=>undef,
+    #          ##   TARGET=>undef,
+    #          ##   ACTION=> undef,
 
-   #      }
-   #  );
+    #          RHOST => $Node->ip,
+    #          RPORT => $Exploit->default_rport
 
-   #  $self->Init->io->debug_dumper({   $Exploit->type => 0,
-   #      $Exploit->module =>
-   #      {
-   #          ##   PAYLOAD=>undef,
-   #          ##   TARGET=>undef,
-   #          ##   ACTION=> undef,
+    #      }
+    #  );
 
-   #          RHOST => $Node->ip,
-   #          RPORT => 80
+    #  $self->Init->io->debug_dumper({   $Exploit->type => 0,
+    #      $Exploit->module =>
+    #      {
+    #          ##   PAYLOAD=>undef,
+    #          ##   TARGET=>undef,
+    #          ##   ACTION=> undef,
 
-   #      }});
+    #          RHOST => $Node->ip,
+    #          RPORT => 80
 
-   #  my $Options = $self->MSFRPC->options( "exploits", $Exploit->module );
-   #  my $Payloads = $self->MSFRPC->payloads( $Exploit->module );
-   # $self->Init->getIO->debug_dumper( \$Options );
-   # # $self->Init->getIO->debug_dumper( \$Payloads );
-   #    $self->Init->getIO->debug_dumper( \$LaunchResult );
+    #      }});
 
+    #  my $Options = $self->MSFRPC->options( "exploits", $Exploit->module );
+    #  my $Payloads = $self->MSFRPC->payloads( $Exploit->module );
+    # $self->Init->getIO->debug_dumper( \$Options );
+    # # $self->Init->getIO->debug_dumper( \$Payloads );
+    #    $self->Init->getIO->debug_dumper( \$LaunchResult );
 
 }
 
-sub console(){
-    my $self=shift;
+sub console() {
+    my $self = shift;
     $self->MSFRPC->console_write(@_);
-    $self->Init->io->debug_dumper($self->MSFRPC->console_read);
-
+    $self->Init->io->debug_dumper( $self->MSFRPC->console_read );
 
 }
 
@@ -154,12 +154,21 @@ sub event_Resources__Exploit {
 sub generate() {
     my $self = shift;
 
-    while ($self->Process->is_running ) {
+    $self->is_avaible;
+
+    $self->populateDB;
+
+    #   $self->safe_database;
+
+}
+
+sub is_avaible() {
+    my $self = shift;
+    while ( $self->Process->is_running ) {
         sleep 5;
         $self->Init->io->info("waiting for meta");
 
         if ( $self->is_up ) {
-            $self->populateDB;
             last;
         }
         else {
@@ -167,8 +176,6 @@ sub generate() {
 
         }
     }
-
-    #   $self->safe_database;
 
 }
 
@@ -195,9 +202,6 @@ sub populateDB() {
     #  $self->start if ( !$self->Process or !$self->Process->is_running );
 
     $self->generate() if !$self->Init->ml->module("Jobs")->tag("msfrpcd");
-    if ( !$self->is_up ) {
-        $IO->print_alert("Cannot sync with meta");
-    }
     my $response = $MSFRPC->call('module.exploits');
 
     my @EXPL_LIST = @{ $response->{'modules'} };
@@ -207,25 +211,9 @@ sub populateDB() {
         "There are " . scalar(@EXPL_LIST) . " exploits in metasploit" );
     my $result = $DB->search( { class => "Resources::Models::Exploit" } );
     my $Counter = 0;
-    while ( my $block = $result->next ) {
-        foreach my $item (@$block) {
-            $Counter++;
-        }
-    }
-    $IO->print_info("$Counter of them already are in the database ");
-
-    $Counter = 0;
     foreach my $exploit (@EXPL_LIST) {
-
         my $result = $DB->search( { module => $exploit } );
-        # my $AlreadyThere = 0;
-        # while ( my $block = $result->next ) {
-        #     foreach my $item (@$block) {
-        #         $AlreadyThere = 1;
-        #         last;
-        #     }
-        # }
-        if ( $result == 0 or $result->next) {
+        if ( $result == 0 or $result->next ) {
             $IO->debug("Adding $exploit to Exploit DB");
             my $Information = $MSFRPC->info( "exploits", $exploit );
             my $Options = $MSFRPC->options( "exploits", $exploit );
@@ -234,7 +222,9 @@ sub populateDB() {
             my @Targets = values %{ $Information->{'targets'} };
             my @References = map { $_ = join( "|", @{$_} ); }
                 @{ $Information->{'references'} };
-            $IO->debug($exploit ." supports the following targets: " .join( " ", @Targets ) );
+            $IO->debug( $exploit
+                    . " supports the following targets: "
+                    . join( " ", @Targets ) );
             my $Expl = Resources::Models::Exploit->new(
                 type          => "exploits",
                 module        => $exploit,
@@ -245,7 +235,7 @@ sub populateDB() {
                 references    => \@References,
                 default_rport => $Options->{'RPORT'}->{'default'}
             );
-                        $IO->debug("adding ".$exploit);
+            $IO->debug( "adding " . $exploit );
 
             $DB->add($Expl);
             $Counter++;
@@ -260,7 +250,7 @@ sub populateDB() {
 
 sub test() {
     my $self = shift;
-
+    $self->is_avaible;
     $self->LaunchExploitOnNode(
         Resources::Models::Node->new( ip => "127.0.0.1" ),
         Resources::Models::Exploit->new(
@@ -277,7 +267,6 @@ sub matchExpl() {
 
     my @Objs = $self->DB->rsearch(
         {
-
             class  => "Resources::Models::Exploit",
             module => $String
         }
@@ -328,7 +317,6 @@ sub matchPort() {
     my $Objs   = $self->DB->search( { default_rport => $String } );
     $self->Init->getIO->print_tabbed(
         "Searching a matching exploit for port $String", 3 );
-
     my @Return;
     while ( my $chunk = $Objs->next ) {
         for my $item (@$chunk) {
@@ -337,7 +325,6 @@ sub matchPort() {
             push( @Return, $item );
         }
     }
-
     return @Return;
 
 }
