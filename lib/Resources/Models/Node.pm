@@ -1,6 +1,5 @@
 package Resources::Models::Node;
 
-use Net::IP;
 use Moose::Util::TypeConstraints;
 use Moose;
 use KiokuDB::Util qw(set);
