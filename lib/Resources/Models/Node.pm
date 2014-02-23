@@ -10,6 +10,7 @@ has 'ip'        => ( is => 'rw' );
 has 'ports'     => ( is => 'rw', isa => "ArrayRef", default => sub { [] } );
 has 'url'       => ( is => 'rw' );
 has 'os'        => ( is => 'rw' );
+has 'hmac'      => ( is => "rw" );
 has 'hostnames' => ( is => "rw" );
 has 'attachments' => (
     does    => "KiokuDB::Set",
