@@ -8,7 +8,8 @@ our $MODULE  = "Metasploit Module";
 our $INFO    = "<www.dark-lab.net>";
 
 #Funzioni che fornisco.
-our @PUBLIC_FUNCTIONS = qw(list kill detach result status clear);   #NECESSARY
+our @PUBLIC_FUNCTIONS
+    = qw(list kill detach result status clear stopall);    #NECESSARY
 
 has 'Processes' => sub { [] };
 
@@ -16,8 +17,15 @@ sub prepare { shift->import_jobs(); }
 
 sub add {    #Not avaible from cli, but avaible among Plugins/MiddleWare
     my $self = shift;
-    push( @{ $self->Processes }, @_);
+    push( @{ $self->Processes }, @_ );
     return $self;
+}
+
+sub stopall {
+    my $self = shift;
+    $self->import_jobs();
+    $self->Init->io->info("Stopping all jobs");
+    $_->destroy() for ( @{ $self->Processes } );
 }
 
 sub clear() {
@@ -25,10 +33,8 @@ sub clear() {
     $self->import_jobs();
     $self->Init->io->info("cleaning not running and pending jobs");
     foreach my $Proc ( @{ $self->Processes } ) {
-        $Proc->destroy() if ( $Proc->is_running );
-        # $Proc->destroy();
+        $Proc->destroy() if ( !$Proc->is_running );
     }
-
 }
 
 sub list {
@@ -39,11 +45,11 @@ sub list {
     }
 }
 
-sub tag(){
-    my $self=shift;
-    my $tag= shift;
+sub tag() {
+    my $self = shift;
+    my $tag  = shift;
     foreach my $Job ( @{ $self->Processes } ) {
-       return $Job if ($Job->get_var("tag") eq $tag);
+        return $Job if ( $Job->get_var("tag") eq $tag );
     }
 }
 
