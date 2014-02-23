@@ -1,12 +1,15 @@
 package Resources::API::DB;
 use Nemesis::BaseRes -base;
 
-use KiokuDB;    #### XXX: to change database approach
-use KiokuDB::Backend::DBI; ## Just to ensure that will fail if not exist
-use DBI; ## same here
+use KiokuDB;                  #### XXX: to change database approach
+use KiokuDB::Backend::DBI;    ## Just to ensure that will fail if not exist
+use DBI;                      ## same here
+
 #XXX: secretely planning to a DBM::Deep wrapper for no more tears on deps
 use Search::GIN::Extract::Class;
 use Search::GIN::Query::Manual;
+use Search::GIN::Extract::Callback;
+use Search::GIN::Extract::Multiplex;
 use Search::GIN::Query::Class;
 use Fcntl qw(:DEFAULT :flock);
 use Resources::Models::Snap;
@@ -119,26 +122,19 @@ sub connect() {
         #    extract => Search::GIN::Extract::Class->new
         # ) or $self->Init->io->error("Error loading BackEnd");
 
-
         $BackEnd = KiokuDB->connect(
-            "dbi:SQLite:dbname=" . $self->Init->getSession()->getSessionPath."/.sqlite.db",
-            create     => 1,
-        # extract => Search::GIN::Extract::Callback->new(
-        #     extract => sub {
-        #         my ( $obj, $extractor, @args ) = @_;
- 
-        #         if ( $obj->isa("") ) {
-        #             return {
-        #                 type => "user",
-        #                 name => $obj->name,
-        #             };
-        #         }
- 
-        #         return;
-        #     },
-        # ),            
+            "dbi:SQLite:dbname="
+                . $self->Init->getSession()->getSessionPath
+                . "/.sqlite.db",
+            create  => 1,
+            extract => Search::GIN::Extract::Multiplex->new(
+                extractors => [
+                    Search::GIN::Extract::Class->new      ## Extract class
+               
+                ],
+            ),
             clear_leaks  => 1,
-             transactions=> 1,
+            transactions => 1,
             leak_tracker => sub {
                 my @leaked = @_;
                 $self->Init->io->alert(
@@ -156,6 +152,8 @@ sub connect() {
         if defined $self->BackEnd;
     return $self;
 }
+
+
 
 sub list_obj() {
     my $self  = shift;
@@ -186,23 +184,26 @@ sub search() {
 
         # create query
         my $query
-            = Search::GIN::Query::Class->new( class => $Search{'class'}, );
+            = Search::GIN::Query::Class->new( class => $Search{'class'} );
 
         # get results
-        eval {
-        $results = $self->BackEnd->search($query);
-        };
-         if ($@) {
-            return 0;
-         }
+        eval { $results = $self->BackEnd->search($query); };
+        if ($@) {
+            $self->Init->io->debug("error on search of DB: $@");
+            return undef;
+        }
     }
     else {
-          eval {
-        $results = $self->BackEnd->search( \%Search );
-    };
+        eval {
+            my $query
+                = Search::GIN::Query::Manual->new( values => \%Search, );
+            $results = $self->BackEnd->search($query);
+        };
         if ($@) {
-            return 0;
-         }
+            $self->Init->io->debug("error on search of DB: $@");
+
+            return undef;
+        }
     }
     return $results;
 
@@ -233,7 +234,7 @@ sub searchRegex() {
         $self->Init->getIO->print_alert("You must supply a class");
         return 0;
     }
-    my $query = Search::GIN::Query::Class->new( class => $Search{'class'}, );
+    my $query = Search::GIN::Query::Class->new( class => $Search{'class'} );
 
     # get results
     my $all = $self->BackEnd->search($query);
