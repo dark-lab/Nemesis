@@ -16,16 +16,18 @@ sub find {
     ##It's just visual
     my $self = shift;
     my $arg  = shift;    #single argument for now
+    my $count=0;
     if ( $arg =~ /exploit/i ) {
         my $results
             = $self->search( { class => "Resources::Models::Exploit" } );
         while ( my $block = $results->next ) {
             foreach my $item ( @{$block} ) {
-                $self->Init->getIO->debug(
+                $self->Init->getIO->info(
                     $item->module . ": " . join( ",", @{ $item->targets } ),
                     __PACKAGE__ );
                 $self->Init->getIO->debug(
                     "Description: " . $item->description );
+                $count++;
             }
         }
 
@@ -38,6 +40,7 @@ sub find {
         while ( my $block = $results->next ) {
             foreach my $item ( @{$block} ) {
                 $self->Init->io->print_title( $item->ip );
+                $count++;
                 @{ $item->ports } > 0
                     ? $self->Init->getIO->info( "Open ports: "
                         . join( ",", grep { s/\|.*$//g; } @{ $item->ports } )
@@ -54,18 +57,20 @@ sub find {
         #Whatever else visualization
         while ( my $block = $results->next ) {
             foreach my $item ( @{$block} ) {
+                $count++;
                 $self->Init->io->print_title($item);
                 $self->Init->getIO->print_dumper($item);
             }
         }
     }
+    $self->Init->getIO->info("Found ".$count." total results");
 }
 
 sub add {
     my $self  = shift;
     my @stuff = @_;
     my $DB    = $self->DB || $self->Init->ml->atom("DB");
-
+ 
     # $DB->connect();
     $DB->add(@stuff) ? 1 : 0;
 }
@@ -89,6 +94,11 @@ sub rsearch {    #Regex search
     #  $DB->connect();
     return $DB->searchRegex($Options)
         ; #Yeah, it's not performant but KiokuDB it's not mongoDB (we can't depend on that heavy dep)
+}
+
+sub new_scope(){
+    my $self=shift;
+    return $self->DB->BackEnd->new_scope();
 }
 
 sub remove {
@@ -177,6 +187,14 @@ sub run {
                 $self->DB->lookup($uuid) );
         }
     }
+}
+
+sub add_extractor() {
+    my $self = shift;
+    $self->Init->io->debug("Adding extractor");
+    return !defined( $self->DB->BackEnd->backend )
+        ? 0
+        : push( @{ $self->DB->BackEnd->backend->{extract}->{extractors} }, shift );
 }
 
 1;
