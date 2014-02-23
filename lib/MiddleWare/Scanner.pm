@@ -138,10 +138,13 @@ sub nmapscan() {
         $Node = $Meta->matchNode($Node);
         if ( !defined($DBHost) ) {
             $self->Init->ml->getInstance("Database")->add($Node);
+                    $self->Init->getIO()->print_info( $host->addr ." Added to the database" );
+
         }
         else {
             $self->Init->ml->getInstance("Database")->swap( $DBHost, $Node )
                 ; #This automatically generate a Resources::Snap db object to track the change
+            $self->Init->getIO()->print_info( $host->addr ." updated in the database" );
         }
     }
 }
