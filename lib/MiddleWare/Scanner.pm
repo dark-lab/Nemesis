@@ -12,7 +12,7 @@ our $AUTHOR  = "mudler";
 our $MODULE  = "Scanner plugin";
 our $INFO    = "<www.dark-lab.net>";
 
-our @PUBLIC_FUNCTIONS = qw(webtest nmap);
+our @PUBLIC_FUNCTIONS = qw(scan webtest nmap);
 
 has 'Arguments';
 has 'DB';
@@ -26,6 +26,11 @@ sub prepare {
     $self->Arguments("-sS -sV -O -A -P0");
 }
 
+sub scan{
+    ##XXX: For now an alias of nmap, but we will check if the given string it's a url
+    my $self=shift;
+    $self->nmap(@_);
+}
 sub webtest() {
     my $self         = shift;
     my $SearchString = shift;
