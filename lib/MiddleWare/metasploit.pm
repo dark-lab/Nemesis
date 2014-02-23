@@ -29,25 +29,26 @@ sub prepare {
         ;    #If exist i load the process
 
     ## Adds the extractor to the DB to access special fields.
-    $self->DB->add_extractor(
-        Search::GIN::Extract::Callback->new(    ## Extract callback
-            extract => sub {
-                my ( $obj, $extractor, @args ) = @_;
+    # $self->DB->add_extractor(
+    #     Search::GIN::Extract::Callback->new(    ## Extract callback
+    #         extract => sub {
+    #             my ( $obj, $extractor, @args ) = @_;
 
-                ##### If it's an exploit add those to the index.
-                if ( $obj->isa("Resources::Models::Exploit") ) {
-                    return {
-                        default_rport => $obj->default_rport,
-                        RPORT         => $obj->RPORT,
-                        module        => $obj->module,
+    #             ##### If it's an exploit add those to the index.
+    #             if ( $obj->isa("Resources::Models::Exploit") ) {
+    #                 return {
+    #                     default_rport => $obj->default_rport,
+    #                     RPORT         => $obj->RPORT,
+    #                     module        => $obj->module,
 
-                    };
-                }
+    #                 };
+    #             }
 
-                return;
-            },
-        )
-    );
+    #             return;
+    #         },
+    #     )
+    # );
+    ## Another way to accomplish the same it's to use the Role Resources::API::GINIndexing and specify in the object what are the indexed fields
 
 }
 
