@@ -29,7 +29,7 @@ requires 'Module::ScanDeps';
 suggests 'Mojo::IOLoop';
 suggests 'Mojo::Server::Daemon';
 suggests 'Mojolicious::Lite';
-requires 'Moose';
+requires 'Moose', '2.1005';
 requires 'Moose::Util::TypeConstraints';
 suggests 'Mozilla::CA';
 suggests 'Net::DHCP::Constants';
