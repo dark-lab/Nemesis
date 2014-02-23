@@ -129,8 +129,17 @@ sub connect() {
             create  => 1,
             extract => Search::GIN::Extract::Multiplex->new(
                 extractors => [
-                    Search::GIN::Extract::Class->new      ## Extract class
-               
+                    Search::GIN::Extract::Class->new,    ## Extract class
+                    Search::GIN::Extract::Callback->new(
+                        extract => sub {
+                            my ( $obj, $extractor, @args ) = @_;
+                            return $obj->extract_index( $extractor, @args )
+                                if $obj->does('Resources::API::GINIndexing')
+                                ;                        ## Indexing Role
+                            return;
+                        },
+                    ),
+
                 ],
             ),
             clear_leaks  => 1,
@@ -152,8 +161,6 @@ sub connect() {
         if defined $self->BackEnd;
     return $self;
 }
-
-
 
 sub list_obj() {
     my $self  = shift;
