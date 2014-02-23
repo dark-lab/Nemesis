@@ -134,43 +134,6 @@ sub LaunchExploitOnNode() {
         $self->Init->io->info("Exploit successful");
     }
 
-    # $self->MSFRPC->console_write("jobs");
-
-    #sleep 4;
-    #$self->Init->io->debug_dumper( $self->MSFRPC->console_read() );
-
-    #  my $LaunchResult = $self->MSFRPC->execute(
-    #      $Exploit->type,
-    #      $Exploit->module,
-    #      {
-    #          ##   PAYLOAD=>undef,
-    #          ##   TARGET=>undef,
-    #          ##   ACTION=> undef,
-
-    #          RHOST => $Node->ip,
-    #          RPORT => $Exploit->default_rport
-
-    #      }
-    #  );
-
-    #  $self->Init->io->debug_dumper({   $Exploit->type => 0,
-    #      $Exploit->module =>
-    #      {
-    #          ##   PAYLOAD=>undef,
-    #          ##   TARGET=>undef,
-    #          ##   ACTION=> undef,
-
-    #          RHOST => $Node->ip,
-    #          RPORT => 80
-
-    #      }});
-
-    #  my $Options = $self->MSFRPC->options( "exploits", $Exploit->module );
-    #  my $Payloads = $self->MSFRPC->payloads( $Exploit->module );
-    # $self->Init->getIO->debug_dumper( \$Options );
-    # # $self->Init->getIO->debug_dumper( \$Payloads );
-    #    $self->Init->getIO->debug_dumper( \$LaunchResult );
-
 }
 
 sub event_Resources__Exploit {
@@ -321,6 +284,11 @@ sub pwn() {
                 push( @Hosts, $foundhost );
                 last;
             }
+        }
+        if ( @Hosts == 0 ) {
+            ##At least we try to acquire it thru the scanner, i think that is what you want
+            $self->Init->ml->execute( "Scanner", "scan", $host )
+                ; ## execute it's tracked in the history, instead calling the istance
         }
     }
     else {
