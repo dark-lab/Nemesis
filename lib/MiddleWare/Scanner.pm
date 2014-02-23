@@ -7,8 +7,6 @@ use Nemesis::BaseModule -base;
 use Resources::Models::Node;
 use DateTime;
 
-
-
 our $VERSION = '0.1a';
 our $AUTHOR  = "mudler";
 our $MODULE  = "Scanner plugin";
@@ -55,7 +53,8 @@ sub nmap() {
     my $self = shift;
     my $Ip   = shift;
 
-    if ( !$self->Init->ml->got_lib("Nmap::Parser") ) { #if true it will be loaded
+    if ( !$self->Init->ml->got_lib("Nmap::Parser") )
+    {    #if true it will be loaded
         $self->Init->io->error("You don't seem to have Nmap::Parser");
         return 0;
     }
@@ -80,7 +79,8 @@ sub nmapscan() {
     $Np->cache_scan(
         $self->Init->getSession()->new_file( DateTime->now, __PACKAGE__ ) );
 
-    $self->Init->getIO()->print_info("Scanning started on $Ip with ".$self->Arguments);
+    $self->Init->getIO()
+        ->print_info( "Scanning started on $Ip with " . $self->Arguments );
     $Np->parsescan( $self->Init->getEnv()->whereis("nmap"),
         $self->Arguments . " $Ip" );
     my $Session = $Np->get_session;
@@ -91,10 +91,12 @@ sub nmapscan() {
         my $results = $self->Init->ml->getInstance("Database")
             ->search( { ip => $host->addr } );
         my $DBHost;
-        while ( my $chunk = $results->next ) {
-            for my $foundhost (@$chunk) {
-                $DBHost = $foundhost;
-                last;
+        if ($results) {
+            while ( my $chunk = $results->next ) {
+                for my $foundhost (@$chunk) {
+                    $DBHost = $foundhost;
+                    last;
+                }
             }
         }
         my $Node = Resources::Models::Node->new( ip => $host->addr );
@@ -105,7 +107,7 @@ sub nmapscan() {
             ->print_tabbed(
             "HostNames: " . join( " ", $host->all_hostnames() ), 3 );
         $Node->hostnames( join( " ", $host->all_hostnames() ) );
-        $self->Init->getIO()
+        $Node->hmac($host->mac_addr) and $self->Init->getIO()
             ->print_tabbed( "Mac HW: " . $host->mac_addr(), 3 )
             if $host->mac_addr();
 
@@ -113,7 +115,7 @@ sub nmapscan() {
             $self->Init->getIO()
                 ->print_tabbed(
                 "OS Name: " . $os->name() . " Family: " . $os->osfamily, 3 );
-            $Node->os( $os->osfamily );
+            $Node->os( $os->osfamily . " : " .$os->name );
         }
         my @Found_Ports;
         for my $port ( $host->tcp_ports() ) {
