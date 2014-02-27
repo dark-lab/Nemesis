@@ -271,7 +271,7 @@ sub matchExpl() {
 
 }
 
-sub pwn() {
+sub pwn {
     my $self = shift;
     my $host = shift || undef;
     my @Hosts;
@@ -320,7 +320,7 @@ sub pwn() {
     }
 }
 
-sub matchNode() {
+sub matchNode {
 
     my $self = shift;
     my $Node = shift;
@@ -351,7 +351,7 @@ sub matchNode() {
     return $Node;
 }
 
-sub matchPort() {
+sub matchPort {
     my $self   = shift;
     my $String = shift;
     my $Objs   = $self->DB->search( { default_rport => $String } );
@@ -370,18 +370,18 @@ sub matchPort() {
 
 }
 
-sub sessionlist() {
+sub sessionlist {
     my $self = shift;
     $self->MSFRPC->call("session.list");
 }
 
-sub call() {
+sub call {
     my $self   = shift;
     my $String = shift;
     $self->MSFRPC->call($String);
 }
 
-sub clear() {
+sub clear{
     my $self = shift;
     $self->Process->destroy() if ( $self->Process ); #Destroy instance on exit
 }
