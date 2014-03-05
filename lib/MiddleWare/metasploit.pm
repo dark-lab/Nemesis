@@ -52,7 +52,7 @@ sub prepare {
 
 }
 
-sub start() {
+sub start {
     my $self = shift;
 
     #return 1 if ( $self->Process && $self->Process->is_running );
@@ -90,7 +90,7 @@ sub start() {
 
 }
 
-sub safe_database() {
+sub safe_database {
     my $self = shift;
     my $result
         = $self->DB->search( { class => "Resources::Models::Exploit" } );
@@ -110,7 +110,7 @@ sub safe_database() {
 
 }
 
-sub LaunchExploitOnNode() {
+sub LaunchExploitOnNode {
     my $self         = shift;
     my $Node         = shift;
     my $Exploit      = shift;
@@ -132,7 +132,9 @@ sub LaunchExploitOnNode() {
 
     if ( $LaunchResult == 1 ) {
         $self->Init->io->info("Exploit successful");
+        return 1;
     }
+    return 0;
 
 }
 
@@ -141,7 +143,7 @@ sub event_Resources__Exploit {
     $self->Init->io->debug("Exploit generated correctly!");
 }
 
-sub generate() {
+sub generate {
     my $self = shift;
 
     $self->is_avaible;
@@ -152,7 +154,7 @@ sub generate() {
 
 }
 
-sub is_avaible() {
+sub is_avaible {
     my $self = shift;
     while ( $self->Process->is_running ) {
         sleep 5;
@@ -169,7 +171,7 @@ sub is_avaible() {
 
 }
 
-sub is_up() {
+sub is_up {
     my $self = shift;
     if ( $self->MSFRPC ) {
         my $MSFRPC   = $self->MSFRPC;
@@ -183,7 +185,7 @@ sub is_up() {
 
 }
 
-sub populateDB() {
+sub populateDB {
     my $self   = shift;
     my $MSFRPC = $self->MSFRPC;
     my $DB     = $self->Init->ml->getInstance("Database");
@@ -237,7 +239,7 @@ sub populateDB() {
     $IO->print_info(" $Counter added");
 }
 
-sub test() {
+sub test {
     my $self = shift;
     $self->is_avaible;
     $self->LaunchExploitOnNode(
@@ -251,7 +253,7 @@ sub test() {
 
 }
 
-sub matchExpl() {
+sub matchExpl {
     my $self   = shift;
     my $String = shift;
 
