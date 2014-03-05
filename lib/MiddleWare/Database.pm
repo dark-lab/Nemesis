@@ -14,9 +14,9 @@ has 'DB';
 
 sub find {
     ##It's just visual
-    my $self = shift;
-    my $arg  = shift;    #single argument for now
-    my $count=0;
+    my $self  = shift;
+    my $arg   = shift;    #single argument for now
+    my $count = 0;
     if ( $arg =~ /exploit/i ) {
         my $results
             = $self->search( { class => "Resources::Models::Exploit" } );
@@ -63,14 +63,14 @@ sub find {
             }
         }
     }
-    $self->Init->getIO->info("Found ".$count." total results");
+    $self->Init->getIO->info( "Found " . $count . " total results" );
 }
 
 sub add {
     my $self  = shift;
     my @stuff = @_;
     my $DB    = $self->DB || $self->Init->ml->atom("DB");
- 
+
     # $DB->connect();
     $DB->add(@stuff) ? 1 : 0;
 }
@@ -96,15 +96,15 @@ sub rsearch {    #Regex search
         ; #Yeah, it's not performant but KiokuDB it's not mongoDB (we can't depend on that heavy dep)
 }
 
-sub new_scope(){
-    my $self=shift;
+sub new_scope() {
+    my $self = shift;
     return $self->DB->BackEnd->new_scope();
 }
 
 sub remove {
     my $self = shift;
     my $obj  = shift;
-    my $DB   = $self->DB || $self->Init->ml->atom("DB");
+    my $DB   = $self->DB || $self->Init->ml->atom("DB")->connect;
 
     # $DB->connect();
     return $DB->delete($obj);
@@ -113,7 +113,14 @@ sub remove {
 sub update {
     my $self   = shift;
     my $Object = shift;
-    my $DB     = $self->DB || $self->Init->ml->atom("DB");
+    my $DB     = $self->DB || $self->Init->ml->atom("DB")->connect();
+    return $DB->BackEnd->update($Object);
+}
+
+sub swap_update {
+    my $self   = shift;
+    my $Object = shift;
+    my $DB     = $self->DB || $self->Init->ml->atom("DB")->connect();
 
     # $DB->connect();
     my $id  = $DB->object_to_id($Object);
@@ -144,7 +151,7 @@ sub run {
     ############
     ######      Saving new ids on a file
     my $self = shift;
-        $self->Dispatcher( $self->Init->ml->atom("Dispatcher") );
+    $self->Dispatcher( $self->Init->ml->atom("Dispatcher") );
 
     while ( sleep 1 ) {
         my $WriteFile = $self->Init->session->new_file(".ids");
@@ -194,7 +201,10 @@ sub add_extractor() {
     $self->Init->io->debug("Adding extractor");
     return !defined( $self->DB->BackEnd->backend )
         ? 0
-        : push( @{ $self->DB->BackEnd->backend->{extract}->{extractors} }, shift );
+        : push(
+        @{ $self->DB->BackEnd->backend->{extract}->{extractors} },
+        shift
+        );
 }
 
 1;
