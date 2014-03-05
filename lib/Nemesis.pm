@@ -1,7 +1,6 @@
 package Nemesis;
 
 our $VERSION = 0.01;
-#require forks;
 require Nemesis::Init;
 require Nemesis::Env;
 require Nemesis::Interfaces;
