@@ -23,13 +23,13 @@ sub prepare {
     $self->Dispatcher($Dispatcher);
 }
 
-sub lookup() {
+sub lookup {
     my $self = shift;
     my $uuid = shift;
     return $self->BackEnd->lookup($uuid);
 }
 
-sub add () {
+sub add {
     my $self = shift;
 
     # create a scope
@@ -55,7 +55,7 @@ sub add () {
     return @Objs;
 }
 
-sub update() {
+sub update {
     my $self = shift;
     my $Obj  = shift;
     my $s    = $self->BackEnd->new_scope;
@@ -72,7 +72,7 @@ sub update() {
 
 }
 
-sub swap() {
+sub swap {
     my $self      = shift;
     my $oldObject = shift;
     my $newObject = shift;
@@ -89,7 +89,7 @@ sub swap() {
     return $newObject;
 }
 
-sub delete() {
+sub delete {
     my $self = shift;
     my $Obj  = shift;
     my $s    = $self->BackEnd->new_scope;
@@ -97,7 +97,7 @@ sub delete() {
     return ();
 }
 
-sub connect() {
+sub connect {
     my $self = shift;
     my $BackEnd;
 
@@ -162,7 +162,7 @@ sub connect() {
     return $self;
 }
 
-sub list_obj() {
+sub list_obj {
     my $self  = shift;
     my $scope = $self->BackEnd->new_scope();
     my $all   = $self->BackEnd->all_objects;
@@ -174,7 +174,7 @@ sub list_obj() {
     return $all;
 }
 
-sub search() {
+sub search {
     my $self = shift;
     my %Search;
 
@@ -224,7 +224,7 @@ sub search() {
 
 }
 
-sub searchRegex() {
+sub searchRegex {
     my $self = shift;
     my %Search;
 
