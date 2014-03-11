@@ -316,7 +316,13 @@ sub pwn {
                         . $PotentialExploit->module . " on "
                         . $Node->ip );
 
-                $self->LaunchExploitOnNode( $Node, $PotentialExploit );
+                if ( $self->LaunchExploitOnNode( $Node, $PotentialExploit ) )
+                {
+                    ## A successful exploitation
+                    $PotentialExploit->successful(1);
+                    $self->Init->ml->getInstance("Database")->update($PotentialExploit);
+
+                }
             }
         }
     }
@@ -383,7 +389,7 @@ sub call {
     $self->MSFRPC->call($String);
 }
 
-sub clear{
+sub clear {
     my $self = shift;
     $self->Process->destroy() if ( $self->Process ); #Destroy instance on exit
 }
