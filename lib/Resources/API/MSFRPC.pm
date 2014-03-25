@@ -17,8 +17,9 @@ has 'Auth' => sub {0};
 has 'Result';
 has 'currentConsole';
 has 'opened_consoles' => sub { [] };
+has 'handler_port' => sub {4444};
 
-sub call() {
+sub call {
     my $self    = shift;
     my @Options = @_;
     my $meth    = shift @Options;
@@ -43,7 +44,7 @@ sub call() {
     #$self->Init->getIO->debug_dumper($res);
     $self->error($res) and return if $res->code == 500 or $res->code != 200;
 
-    $self->Result( $MessagePack->unpack( $res->content ) );
+    $self->Result( $MessagePack->unpack( $res->content ) ) if $res->content;
     $self->Init->io->error( $self->Result->{'error_message'} )
         and return $self->Result
         if defined $self->Result
@@ -55,7 +56,7 @@ sub call() {
     return $self->Result;
 }
 
-sub create_console() {
+sub create_console {
     my $self     = shift;
     my $Response = $self->call('console.create');
     $self->Init->io->debug_dumper($Response);
@@ -68,7 +69,7 @@ sub create_console() {
         "generated " . $self->currentConsole . " console" );
 }
 
-sub select_console() {
+sub select_console {
     my $self = shift;
     my $ID   = shift;
     if ( &Resources::Util::match( $self->opened_consoles, $ID ) ) {
@@ -81,7 +82,7 @@ sub select_console() {
 
 }
 
-sub load_console() {
+sub load_console {
     my $self     = shift;
     my $Response = $self->call('console.list');
     @{ $self->opened_consoles } = keys %{$Response}
@@ -121,7 +122,7 @@ sub console_read() {
         my $call = $self->call( "console.read", $console );
         $data .= $call->{data};
         if ( $call->{busy} == 1 ) {
-            sleep 1;
+            sleep 3;
             $data .= $self->console_read($console);
         }
         else {
@@ -144,13 +145,14 @@ sub exploit() {
     $self->console( "use " . $Module );
 
     foreach my $Option ( keys( %{$options} ) ) {
-        $self->console( "set " . $Option . " " . $options->{$Option} ) if defined $options->{$Option};
+        $self->console( "set " . $Option . " " . $options->{$Option} )
+            if defined $options->{$Option};
 
     }
 
     my $res = $self->console("exploit");
 
-    if ( $res =~ /Exploit\s+failed/i ) {
+    if ( $res =~ /Exploit\s+failed|Failed/i ) {
         $self->Init->io->error( "Exploit failed : " . $Module );
         $self->Init->io->error($res);
         return 0;
