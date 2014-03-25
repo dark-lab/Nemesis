@@ -5,6 +5,8 @@ package Nemesis::Process;
     use Scalar::Util 'reftype';
     our $Init;
 
+    $SIG{CHLD} = 'IGNORE';
+
     sub new {
         my $package = shift;
         bless( {}, $package );
@@ -58,11 +60,9 @@ package Nemesis::Process;
                     ; #this was roughly handling daemon spawning, that way was abandoned so far.
             }
         }
-        if ($state) {
-            if ( my $Job = $Init->ml->getInstance("Jobs") ) {
+        if ($state and my $Job = $Init->ml->getInstance("Jobs") ) {
                 $Job->add($self);
                 $Job->list();
-            }
         }
         return $state ? $self->get_id() : ();
     }
@@ -198,7 +198,7 @@ package Nemesis::Process;
 
             kill 9 => $self->get_pid();
             kill( 9, $self->get_pid() );
-            waitpid( $self->get_pid(), 0 );    #to clean defuncts
+          #  waitpid( $self->get_pid(), 0 );    #to clean defuncts
         }
     }
 
@@ -314,8 +314,7 @@ package Nemesis::Process;
         if ( !$pid ) {    #XXX: WITHOUT FORK RUBY GOES DEFUNCT-
             chdir("/") || die "can't chdir to /: $!";
             open( STDIN, "< /dev/null" ) || die "can't read /dev/null: $!";
-            open( STDOUT, "> /dev/null" )
-                || die "can't write to /dev/null: $!";
+          #  open( STDOUT, "> /dev/null" )     || die "can't write to /dev/null: $!";
 
             #  ( setsid() != -1 ) || die "Can't start a new session: $!";
             open( STDERR, ">&STDOUT" ) || die "can't dup stdout: $!";
