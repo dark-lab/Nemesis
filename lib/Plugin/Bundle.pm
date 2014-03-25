@@ -42,7 +42,7 @@ sub export( ) {
     }
 
     if ( !$self->What || !$self->Where ) {
-        $Init->io->debug("You have not What and Where");
+        $self->Init->io->debug("You have not What and Where");
     }
 
     $self->Init->getIO()
@@ -84,7 +84,7 @@ sub fatpack() {
         $self->trace( args => \@args, use => @Additional_modules );
     my @packlists = $self->packlists_containing( \@modules );
 
-    my $base = catdir( $Init->env->getPathBin(), 'fatlib' );
+    my $base = catdir( $self->Init->env->getPathBin(), 'fatlib' );
     $self->packlists_to_tree( $base, \@packlists );
 
     my $file = shift @args;
@@ -99,35 +99,35 @@ sub write() {
     close FILE;
 }
 
-sub pack() {
+sub pack {
     my $self = shift;
     my ( $What, $FileName ) = ( $self->What, $self->Where );
-    my $parpath = $Init->getEnv()->wherepath("par.pl");
+    my $parpath = $self->Init->getEnv()->wherepath("par.pl");
 
-    #  $Init->getIO()->debug("Chdir to $parpath");
-    $Init->getSession->safedir(
+    #  $self->Init->getIO()->debug("Chdir to $parpath");
+    $self->Init->getSession->safedir(
         $parpath,
         sub {
             my @OPTS = ($What);
             my @LOADED_PLUGINS = grep /./i, map {
                 my ($Name) = $_ =~ m/([^\.|^\/]+)\.pm$/;
                 if ($Name) {
-                    $_ = $Init->getModuleLoader()->_findLib($Name) . "/"
+                    $_ = $self->Init->getModuleLoader()->_findLib($Name) . "/"
                         . $Name . ".pm";
                 }
                 else {
                     $_ = ();
                 }
-            } $Init->getModuleLoader()->getLoadedLib();
+            } $self->Init->getModuleLoader()->getLoadedLib();
 
-            $Init->getIO->print_info(
+            $self->Init->getIO->print_info(
                 "Those are the library that i'm bundling in the unique file $FileName :"
             );
             foreach my $Modules (@LOADED_PLUGINS) {
-                $Init->getIO->print_tabbed( $Modules, 2 );
+                $self->Init->getIO->print_tabbed( $Modules, 2 );
             }
 
-#my @Deps_Mods=Module::ScanDeps::scan_line($Init->getModuleLoader()->getLoadedLib());
+#my @Deps_Mods=Module::ScanDeps::scan_line($self->Init->getModuleLoader()->getLoadedLib());
 
             #  my $files=scan_deps(
             #   files   => [     @Deps_Mods, keys %INC],
@@ -135,28 +135,28 @@ sub pack() {
             #      compile => 1,
 
             #      );
-            #  $Init->io->debug_dumper(\%INC);
-            #  $Init->io->debug_dumper( \$files);
+            #  $self->Init->io->debug_dumper(\%INC);
+            #  $self->Init->io->debug_dumper( \$files);
             # push(@Deps_Mods,keys %{$files});
             #Hardcoded Moose required deps (ARGH MOOSEX DECLARE!)
-            $Init->getIO->print_info(
+            $self->Init->getIO->print_info(
                 "Acquiring Plugin dependencies... please wait");
             push( @LOADED_PLUGINS, keys %INC );
 
-  #my @CORE_MODULES= $Init->getModuleLoader()->_findLibsByCategory("Nemesis");
+  #my @CORE_MODULES= $self->Init->getModuleLoader()->_findLibsByCategory("Nemesis");
   #push(@LOADED_PLUGINS,@CORE_MODULES);
-            $Init->getIO->print_info("Filled with deps :");
+            $self->Init->getIO->print_info("Filled with deps :");
             my @Additional_files;
             my $c = 0;
             foreach my $Modules (@LOADED_PLUGINS) {
                 if ( $Modules !~ /\.txt|\.pm|\.pl/ ) {
 
-                    # $Init->io->debug("Tooo bad for you $Modules");
+                    # $self->Init->io->debug("Tooo bad for you $Modules");
                     push( @Additional_files, $Modules );
                     delete $LOADED_PLUGINS[$c];
                 }
 
-                $Init->getIO->print_tabbed( $Modules, 2 );
+                $self->Init->getIO->print_tabbed( $Modules, 2 );
                 $c++;
             }
 
@@ -164,7 +164,7 @@ sub pack() {
 
             #For Libpath add
             my @LIBPATH;
-            push( @LIBPATH, $Init->getEnv->getPathBin );
+            push( @LIBPATH, $self->Init->getEnv->getPathBin );
             $opt{P} = 1;    #Output perl
               #$opt{c}=1; #compiles-> MUST BE ENABLED ONLY WHEN LIBRARY ARE INSTALLED IN O.S.
               #OTHERWISE NOTHING OF WHAT IS "USING" a PLUGIN WILL BE BUNDLED (e.g. MoooseX::Declare)
@@ -190,7 +190,7 @@ sub pack() {
 
     return 1;
 
-    # $Init->getSession()->safechdir;
+    # $self->Init->getSession()->safechdir;
 
 }
 
