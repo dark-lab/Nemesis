@@ -126,12 +126,15 @@ sub LaunchExploitOnNode {
                 || $Exploit->default_rport,
             LHOST => $Exploit->LHOST
                 || undef
+                ,
+                LPORT=> $self->MSFRPC->{handler_port}
 
         }
     );
 
     if ( $LaunchResult == 1 ) {
-        $self->Init->io->info("Exploit successful");
+        $self->Init->io->info("Exploit successful...maybe");
+        $self->MSFRPC->handler_port($self->MSFRPC->handler_port+1);
         return 1;
     }
     return 0;
@@ -253,7 +256,7 @@ sub test {
 
 }
 
-sub matchExpl {
+sub matchExpl ($) {
     my $self   = shift;
     my $String = shift;
 
