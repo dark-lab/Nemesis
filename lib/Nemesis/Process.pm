@@ -314,10 +314,10 @@ package Nemesis::Process;
         if ( !$pid ) {    #XXX: WITHOUT FORK RUBY GOES DEFUNCT-
             chdir("/") || die "can't chdir to /: $!";
             open( STDIN, "< /dev/null" ) || die "can't read /dev/null: $!";
-          #  open( STDOUT, "> /dev/null" )     || die "can't write to /dev/null: $!";
+            open( STDERR, ">&STDOUT" ) || die "can't dup stdout: $!";
+            open( STDOUT, "> /dev/null" )     || die "can't write to /dev/null: $!";
 
             #  ( setsid() != -1 ) || die "Can't start a new session: $!";
-            open( STDERR, ">&STDOUT" ) || die "can't dup stdout: $!";
 
             #  if ( $p = open3( $wtr, $rdr, $err, $cmd ) ) {
 
