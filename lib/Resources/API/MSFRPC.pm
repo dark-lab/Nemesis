@@ -6,6 +6,7 @@ use LWP;
 use HTTP::Request;
 use Resources::Util;
 
+#no warnings 'recursion';
 #http://blog.spiderlabs.com/2012/01/scripting-metasploit-using-msgrpc-.html
 has 'Username' => sub {'spike'};
 has 'Password' => sub {'spiketest'};
@@ -17,7 +18,7 @@ has 'Auth' => sub {0};
 has 'Result';
 has 'currentConsole';
 has 'opened_consoles' => sub { [] };
-has 'handler_port' => sub {4444};
+has 'handler_port'    => sub {4444};
 
 sub call {
     my $self    = shift;
@@ -115,19 +116,21 @@ sub console() {
 }
 
 sub console_read() {
-    my $self = shift;
-    my $console = shift // $self->currentConsole;
+    my $self      = shift;
+    my $console   = shift // $self->currentConsole;
+    my $rec_limit = 100;
     my $data;
     if ( &Resources::Util::match( $self->opened_consoles, $console ) ) {
         my $call = $self->call( "console.read", $console );
-        $data .= $call->{data};
+        $data .= $call->{data} if exists $call->{data};
         if ( $call->{busy} == 1 ) {
-            sleep 3;
+            sleep 1;
+            return $data if --$rec_limit < 0;
             $data .= $self->console_read($console);
         }
-        else {
-            return $data;
-        }
+
+        return $data;
+
     }
     else {
         $self->Init->io->error("No console in the list");
