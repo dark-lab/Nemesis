@@ -3,7 +3,8 @@ package Resources::Models::Node;
 use Moose::Util::TypeConstraints;
 use Moose;
 use KiokuDB::Util qw(set);
-
+with 'Resources::API::GINIndexing'
+    ; 
 subtype 'port', as 'Int', where { $_ > 0 and $_ < 65000 }, message {"Ehmm"};
 
 has 'ip'        => ( is => 'rw' );
@@ -21,5 +22,10 @@ has 'attachments' => (
 has 'suspect'           => ( is => 'rw', default => 0 );
 has 'nemesis_node'      => ( is => 'rw', default => 0 );
 has 'nemesis_supernode' => ( is => 'rw', default => 0 );
-
+sub extract_index {
+    my $self = shift;
+    return {
+        ip => $self->ip
+    };
+}
 1;
