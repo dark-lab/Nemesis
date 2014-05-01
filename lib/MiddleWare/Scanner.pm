@@ -44,7 +44,7 @@ sub webtest() {
         $Test->Bug($Exploit)
             ; #Can be post or otherwise, so should implement the api with HTTP::Request object.
         $Test->Crawler($Crawler);
-        if ( $Test->test() ) {
+        if ( $Test->test(@{$self->Crawler->stripLinks}) ) {
 
             #return true, attack succeed
         }
