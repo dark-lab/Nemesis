@@ -1,10 +1,6 @@
 package Resources::API::Dispatcher;
-use Moose;
-use Nemesis::Inject;
+use Nemesis::BaseRes -base;
 
-nemesis resource {
-    1;
-};
 
 sub dispatch_packet() {
     my $self  = shift;
@@ -56,7 +52,7 @@ sub job() {
 
 }
 
-sub match() {
+sub match($@) {
     my $self    = shift;
     my @Args    = @_;
     my $Command = shift(@Args);
