@@ -2,6 +2,7 @@ package MiddleWare::metasploit;
 use Resources::Models::Exploit;
 use Resources::Models::Node;
 use Nemesis::BaseModule -base;
+use Net::IP;
 
 my $VERSION = '0.1a';
 my $AUTHOR  = "mudler";
@@ -120,17 +121,14 @@ sub LaunchExploitOnNode {
             ##   PAYLOAD=>undef,
             ##   TARGET=>undef,
             ##   ACTION=> undef,
-
             RHOST => $Node->ip,
             RPORT => $Exploit->RPORT
                 || $Exploit->default_rport,
             LHOST => $Exploit->LHOST
                 || undef,
             LPORT => $self->MSFRPC->{handler_port}
-
         }
     );
-
     if ( $LaunchResult == 1 ) {
         $self->Init->io->info("Exploit successful...maybe");
         $self->MSFRPC->handler_port( $self->MSFRPC->handler_port + 1 );
@@ -320,12 +318,13 @@ sub pwn {
         {
             my $scope = $self->DB->new_scope()
                 ;    #KiokuDB needs that for accessing at attachments
-                my $exploit_n = $Node->attachments->size;
-                my $exploit_launched = 0;
+            my $exploit_n        = $Node->attachments->size;
+            my $exploit_launched = 0;
             foreach my $PotentialExploit ( $Node->attachments->members ) {
                 $exploit_launched++;
                 next if !$PotentialExploit->isa("Resources::Models::Exploit");
-                $self->Init->io->info( "[$exploit_launched/$exploit_n] Trying "
+                $self->Init->io->info(
+                          "[$exploit_launched/$exploit_n] Trying "
                         . $PotentialExploit->module . " on "
                         . $Node->ip );
 
@@ -405,6 +404,26 @@ sub clear {
 }
 
 sub event_tcp() {
+    my $self  = shift;
+    my $Frame = shift;
+    my $Ip    = $Frame->ref->{'IPv4'};
+
+    my $Tcp     = $Frame->ref->{'TCP'};
+    my $InfoIP  = Net::IP->new( $Ip->src );
+    my $SrcType = $InfoIP->iptype;
+    if ( $SrcType eq "PRIVATE" ) {
+
+        foreach my $FoundExploit (
+            ( $self->matchPort( $Tcp->src ), $self->matchPort( $Tcp->dst ) ) )
+        {    # really greedy
+
+            # if it's private, have sense parse the packet
+
+            #Update Database with new information
+            #Launch Exploit
+
+        }
+    }
 
     # my $IO=$Init->io;
     # my $PrivIp;
