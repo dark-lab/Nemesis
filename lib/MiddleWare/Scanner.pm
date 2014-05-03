@@ -26,32 +26,26 @@ sub prepare {
     $self->Arguments("-sS -sV -O -A -P0");
 }
 
-sub scan{
+sub scan {
     ##XXX: For now an alias of nmap, but we will check if the given string it's a url
-    my $self=shift;
+    my $self = shift;
     $self->nmap(@_);
 }
+
 sub webtest() {
     my $self         = shift;
     my $SearchString = shift;
     my $Exploit      = shift;
     my $Crawler      = $self->Init->ml()->atom("Crawler");
     $Crawler->search($SearchString);
-    $Crawler->fetchNext();
-    my @TESTS = qw (LFI RFI RCE AFU SQLi);
-    foreach my $test (@TESTS) {
-        my $Test = $self->Init->ml->load($test);
+    $self->Init->io->debug_dumper($Crawler->stripLinks );
+
+        my $Test = $self->Init->ml->loadmodule("SQLi");
+        #$self->Init->getIO->info("Testing with $Test");
         $Test->Bug($Exploit)
             ; #Can be post or otherwise, so should implement the api with HTTP::Request object.
-        $Test->Crawler($Crawler);
-        if ( $Test->test(@{$self->Crawler->stripLinks}) ) {
+        my %Res = $Test->test(@{$Crawler->{Result} });
 
-            #return true, attack succeed
-        }
-        else {
-            #false, no luck
-        }
-    }
 }
 
 sub nmap() {
@@ -59,7 +53,7 @@ sub nmap() {
     my $Ip   = shift;
 
     if ( !$self->Init->ml->got_lib("Nmap::Parser") )
-    {    #if true it will be loaded
+    {         #if true it will be loaded
         $self->Init->io->error("You don't seem to have Nmap::Parser");
         return 0;
     }
@@ -112,7 +106,8 @@ sub nmapscan() {
             ->print_tabbed(
             "HostNames: " . join( " ", $host->all_hostnames() ), 3 );
         $Node->hostnames( join( " ", $host->all_hostnames() ) );
-        $Node->hmac($host->mac_addr) and $self->Init->getIO()
+        $Node->hmac( $host->mac_addr )
+            and $self->Init->getIO()
             ->print_tabbed( "Mac HW: " . $host->mac_addr(), 3 )
             if $host->mac_addr();
 
@@ -120,7 +115,7 @@ sub nmapscan() {
             $self->Init->getIO()
                 ->print_tabbed(
                 "OS Name: " . $os->name() . " Family: " . $os->osfamily, 3 );
-            $Node->os( $os->osfamily . " : " .$os->name );
+            $Node->os( $os->osfamily . " : " . $os->name );
         }
         my @Found_Ports;
         for my $port ( $host->tcp_ports() ) {
@@ -143,13 +138,15 @@ sub nmapscan() {
         $Node = $Meta->matchNode($Node);
         if ( !defined($DBHost) ) {
             $self->Init->ml->getInstance("Database")->add($Node);
-                    $self->Init->getIO()->print_info( $host->addr ." Added to the database" );
+            $self->Init->getIO()
+                ->print_info( $host->addr . " Added to the database" );
 
         }
         else {
             $self->Init->ml->getInstance("Database")->swap( $DBHost, $Node )
                 ; #This automatically generate a Resources::Snap db object to track the change
-            $self->Init->getIO()->print_info( $host->addr ." updated in the database" );
+            $self->Init->getIO()
+                ->print_info( $host->addr . " updated in the database" );
         }
     }
 }
