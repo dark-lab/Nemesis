@@ -1,5 +1,7 @@
 package Resources::Network::Proxy;
+
 ### This is Net::Proxy , all credits go to the author of the distribution
+
 use strict;
 use warnings;
 use Carp;
@@ -720,7 +722,7 @@ Implement a C<Net::Proxy::Connector::starttls> connector that can upgrade
 upgrade a connection to SSL transparently, even if the client or server
 doesn't support STARTTLS.
 
-Martin Werthm�ller provided a full implementation of a connector that
+Martin Werthmuller provided a full implementation of a connector that
 can handle IMAP connections and upgrade them to TLS if the client sends
 a C<STARTTLS> command. My implementation will split this in two parts
 C<Net::Proxy::Connector::ssl> and C<Net::Proxy::Connector::starttls>,
