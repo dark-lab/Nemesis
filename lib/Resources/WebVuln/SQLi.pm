@@ -1,4 +1,4 @@
-package Resources::WebVuln::LFI;
+package Resources::WebVuln::SQLi;
 use Nemesis::BaseRes -base;
 use Resources::Network::HTTPInterface;
 
@@ -13,6 +13,8 @@ sub test {
         my $Test     = "http://" . $url . $self->Bug . "'";
         my $response = Resources::Network::HTTPInterface->new->get($Test);
         my $Content  = $response->{content};
+                $self->Init->getIO()->debug($Content);
+
         if ( $Content
             =~ m/You have an error in your SQL syntax|Query failed|SQL query failed/i
             )
