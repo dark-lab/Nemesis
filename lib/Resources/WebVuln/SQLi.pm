@@ -9,8 +9,8 @@ sub test {
     my @URLS = @_;
     my %Res;
     foreach my $url (@URLS) {
-        $self->Init->getIO()->print_info("SQLinjection testing against $url");
-        my $Test     = "http://" . $url . $self->Bug . "'";
+        $self->Init->getIO->print_info("SQLinjection testing against $url");
+        my $Test     = $url . $self->Bug . "'";
         my $response = Resources::Network::HTTPInterface->new->get($Test);
         my $Content  = $response->{content};
                 $self->Init->getIO()->debug($Content);

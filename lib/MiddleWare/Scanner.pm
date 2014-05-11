@@ -40,11 +40,12 @@ sub webtest() {
     $Crawler->search($SearchString);
     $self->Init->io->debug_dumper($Crawler->stripLinks );
 
-        my $Test = $self->Init->ml->loadmodule("SQLi");
+        my $Test = $self->Init->ml->atom("Resources::WebVuln::SQLi");
         #$self->Init->getIO->info("Testing with $Test");
         $Test->Bug($Exploit)
             ; #Can be post or otherwise, so should implement the api with HTTP::Request object.
         my %Res = $Test->test(@{$Crawler->{Result} });
+        $self->Init->io->debug_dumper(\%Res);
 
 }
 
