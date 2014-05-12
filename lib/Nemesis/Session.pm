@@ -105,23 +105,16 @@ use File::Path;
     sub exists() {
         my $self = shift;
         if ( $_[0] ) {
-            if (  -d $Init->getEnv()->workspace() . "/"
+            return 1
+                if ( -d $Init->getEnv()->workspace() . "/"
                 . $CONF->{'VARS'}->{'SESSION_DIR'} . "/"
-                . $_[0] )
-            {
-                return 1;
-            }
-            else {
-                return 0;
-            }
+                . $_[0] );
+            return 0;
         }
         else {
-            if ( exists( $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'} ) ) {
-                return 1;
-            }
-            else {
-                return 0;
-            }
+            return 1
+                if ( exists( $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'} ) );
+            return 0;
         }
     }
 
@@ -155,9 +148,7 @@ use File::Path;
             = $Init->getEnv()->workspace() . "/"
             . $self->{'CONF'}->{'VARS'}->{'SESSION_DIR'} . "/"
             . $session_name;
-        if ( !-d $session_dir ) {
-            croak "No Session found with that name!";
-        }
+        croak "No Session found with that name!"  if ( !-d $session_dir ) ;
         $self->{'CONF'}->{'VARS'}->{'SESSION_NAME'}          = $session_name;
         $self->{'CONF'}->{'VARS'}->{'SESSION_PATH_STRIPPED'} = $session_dir;
         $session_dir =~ s/\s+/\\ /g;
@@ -176,11 +167,9 @@ use File::Path;
         my $self = shift;
         my $dir  = shift;
         my $code = shift;
-
         chdir($dir);
         &$code;
         chdir( $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} );
-
     }
 
     sub wrap {
@@ -214,9 +203,11 @@ use File::Path;
             my $method = shift(@FLOW_PIECES);
             next if !$method;
             my $ARGS = shift(@FLOW_PIECES);
+
             #next if !$ARGS;
             my @REAL_ARGS = split( '#', $ARGS ) if $ARGS;
-            $Init->io->debug(" executing $module $method and ".join(" ",@REAL_ARGS));
+            $Init->io->debug(
+                " executing $module $method and " . join( " ", @REAL_ARGS ) );
             $Init->getModuleLoader()->execute( $module, $method, @REAL_ARGS );
         }
     }
@@ -254,14 +245,19 @@ use File::Path;
         my @FLOW;
         if ($File) {
             open $COMMAND_LOG, "<", $File
-                or $Init->io->debug("Cannot read flow ".  $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/".$File) and die();
+                or $Init->io->debug( "Cannot read flow "
+                    . $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/"
+                    . $File )
+                and die
+                ();
             @FLOW = <$COMMAND_LOG>;
         }
         else {
             open $COMMAND_LOG, "<",
                 $self->{'CONF'}->{'VARS'}->{'SESSION_PATH'} . "/"
-                . $CONF->{'VARS'}->{'FLOWFILE'} or
-                $Init->io->debug("Session is new, now flowfile") and return [];
+                . $CONF->{'VARS'}->{'FLOWFILE'}
+                or $Init->io->debug("Session is new, now flowfile")
+                and return [];
             @FLOW = <$COMMAND_LOG>;
         }
 
@@ -485,7 +481,7 @@ sub is_state()
                 {
                     $ref = $ref->{ $g
                         }; #LA scorro fino alla fine delle referenze (necessarie)
-                    print "G is : " 
+                    print "G is : "
                         . $g . "\n"
                         . "Ref is "
                         . Dumper($ref) . "\n";
