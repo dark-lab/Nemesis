@@ -3,7 +3,6 @@ package Nemesis::ModuleLoader;
     # no warnings 'redefine';
     # use Try::Tiny;
     # use TryCatch;
-    use LWP::Simple;
     use Regexp::Common qw /URI/;
     use File::Find;
     use Module::Load;

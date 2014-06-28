@@ -1,4 +1,4 @@
-package Resources::WebVuln::LFI;
+package Resources::WebVuln::SQLi;
 use Nemesis::BaseRes -base;
 use Resources::Network::HTTPInterface;
 
@@ -6,13 +6,14 @@ has 'Bug';
 
 sub test {
     my $self = shift;
-    my @URLS = @_;
     my %Res;
-    foreach my $url (@URLS) {
-        $self->Init->getIO()->print_info("SQLinjection testing against $url");
-        my $Test     = "http://" . $url . $self->Bug . "'";
+    foreach my $url (@_) {
+        my $Test = $url . $self->Bug . "'";
+        $self->Init->getIO->debug("SQLinjection testing $Test");
         my $response = Resources::Network::HTTPInterface->new->get($Test);
         my $Content  = $response->{content};
+
+        #$self->Init->getIO()->debug($Content);
         if ( $Content
             =~ m/You have an error in your SQL syntax|Query failed|SQL query failed/i
             )
@@ -30,7 +31,6 @@ sub test {
         {
             $Res{$Test} = "access";
         }
-
     }
     return %Res;
 }
