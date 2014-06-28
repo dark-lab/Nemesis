@@ -31,7 +31,7 @@ sub job() {
     my $self    = shift;
     my $event   = shift;
     my $object  = shift;
-    my $Process = $Init->ml->loadmodule("Process");
+    my $Process = $self->Init->ml->loadmodule("Process");
     $Process->set(
         type => "thread",
         code => sub {
@@ -39,7 +39,7 @@ sub job() {
             # threads->detach;
             #      $self->match($event,$object);
             # threads->exit;
-            $Init->io->debug("ok");
+            $self->Init->io->debug("ok");
             }
 
     );
@@ -59,9 +59,9 @@ sub match($@) {
     if ( $Command =~ /\:\:/ ) {
         $Command =~ s/\:\:/\_\_/g;
     }
-    $Init->io->debug("Searching $Command");
-    foreach my $Module ( $Init->getModuleLoader->canModule($Command) ) {
-        my $Instance = $Init->getModuleLoader->getInstance($Module);
+    $self->Init->io->debug("Searching $Command");
+    foreach my $Module ( $self->Init->getModuleLoader->canModule($Command) ) {
+        my $Instance = $self->Init->getModuleLoader->getInstance($Module);
 
         $self->Init->getIO()->print_info("I can do that $Instance");
         eval { $Instance->$Command(@Args); };

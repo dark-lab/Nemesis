@@ -38,15 +38,21 @@ sub webtest() {
     my $Exploit      = shift;
     my $Crawler      = $self->Init->ml()->atom("Crawler");
     $Crawler->search($SearchString);
-    $self->Init->io->debug_dumper($Crawler->stripLinks );
+    $self->Init->io->debug_dumper( $Crawler->stripLinks );
 
-        my $Test = $self->Init->ml->atom("Resources::WebVuln::SQLi");
-        #$self->Init->getIO->info("Testing with $Test");
-        $Test->Bug($Exploit)
-            ; #Can be post or otherwise, so should implement the api with HTTP::Request object.
-        my %Res = $Test->test(@{$Crawler->{Result} });
-        $self->Init->io->debug_dumper(\%Res);
+    my $Test = $self->Init->ml->atom("Resources::WebVuln::SQLi");
 
+    #$self->Init->getIO->info("Testing with $Test");
+    $Test->Bug($Exploit)
+        ; #Can be post or otherwise, so should implement the api with HTTP::Request object.
+    my %Res = $Test->test( @{ $Crawler->{Result} } );
+    $self->Init->io->print_info("Scanning finished");
+    foreach my $K ( keys %Res ) {
+        $self->Init->io->print_tabbed( $K,       1 );
+        $self->Init->io->print_tabbed( $Res{$K}, 2 );
+    }
+
+    #$self->Init->io->debug_dumper( \%Res );
 }
 
 sub nmap() {
@@ -54,7 +60,7 @@ sub nmap() {
     my $Ip   = shift;
 
     if ( !$self->Init->ml->got_lib("Nmap::Parser") )
-    {         #if true it will be loaded
+    {    #if true it will be loaded
         $self->Init->io->error("You don't seem to have Nmap::Parser");
         return 0;
     }

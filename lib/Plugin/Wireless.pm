@@ -15,10 +15,9 @@ sub rogue {    #associate every probe
     my $Aircrack = $self->Init->ml->atom("Aircrack");
     $Aircrack->device($device);
     $Aircrack->monitor(1);
-    if ( $Aircrack->airbase(1) ) {
-        push( @{ $self->res }, $Aircrack );
-        return 1;
-    }
+    push( @{ $self->res }, $Aircrack ) and return 1
+        if ( $Aircrack->airbase(1) );
+    return 0;
 }
 
 sub scan {
@@ -29,17 +28,13 @@ sub scan {
 
 sub list {
     my $self = shift;
-
-    my %Aps = $self->Init->interfaces->getAPs();
-
+    my %Aps  = $self->Init->interfaces->getAPs();
     foreach my $k ( keys %Aps ) {
         $self->Init->io->info("Device: $k");
         foreach my $kk ( keys %{ $Aps{$k} } ) {
             $self->display_wifi( $Aps{$k}{$kk} );
-
         }
     }
-
 }
 
 sub monitor {    #associate every probe
@@ -47,11 +42,8 @@ sub monitor {    #associate every probe
     my $device   = shift;
     my $Aircrack = $self->Init->ml->atom("Aircrack");
     $Aircrack->device($device);
-    if ( $Aircrack->monitor(1) ) {
-        push( @{ $self->res }, $Aircrack );
-        return 1;
-    }
-
+    push( @{ $self->res }, $Aircrack ) and return 1
+        if ( $Aircrack->monitor(1) );
 }
 
 sub wps {
@@ -63,26 +55,20 @@ sub wps {
     $self->Init->io->debug_dumper( \%Aps );
 
     if ( $Target =~ /\:/ ) {
-
         #$Init->io->info()
         if ( exists $Aps{$Target} ) {
             $self->Init->io->info( "We have a match for " . $Target );
             $self->display_wifi( $Aps{$Target} );
-
         }
-
     }
     else {
-
         foreach my $mac ( keys %Aps ) {
             if ( $Aps{$mac}{"SSID"} =~ /$Target/i ) {
                 $self->Init->io->info( "We have a match for " . $Target );
                 $self->display_wifi( $Aps{$mac} );
-
             }
         }
     }
-
 }
 
 sub attack_wps() {
